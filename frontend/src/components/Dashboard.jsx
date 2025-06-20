@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Progress } from './ui/progress';
+import { Alert, AlertDescription } from './ui/alert';
 import { 
   BarChart3, 
   Users, 
@@ -15,15 +16,73 @@ import {
   Eye,
   Edit,
   Trash2,
-  Download
+  Download,
+  CreditCard,
+  Loader2
 } from 'lucide-react';
-import { mockOrganizations, mockSurveys, mockUsers, mockAnalytics } from '../mock/mockData';
+import { useAuth } from '../contexts/AuthContext';
+import { surveysAPI, analyticsAPI, usersAPI, organizationAPI } from '../services/api';
 import SurveyBuilder from './SurveyBuilder';
 import UserManagement from './UserManagement';
 
-const Dashboard = ({ onLogout }) => {
+const Dashboard = ({ onUpgrade }) => {
+  const { user, organization, logout, updateOrganization } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
-  const [currentOrg] = useState(mockOrganizations[0]);
+  const [surveys, setSurveys] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [surveysRes, analyticsRes, usersRes, orgRes] = await Promise.allSettled([
+        surveysAPI.getSurveys(),
+        analyticsAPI.getAnalytics(),
+        usersAPI.getUsers(),
+        organizationAPI.getMyOrganization()
+      ]);
+
+      if (surveysRes.status === 'fulfilled') {
+        setSurveys(surveysRes.value.data);
+      }
+
+      if (analyticsRes.status === 'fulfilled') {
+        setAnalytics(analyticsRes.value.data);
+      }
+
+      if (usersRes.status === 'fulfilled') {
+        setUsers(usersRes.value.data);
+      }
+
+      if (orgRes.status === 'fulfilled') {
+        updateOrganization(orgRes.value.data);
+      }
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      setError('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteSurvey = async (surveyId) => {
+    if (!window.confirm('Are you sure you want to delete this survey?')) return;
+    
+    try {
+      await surveysAPI.deleteSurvey(surveyId);
+      setSurveys(prev => prev.filter(s => s.id !== surveyId));
+    } catch (error) {
+      console.error('Error deleting survey:', error);
+      setError('Failed to delete survey');
+    }
+  };
 
   const StatCard = ({ title, value, icon, trend, trendValue, color = "blue" }) => (
     <Card className="relative overflow-hidden hover:shadow-lg transition-shadow duration-300">
@@ -61,10 +120,10 @@ const Dashboard = ({ onLogout }) => {
       <CardContent>
         <div className="flex items-center justify-between mb-4">
           <div className="text-sm text-gray-600">
-            <span className="font-medium">{survey.responses}</span> responses
+            <span className="font-medium">{survey.responses_count || 0}</span> responses
           </div>
           <div className="text-sm text-gray-600">
-            Updated {new Date(survey.updatedAt).toLocaleDateString()}
+            Updated {new Date(survey.updated_at).toLocaleDateString()}
           </div>
         </div>
         <div className="flex gap-2">
@@ -72,17 +131,45 @@ const Dashboard = ({ onLogout }) => {
             <Eye className="h-4 w-4 mr-2" />
             View
           </Button>
-          <Button size="sm" variant="outline" className="flex-1">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="flex-1"
+            onClick={() => setActiveTab('builder')}
+          >
             <Edit className="h-4 w-4 mr-2" />
             Edit
           </Button>
-          <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          {user?.role === 'Admin' && (
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="text-red-600 hover:text-red-700"
+              onClick={() => handleDeleteSurvey(survey.id)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
   );
+
+  const isAtLimit = (current, limit) => {
+    if (limit === -1) return false; // Unlimited
+    return current >= limit;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -96,24 +183,41 @@ const Dashboard = ({ onLogout }) => {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">DataRW</h1>
-                <p className="text-sm text-gray-600">{currentOrg.name}</p>
+                <p className="text-sm text-gray-600">{organization?.name}</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <Badge className="bg-green-100 text-green-800 border-green-200">
-                {currentOrg.plan} Plan
+                {organization?.plan} Plan
               </Badge>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => onUpgrade && onUpgrade()}
+                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                Upgrade
+              </Button>
               <Button variant="outline" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
               </Button>
-              <Button variant="outline" size="sm" onClick={onLogout}>
+              <Button variant="outline" size="sm" onClick={logout}>
                 Logout
               </Button>
             </div>
           </div>
         </div>
       </header>
+
+      {error && (
+        <div className="px-6 py-4">
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </div>
+      )}
 
       <div className="flex">
         {/* Sidebar */}
@@ -139,6 +243,7 @@ const Dashboard = ({ onLogout }) => {
               variant={activeTab === 'builder' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('builder')}
               className="w-full justify-start"
+              disabled={isAtLimit(surveys.length, organization?.survey_limit)}
             >
               <Plus className="h-4 w-4 mr-3" />
               Survey Builder
@@ -160,7 +265,7 @@ const Dashboard = ({ onLogout }) => {
               User Management
             </Button>
           </nav>
-        </aside>
+        </div>
 
         {/* Main Content */}
         <main className="flex-1 p-6">
@@ -168,17 +273,30 @@ const Dashboard = ({ onLogout }) => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
+                <Button 
+                  className="bg-gradient-to-r from-blue-600 to-purple-600"
+                  onClick={() => setActiveTab('builder')}
+                  disabled={isAtLimit(surveys.length, organization?.survey_limit)}
+                >
                   <Plus className="h-4 w-4 mr-2" />
-                  New Survey
+                  {isAtLimit(surveys.length, organization?.survey_limit) ? 'Limit Reached' : 'New Survey'}
                 </Button>
               </div>
+
+              {/* Usage Warnings */}
+              {isAtLimit(surveys.length, organization?.survey_limit) && (
+                <Alert>
+                  <AlertDescription>
+                    You've reached your survey limit. <Button variant="link" className="p-0" onClick={() => onUpgrade && onUpgrade()}>Upgrade your plan</Button> to create more surveys.
+                  </AlertDescription>
+                </Alert>
+              )}
 
               {/* Stats Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                   title="Total Surveys"
-                  value={currentOrg.surveyCount}
+                  value={surveys.length}
                   icon={<FileText className="h-5 w-5 text-blue-600" />}
                   trend="up"
                   trendValue={12}
@@ -186,15 +304,15 @@ const Dashboard = ({ onLogout }) => {
                 />
                 <StatCard
                   title="Total Responses"
-                  value={mockAnalytics.totalResponses.toLocaleString()}
+                  value={analytics?.total_responses?.toLocaleString() || '0'}
                   icon={<BarChart3 className="h-5 w-5 text-green-600" />}
                   trend="up"
-                  trendValue={mockAnalytics.monthlyGrowth}
+                  trendValue={analytics?.monthly_growth || 0}
                   color="green"
                 />
                 <StatCard
                   title="Response Rate"
-                  value={`${mockAnalytics.responseRate}%`}
+                  value={`${analytics?.response_rate?.toFixed(1) || 0}%`}
                   icon={<TrendingUp className="h-5 w-5 text-purple-600" />}
                   trend="up"
                   trendValue={8}
@@ -202,7 +320,7 @@ const Dashboard = ({ onLogout }) => {
                 />
                 <StatCard
                   title="Storage Used"
-                  value={`${currentOrg.storageUsed}/${currentOrg.storageLimit} GB`}
+                  value={`${organization?.storage_used || 0}/${organization?.storage_limit === -1 ? '∞' : organization?.storage_limit} GB`}
                   icon={<Database className="h-5 w-5 text-orange-600" />}
                   color="orange"
                 />
@@ -214,12 +332,12 @@ const Dashboard = ({ onLogout }) => {
                   <CardHeader>
                     <CardTitle>Survey Usage</CardTitle>
                     <CardDescription>
-                      {currentOrg.surveyCount} of {currentOrg.plan === 'Basic' ? 4 : 10} surveys used
+                      {surveys.length} of {organization?.survey_limit === -1 ? 'unlimited' : organization?.survey_limit} surveys used
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Progress 
-                      value={(currentOrg.surveyCount / (currentOrg.plan === 'Basic' ? 4 : 10)) * 100} 
+                      value={organization?.survey_limit === -1 ? 0 : (surveys.length / organization?.survey_limit) * 100} 
                       className="h-2"
                     />
                   </CardContent>
@@ -228,12 +346,12 @@ const Dashboard = ({ onLogout }) => {
                   <CardHeader>
                     <CardTitle>Storage Usage</CardTitle>
                     <CardDescription>
-                      {currentOrg.storageUsed} GB of {currentOrg.storageLimit} GB used
+                      {organization?.storage_used || 0} GB of {organization?.storage_limit === -1 ? 'unlimited' : `${organization?.storage_limit} GB`} used
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Progress 
-                      value={(currentOrg.storageUsed / currentOrg.storageLimit) * 100} 
+                      value={organization?.storage_limit === -1 ? 0 : ((organization?.storage_used || 0) / organization?.storage_limit) * 100} 
                       className="h-2"
                     />
                   </CardContent>
@@ -243,19 +361,24 @@ const Dashboard = ({ onLogout }) => {
               {/* Recent Activity */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Recent Survey Activity</CardTitle>
+                  <CardTitle>Recent Surveys</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {mockAnalytics.responsesByMonth.slice(-3).map((data, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    {surveys.slice(0, 3).map((survey) => (
+                      <div key={survey.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div>
-                          <span className="font-medium">{data.month}</span>
-                          <span className="text-gray-600 ml-2">{data.responses} responses</span>
+                          <span className="font-medium">{survey.title}</span>
+                          <span className="text-gray-600 ml-2">{survey.responses_count || 0} responses</span>
                         </div>
-                        <Badge variant="outline">{data.responses > 250 ? 'High' : 'Normal'} Activity</Badge>
+                        <Badge variant="outline">
+                          {survey.status}
+                        </Badge>
                       </div>
                     ))}
+                    {surveys.length === 0 && (
+                      <p className="text-gray-500 text-center py-4">No surveys yet. Create your first survey!</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -266,22 +389,37 @@ const Dashboard = ({ onLogout }) => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-gray-900">Surveys</h1>
-                <Button onClick={() => setActiveTab('builder')} className="bg-gradient-to-r from-blue-600 to-purple-600">
+                <Button 
+                  onClick={() => setActiveTab('builder')} 
+                  className="bg-gradient-to-r from-blue-600 to-purple-600"
+                  disabled={isAtLimit(surveys.length, organization?.survey_limit)}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Create Survey
                 </Button>
               </div>
 
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {mockSurveys.map((survey) => (
+                {surveys.map((survey) => (
                   <SurveyCard key={survey.id} survey={survey} />
                 ))}
+                {surveys.length === 0 && (
+                  <div className="col-span-full text-center py-12">
+                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No surveys yet</h3>
+                    <p className="text-gray-600 mb-4">Create your first survey to start collecting data.</p>
+                    <Button onClick={() => setActiveTab('builder')}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Survey
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          {activeTab === 'builder' && <SurveyBuilder />}
-          {activeTab === 'users' && <UserManagement />}
+          {activeTab === 'builder' && <SurveyBuilder onSurveyCreated={fetchDashboardData} />}
+          {activeTab === 'users' && <UserManagement users={users} onUsersChange={setUsers} />}
 
           {activeTab === 'data' && (
             <div className="space-y-6">
@@ -294,11 +432,11 @@ const Dashboard = ({ onLogout }) => {
               </div>
 
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {mockSurveys.map((survey) => (
+                {surveys.map((survey) => (
                   <Card key={survey.id} className="hover:shadow-md transition-shadow">
                     <CardHeader>
                       <CardTitle className="text-lg">{survey.title}</CardTitle>
-                      <CardDescription>{survey.responses} responses</CardDescription>
+                      <CardDescription>{survey.responses_count || 0} responses</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
