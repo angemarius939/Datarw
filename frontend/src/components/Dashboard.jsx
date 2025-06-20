@@ -265,7 +265,7 @@ const Dashboard = ({ onUpgrade }) => {
               User Management
             </Button>
           </nav>
-        </div>
+        </aside>
 
         {/* Main Content */}
         <main className="flex-1 p-6">
