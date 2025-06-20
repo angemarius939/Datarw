@@ -2,7 +2,7 @@ from emergentintegrations.payments.stripe.checkout import StripeCheckout, Checko
 from models import PaymentTransaction, PaymentTransactionCreate, SubscriptionPlan, PaymentStatus
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import logging
 
 logger = logging.getLogger(__name__)
