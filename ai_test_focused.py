@@ -296,7 +296,12 @@ class AITestFocused:
             )
             
             if create_response.status_code == 200:
-                survey_id = create_response.json()["id"]
+                survey_response_data = create_response.json()
+                # Handle both 'id' and '_id' fields
+                survey_id = survey_response_data.get("id") or survey_response_data.get("_id")
+                if not survey_id:
+                    self.log_result("Survey Translation", False, "No survey ID in response", survey_response_data)
+                    return False
             else:
                 self.log_result("Survey Translation", False, "Failed to create survey for translation test")
                 return False
