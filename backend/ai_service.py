@@ -63,8 +63,13 @@ class AIService:
         )
         if context_doc:
             # Convert ObjectId to string if present
-            if "_id" in context_doc and hasattr(context_doc["_id"], "hex"):
+            if "_id" in context_doc:
                 context_doc["_id"] = str(context_doc["_id"])
+            # Also handle any nested ObjectIds in uploaded_documents
+            if "uploaded_documents" in context_doc:
+                for doc in context_doc["uploaded_documents"]:
+                    if "_id" in doc:
+                        doc["_id"] = str(doc["_id"])
             return SurveyGenerationContext(**context_doc)
         return None
 
