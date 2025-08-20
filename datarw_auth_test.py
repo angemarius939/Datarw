@@ -547,7 +547,7 @@ class DataRWAuthTester:
                     self.log_result(
                         "Survey Creation", 
                         True, 
-                        f"Successfully created survey. ID: {data['id']}"
+                        f"Successfully created survey. ID: {survey_id}"
                     )
                     return True
                 else:
