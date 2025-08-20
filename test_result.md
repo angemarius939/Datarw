@@ -307,17 +307,17 @@ frontend:
           agent: "main"
           comment: "COMPLETED: AI-powered survey generation implemented with gpt-4.1 model. Features include: 1) Basic AI generation from natural language descriptions, 2) Document upload for context (business plans, policies, etc.), 3) Enhanced question types (18 total including multiple choice variants, rating scales, matrix questions, file upload, date/time pickers, etc.), 4) AI translation capabilities, 5) Comprehensive UI with modals for AI generation, document upload, and translation, 6) Backend endpoints for AI processing, 7) Document context analysis for relevant survey generation. Frontend includes intuitive modals and proper error handling."
 
-  - task: "Automatic Survey Translation"
-    implemented: false
+  - task: "Survey Preview Functionality Fix"
+    implemented: true
     working: "NA"
     file: "/app/frontend/src/components/SurveyBuilder.jsx"
     stuck_count: 0
-    priority: "high"
+    priority: "medium"
     needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "Will implement automatic translation capabilities focusing on Kinyarwanda and other languages for survey questionnaires."
+          comment: "COMPLETED: Fixed survey preview functionality. Implemented comprehensive preview modal that shows all question types with proper rendering: multiple choice options, text inputs, rating scales, Likert scales, matrix grids, file upload areas, date/time pickers, ranking questions, signature capture, and yes/no questions. Preview shows exactly how the survey will appear to respondents with proper formatting and styling."
 
 metadata:
   created_by: "testing_agent"
