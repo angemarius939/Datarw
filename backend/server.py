@@ -17,8 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from models import *
 from auth import *
 from database import DatabaseService
-from payment_service import PaymentService
-from emergentintegrations.payments.stripe.checkout import CheckoutSessionResponse, CheckoutStatusResponse
+from payment_service import IremboPayService
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
