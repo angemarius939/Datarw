@@ -95,6 +95,113 @@ const LandingPage = ({ onGetStarted }) => {
         </div>
       </section>
 
+      {/* Products Overview Section */}
+      <section className="py-20 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4 text-gray-900">Two Powerful Platforms, One Account</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Choose the tools you need. Organizations can access both platforms with a single account and unified pricing.
+            </p>
+          </div>
+          
+          <div className="grid lg:grid-cols-2 gap-12 max-w-7xl mx-auto">
+            {/* DataRW Surveys */}
+            <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+              <CardHeader className="text-center pb-6">
+                <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Database className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-3xl font-bold text-gray-900 mb-2">DataRW Surveys</CardTitle>
+                <CardDescription className="text-lg text-gray-600">
+                  AI-Powered Survey Generation & Data Collection
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700"><strong>AI Survey Generation</strong> - Describe your needs, get complete questionnaires</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700"><strong>18 Question Types</strong> - From multiple choice to signature capture</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700"><strong>Document Context Analysis</strong> - Upload business plans for targeted surveys</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700"><strong>Auto-Translation</strong> - Kinyarwanda, French, Spanish, and more</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700"><strong>Mobile App</strong> - Offline data collection with sync</span>
+                  </div>
+                </div>
+                <Button 
+                  onClick={onGetStarted}
+                  className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-lg py-6 rounded-xl"
+                >
+                  Try Surveys Platform <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* DataRW Projects */}
+            <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+              <CardHeader className="text-center pb-6">
+                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <BarChart3 className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-3xl font-bold text-gray-900 mb-2">DataRW Projects</CardTitle>
+                <CardDescription className="text-lg text-gray-600">
+                  Comprehensive M&E & Project Management System
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700"><strong>Project & Activity Management</strong> - Full lifecycle tracking</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700"><strong>Budget & Financial Tracking</strong> - Real-time expenditure monitoring</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700"><strong>KPI Dashboards</strong> - Performance metrics & visualization</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700"><strong>Beneficiary Profiles</strong> - Complete stakeholder management</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700"><strong>Document Management</strong> - Secure repository with version control</span>
+                  </div>
+                </div>
+                <Button 
+                  onClick={onGetStarted}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-lg py-6 rounded-xl"
+                >
+                  Try Projects Platform <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="text-center mt-12">
+            <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg">
+              <Shield className="h-5 w-5 text-green-500" />
+              <span className="text-gray-700 font-medium">One Account • Unified Billing • Seamless Integration</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section id="features" className="py-20 bg-white/50">
         <div className="container mx-auto px-6">
