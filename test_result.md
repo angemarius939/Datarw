@@ -101,3 +101,184 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Test the DataRW backend registration and authentication system specifically: registration endpoint, login endpoint, protected endpoints, IremboPay integration, and survey management with limit enforcement."
+
+backend:
+  - task: "User Registration Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Successfully tested POST /api/auth/register with valid data (name: 'John Doe', email: 'john@test.com', password: 'password123'). Returns proper JWT token, user data, and organization data. All required fields present in response."
+
+  - task: "User Registration Duplicate Email Handling"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Successfully tested duplicate email registration. Returns HTTP 400 with proper error message 'Email already registered' when attempting to register with existing email."
+
+  - task: "User Login Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Successfully tested POST /api/auth/login with registered credentials. Returns JWT token and user data. Authentication working correctly."
+
+  - task: "User Login Invalid Credentials Handling"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Successfully tested login with wrong credentials. Returns HTTP 401 with proper error message 'Incorrect email or password'."
+
+  - task: "Protected Endpoint - Organizations/Me"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Successfully tested GET /api/organizations/me with valid JWT token. Returns organization data with plan and name. Authorization working correctly."
+
+  - task: "Protected Endpoint - Users"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Successfully tested GET /api/users with valid JWT token. Returns list of users with required fields (id, email, name, role). Authorization working correctly."
+
+  - task: "Protected Endpoints Authorization Enforcement"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Successfully verified that protected endpoints (/api/organizations/me and /api/users) properly reject unauthorized access with HTTP 403 when no JWT token is provided."
+
+  - task: "IremboPay Payment Plans Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/payment_service.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Successfully tested GET /api/payments/plans. Returns all payment plans (Basic, Professional, Enterprise) with proper structure including amounts and features. Basic plan shows 100,000 RWF."
+
+  - task: "IremboPay Widget Configuration Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/payment_service.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Successfully tested GET /api/payments/widget-config. Returns widget configuration with required fields (widget_url, public_key, is_production). Shows production: false for sandbox environment."
+
+  - task: "Survey Creation Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Successfully tested POST /api/surveys with valid survey data. Creates survey with proper title, description, and questions. Returns survey ID for further operations."
+
+  - task: "Survey Listing Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Successfully tested GET /api/surveys. Returns list of surveys for the organization. Proper authorization and data retrieval working."
+
+  - task: "Survey Limit Enforcement"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Successfully tested survey limit enforcement for Basic plan. After creating 3 surveys, the 4th attempt properly returns HTTP 400 with error message 'Survey limit reached. Upgrade your plan to create more surveys.'"
+
+frontend:
+  - task: "Frontend Integration Testing"
+    implemented: false
+    working: "NA"
+    file: "N/A"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "Frontend testing not performed as per system limitations and focus on backend API testing only."
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "User Registration Endpoint"
+    - "User Login Endpoint"
+    - "Protected Endpoints"
+    - "IremboPay Integration"
+    - "Survey Management"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "testing"
+      message: "Completed comprehensive backend testing for DataRW authentication and registration system. All 12 critical tests passed with 100% success rate. Registration, login, protected endpoints, IremboPay integration, and survey management with limit enforcement are all working correctly. No critical issues found. Backend APIs are ready for production use."
