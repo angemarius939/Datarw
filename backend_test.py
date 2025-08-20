@@ -1061,8 +1061,10 @@ class DataRWAPITester:
             
             if response.status_code == 200:
                 data = response.json()
-                if "id" in data and data.get("title") == activity_data["title"]:
-                    self.activity_id = data["id"]
+                # Handle both 'id' and '_id' fields
+                activity_id = data.get("id") or data.get("_id")
+                if activity_id and data.get("title") == activity_data["title"]:
+                    self.activity_id = activity_id
                     self.log_result("Create Activity", True, "Activity created successfully")
                     return True
                 else:
