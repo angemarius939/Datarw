@@ -202,7 +202,9 @@ class DataRWAPITester:
             
             if response.status_code == 200:
                 data = response.json()
-                if "id" in data and "name" in data and "plan" in data:
+                # Check for either 'id' or '_id' field
+                org_id = data.get("id") or data.get("_id")
+                if org_id and "name" in data and "plan" in data:
                     self.log_result("Get Organization", True, "Organization details retrieved successfully")
                     return True
                 else:
