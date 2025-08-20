@@ -289,6 +289,12 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {errors[`question_${index}`] && (
+          <Alert variant="destructive">
+            <AlertDescription>{errors[`question_${index}`]}</AlertDescription>
+          </Alert>
+        )}
+        
         <div>
           <Label htmlFor={`question-${question.id}`}>Question Text</Label>
           <Textarea
@@ -296,7 +302,7 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
             value={question.question}
             onChange={(e) => updateQuestion(question.id, { question: e.target.value })}
             placeholder="Enter your question here... You can write longer, more detailed questions as needed."
-            className="mt-1 min-h-[80px] resize-y"
+            className={`mt-1 min-h-[80px] resize-y ${errors[`question_${index}`] ? 'border-red-500' : ''}`}
             rows={3}
           />
           <div className="text-xs text-gray-500 mt-1 flex justify-between">
