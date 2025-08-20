@@ -24,6 +24,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { surveysAPI, analyticsAPI, usersAPI, organizationAPI } from '../services/api';
 import SurveyBuilder from './SurveyBuilder';
 import UserManagement from './UserManagement';
+import ProjectDashboard from './ProjectDashboard';
 
 const Dashboard = ({ onUpgrade }) => {
   const { user, organization, logout, updateOrganization } = useAuth();
