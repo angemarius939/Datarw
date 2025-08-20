@@ -987,7 +987,9 @@ class DataRWAPITester:
             
             if response.status_code == 200:
                 data = response.json()
-                if data.get("id") == self.project_id:
+                # Handle both 'id' and '_id' fields
+                project_id = data.get("id") or data.get("_id")
+                if project_id == self.project_id:
                     self.log_result("Get Specific Project", True, "Project retrieved successfully")
                     return True
                 else:
