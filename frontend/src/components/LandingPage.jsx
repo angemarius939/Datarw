@@ -11,28 +11,28 @@ const LandingPage = ({ onGetStarted }) => {
   const features = [
     {
       icon: <Database className="h-8 w-8 text-blue-600" />,
-      title: "Smart Survey Builder",
-      description: "Create powerful surveys with skip logic, calculations, and multiple question types"
+      title: "AI Survey Builder",
+      description: "Generate comprehensive surveys using AI with natural language descriptions and document context analysis"
     },
     {
       icon: <BarChart3 className="h-8 w-8 text-green-600" />,
-      title: "Advanced Analytics", 
-      description: "Real-time KPI dashboards with response rates, completion metrics, and data visualization"
+      title: "Project Management", 
+      description: "Complete M&E system with activity tracking, budgeting, KPI dashboards, and performance monitoring"
     },
     {
       icon: <Users className="h-8 w-8 text-purple-600" />,
-      title: "Team Management",
-      description: "Multi-level user access with Admin, Editor, and Viewer roles for your organization"
+      title: "Beneficiary Management",
+      description: "Profile management with geographic mapping, demographic reports, and stakeholder tracking"
     },
     {
       icon: <Shield className="h-8 w-8 text-red-600" />,
-      title: "Secure & Compliant",
-      description: "Enterprise-grade security with data encryption and compliance standards"
+      title: "Document Repository",
+      description: "Secure storage for program documents, reports, agreements with version control and role-based access"
     },
     {
       icon: <Zap className="h-8 w-8 text-yellow-600" />,
-      title: "Export & Integration",
-      description: "Export data in multiple formats and integrate with your existing systems"
+      title: "Automated Reporting",
+      description: "Generate monthly, quarterly, annual reports automatically with customizable templates and export options"
     }
   ];
 
