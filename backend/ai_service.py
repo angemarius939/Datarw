@@ -249,11 +249,22 @@ Guidelines:
         await self._categorize_documents(context_data)
         
         # Save to database
-        await self.db.survey_generation_contexts.replace_one(
+        result = await self.db.survey_generation_contexts.replace_one(
             {"organization_id": organization_id},
             context_data,
             upsert=True
         )
+        
+        # Set the ID for the returned object
+        if result.upserted_id:
+            context_data["_id"] = str(result.upserted_id)
+        else:
+            # Get the existing document to get its ID
+            existing_doc = await self.db.survey_generation_contexts.find_one(
+                {"organization_id": organization_id}
+            )
+            if existing_doc and "_id" in existing_doc:
+                context_data["_id"] = str(existing_doc["_id"])
         
         return SurveyGenerationContext(**context_data)
 
