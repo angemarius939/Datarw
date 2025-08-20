@@ -16,7 +16,8 @@ import {
   Eye, 
   Save,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  FileText
 } from 'lucide-react';
 import { questionTypes } from '../mock/mockData';
 
