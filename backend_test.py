@@ -1298,7 +1298,7 @@ class DataRWAPITester:
             
             response = self.session.put(
                 f"{self.base_url}/kpis/{self.kpi_id}/value",
-                json={"current_value": current_value}
+                params={"current_value": current_value}
             )
             
             if response.status_code == 200:
