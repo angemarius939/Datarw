@@ -7,8 +7,11 @@ import uuid
 # Enums
 class UserRole(str, Enum):
     ADMIN = "Admin"
-    EDITOR = "Editor"
+    EDITOR = "Editor" 
     VIEWER = "Viewer"
+    PROJECT_MANAGER = "Project Manager"
+    ME_OFFICER = "M&E Officer"
+    DONOR_VIEWER = "Donor Viewer"
 
 class SubscriptionPlan(str, Enum):
     BASIC = "Basic"
