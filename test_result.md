@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the DataRW backend registration and authentication system specifically: registration endpoint, login endpoint, protected endpoints, IremboPay integration, and survey management with limit enforcement."
+user_problem_statement: "Test the DataRW frontend survey creation functionality specifically: Navigate to survey creation, test survey creation form, verify the FileText error fix, and test user experience including loading states, success/error messages, and form validation."
 
 backend:
   - task: "User Registration Endpoint"
