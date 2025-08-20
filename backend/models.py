@@ -80,7 +80,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     name: str
-    organization_id: str
+    organization_id: Optional[str] = None
     role: UserRole = UserRole.VIEWER
 
 class UserUpdate(BaseModel):
