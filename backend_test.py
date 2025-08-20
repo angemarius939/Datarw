@@ -1339,8 +1339,10 @@ class DataRWAPITester:
             
             if response.status_code == 200:
                 data = response.json()
-                if "id" in data and data.get("unique_id") == beneficiary_data["unique_id"]:
-                    self.beneficiary_id = data["id"]
+                # Handle both 'id' and '_id' fields
+                beneficiary_id = data.get("id") or data.get("_id")
+                if beneficiary_id and data.get("unique_id") == beneficiary_data["unique_id"]:
+                    self.beneficiary_id = beneficiary_id
                     self.log_result("Create Beneficiary", True, "Beneficiary created successfully")
                     return True
                 else:
