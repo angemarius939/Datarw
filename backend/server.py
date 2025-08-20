@@ -518,3 +518,8 @@ async def shutdown_db_client():
 @api_router.get("/")
 async def root():
     return {"message": "DataRW API is running!", "version": "1.0.0"}
+
+# Also add a root endpoint for the main app
+@app.get("/")
+async def app_root():
+    return {"message": "DataRW API Server", "version": "1.0.0", "docs": "/docs"}
