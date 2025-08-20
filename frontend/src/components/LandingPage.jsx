@@ -214,7 +214,7 @@ const LandingPage = ({ onGetStarted }) => {
                 <div className="space-y-3">
                   <a 
                     href="/downloads/DataRW-Survey-v1.0.0.apk" 
-                    download
+                    download="DataRW-Survey-v1.0.0.apk"
                     className="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200"
                   >
                     <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -223,6 +223,10 @@ const LandingPage = ({ onGetStarted }) => {
                     Download APK
                   </a>
                   <p className="text-sm text-blue-200">Version 1.0.0 • 25 MB</p>
+                  <div className="text-xs text-blue-300">
+                    <p>• Android 5.0+ required</p>
+                    <p>• Enable "Unknown sources" to install</p>
+                  </div>
                 </div>
               </div>
               
