@@ -10,10 +10,10 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 
 # Import our models and services
-from .models import *
-from .auth import *
-from .database import DatabaseService
-from .payment_service import PaymentService
+from models import *
+from auth import *
+from database import DatabaseService
+from payment_service import PaymentService
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
