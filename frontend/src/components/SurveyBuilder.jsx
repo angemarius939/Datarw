@@ -276,9 +276,14 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
             id={`question-${question.id}`}
             value={question.question}
             onChange={(e) => updateQuestion(question.id, { question: e.target.value })}
-            placeholder="Enter your question here..."
-            className="mt-1"
+            placeholder="Enter your question here... You can write longer, more detailed questions as needed."
+            className="mt-1 min-h-[80px] resize-y"
+            rows={3}
           />
+          <div className="text-xs text-gray-500 mt-1 flex justify-between">
+            <span>{question.question.length}/1000 characters</span>
+            <span>Tip: Be clear and specific for better responses</span>
+          </div>
         </div>
 
         {question.type === 'multiple_choice' && (
