@@ -51,6 +51,51 @@ class PaymentStatus(str, Enum):
     FAILED = "failed"
     EXPIRED = "expired"
 
+# Project Management Enums
+class ProjectStatus(str, Enum):
+    PLANNING = "planning"
+    ACTIVE = "active"
+    ON_HOLD = "on_hold"
+    COMPLETED = "completed"
+    ARCHIVED = "archived"
+
+class ActivityStatus(str, Enum):
+    NOT_STARTED = "not_started"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    DELAYED = "delayed"
+    CANCELLED = "cancelled"
+
+class BudgetCategory(str, Enum):
+    ADMINISTRATION = "administration"
+    LOGISTICS = "logistics"
+    TRAINING = "training"
+    PERSONNEL = "personnel"
+    EQUIPMENT = "equipment"
+    TRAVEL = "travel"
+    COMMUNICATIONS = "communications"
+    MONITORING = "monitoring"
+    OTHER = "other"
+
+class IndicatorType(str, Enum):
+    QUANTITATIVE = "quantitative"
+    QUALITATIVE = "qualitative"
+
+class IndicatorLevel(str, Enum):
+    OUTPUT = "output"
+    OUTCOME = "outcome"
+    IMPACT = "impact"
+
+class DocumentType(str, Enum):
+    PROJECT_DOCUMENT = "project_document"
+    DONOR_AGREEMENT = "donor_agreement"
+    REPORT = "report"
+    POLICY = "policy"
+    TRAINING_MATERIAL = "training_material"
+    FINANCIAL = "financial"
+    LEGAL = "legal"
+    OTHER = "other"
+
 # Base Models
 class BaseDocument(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), alias="_id")
