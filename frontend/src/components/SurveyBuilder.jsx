@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Checkbox } from './ui/checkbox';
 import { Switch } from './ui/switch';
 import { Alert, AlertDescription } from './ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { 
   Plus, 
   Trash2, 
@@ -19,7 +20,11 @@ import {
   ArrowUp,
   ArrowDown,
   FileText,
-  Loader2
+  Loader2,
+  Sparkles,
+  Upload,
+  Languages,
+  Brain
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { surveysAPI } from '../services/api';
