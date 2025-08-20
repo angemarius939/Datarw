@@ -28,40 +28,112 @@ import { useToast } from '../hooks/use-toast';
 // Question types definition
 const questionTypes = [
   {
-    type: "multiple_choice",
-    name: "Multiple Choice",
+    type: "multiple_choice_single",
+    name: "Multiple Choice (Single)",
     icon: "☑️",
-    description: "Single or multiple selection from options"
+    description: "Single selection from multiple options"
   },
   {
-    type: "text",
-    name: "Text Input", 
+    type: "multiple_choice_multiple", 
+    name: "Multiple Choice (Multiple)",
+    icon: "☰",
+    description: "Multiple selections allowed (checkboxes)"
+  },
+  {
+    type: "short_text",
+    name: "Short Text",
     icon: "📝",
-    description: "Short or long text responses"
+    description: "Brief text responses (1-2 words)"
   },
   {
-    type: "rating",
+    type: "long_text",
+    name: "Long Text", 
+    icon: "📄",
+    description: "Detailed text responses (paragraphs)"
+  },
+  {
+    type: "rating_scale",
     name: "Rating Scale",
     icon: "⭐",
-    description: "1-5 or 1-10 rating scale"
+    description: "Numeric rating (1-5, 1-10, etc.)"
+  },
+  {
+    type: "likert_scale",
+    name: "Likert Scale",
+    icon: "📊",
+    description: "Agreement scale (Strongly Disagree to Strongly Agree)"
+  },
+  {
+    type: "ranking",
+    name: "Ranking Question",
+    icon: "🔢",
+    description: "Rank options in order of preference"
+  },
+  {
+    type: "dropdown",
+    name: "Dropdown",
+    icon: "🔽",
+    description: "Select one option from dropdown"
+  },
+  {
+    type: "matrix_grid",
+    name: "Matrix/Grid",
+    icon: "⚏",
+    description: "Grid of questions with same response options"
   },
   {
     type: "file_upload",
     name: "File Upload",
-    icon: "📎", 
+    icon: "📎",
     description: "Allow respondents to upload files"
   },
   {
-    type: "calculation",
-    name: "Calculation",
-    icon: "🔢",
-    description: "Calculate values from other fields"
+    type: "date_picker",
+    name: "Date Picker", 
+    icon: "📅",
+    description: "Select a specific date"
   },
   {
-    type: "skip_logic",
-    name: "Skip Logic",
-    icon: "↩️",
-    description: "Conditional question flow"
+    type: "time_picker",
+    name: "Time Picker",
+    icon: "🕐",
+    description: "Select a specific time"
+  },
+  {
+    type: "datetime_picker", 
+    name: "Date & Time Picker",
+    icon: "📅",
+    description: "Select both date and time"
+  },
+  {
+    type: "slider",
+    name: "Slider",
+    icon: "🎚️", 
+    description: "Visual slider for numeric input"
+  },
+  {
+    type: "numeric_scale",
+    name: "Numeric Scale",
+    icon: "🔢",
+    description: "Enter numeric value within range"
+  },
+  {
+    type: "image_choice",
+    name: "Image Choice",
+    icon: "🖼️",
+    description: "Choose from images"
+  },
+  {
+    type: "yes_no", 
+    name: "Yes/No",
+    icon: "✅",
+    description: "Simple yes/no question"
+  },
+  {
+    type: "signature",
+    name: "Signature Capture",
+    icon: "✍️",
+    description: "Digital signature capture"
   }
 ];
 
