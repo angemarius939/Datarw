@@ -879,6 +879,537 @@ class DataRWAPITester:
         except Exception as e:
             self.log_result("Enhanced Question Types", False, f"Request error: {str(e)}")
             return False
+
+    # Project Management Tests
+    def test_project_dashboard(self):
+        """Test project dashboard endpoint"""
+        try:
+            response = self.session.get(f"{self.base_url}/projects/dashboard")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("success") and "data" in data):
+                    dashboard_data = data["data"]
+                    required_fields = ["total_projects", "active_projects", "completed_projects", 
+                                     "overdue_activities", "budget_utilization", "kpi_performance", "recent_activities"]
+                    
+                    if all(field in dashboard_data for field in required_fields):
+                        self.log_result("Project Dashboard", True, "Dashboard data retrieved successfully")
+                        return True
+                    else:
+                        missing_fields = [field for field in required_fields if field not in dashboard_data]
+                        self.log_result("Project Dashboard", False, f"Missing fields: {missing_fields}", data)
+                        return False
+                else:
+                    self.log_result("Project Dashboard", False, "Missing required fields in response", data)
+                    return False
+            else:
+                self.log_result("Project Dashboard", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Project Dashboard", False, f"Request error: {str(e)}")
+            return False
+
+    def test_create_project(self):
+        """Test creating a new project"""
+        try:
+            from datetime import datetime, timedelta
+            
+            project_data = {
+                "title": f"Test Project {uuid.uuid4().hex[:8]}",
+                "description": "This is a test project for API testing",
+                "sector": "Education",
+                "donor": "World Bank",
+                "implementation_start": (datetime.now() + timedelta(days=30)).isoformat(),
+                "implementation_end": (datetime.now() + timedelta(days=365)).isoformat(),
+                "total_budget": 50000.0,
+                "budget_currency": "RWF",
+                "location": "Kigali, Rwanda",
+                "target_beneficiaries": 1000,
+                "team_members": []
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/projects",
+                json=project_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "id" in data and data.get("title") == project_data["title"]:
+                    self.project_id = data["id"]
+                    self.log_result("Create Project", True, "Project created successfully")
+                    return True
+                else:
+                    self.log_result("Create Project", False, "Project data mismatch", data)
+                    return False
+            else:
+                self.log_result("Create Project", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Create Project", False, f"Request error: {str(e)}")
+            return False
+
+    def test_get_projects(self):
+        """Test getting all projects"""
+        try:
+            response = self.session.get(f"{self.base_url}/projects")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    self.log_result("Get Projects", True, f"Retrieved {len(data)} projects")
+                    return True
+                else:
+                    self.log_result("Get Projects", False, "Response is not a list", data)
+                    return False
+            else:
+                self.log_result("Get Projects", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Get Projects", False, f"Request error: {str(e)}")
+            return False
+
+    def test_get_specific_project(self):
+        """Test getting a specific project"""
+        if not hasattr(self, 'project_id'):
+            self.log_result("Get Specific Project", False, "No project ID available from previous test")
+            return False
+        
+        try:
+            response = self.session.get(f"{self.base_url}/projects/{self.project_id}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("id") == self.project_id:
+                    self.log_result("Get Specific Project", True, "Project retrieved successfully")
+                    return True
+                else:
+                    self.log_result("Get Specific Project", False, "Project ID mismatch", data)
+                    return False
+            else:
+                self.log_result("Get Specific Project", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Get Specific Project", False, f"Request error: {str(e)}")
+            return False
+
+    def test_update_project(self):
+        """Test updating a project"""
+        if not hasattr(self, 'project_id'):
+            self.log_result("Update Project", False, "No project ID available from previous test")
+            return False
+        
+        try:
+            update_data = {
+                "title": f"Updated Project {uuid.uuid4().hex[:8]}",
+                "status": "active"
+            }
+            
+            response = self.session.put(
+                f"{self.base_url}/projects/{self.project_id}",
+                json=update_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("title") == update_data["title"]:
+                    self.log_result("Update Project", True, "Project updated successfully")
+                    return True
+                else:
+                    self.log_result("Update Project", False, "Project title not updated", data)
+                    return False
+            else:
+                self.log_result("Update Project", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Update Project", False, f"Request error: {str(e)}")
+            return False
+
+    def test_create_activity(self):
+        """Test creating a project activity"""
+        if not hasattr(self, 'project_id'):
+            self.log_result("Create Activity", False, "No project ID available from previous test")
+            return False
+        
+        try:
+            from datetime import datetime, timedelta
+            
+            activity_data = {
+                "project_id": self.project_id,
+                "title": f"Test Activity {uuid.uuid4().hex[:8]}",
+                "description": "This is a test activity for API testing",
+                "responsible_user_id": self.user_data["id"],
+                "start_date": (datetime.now() + timedelta(days=7)).isoformat(),
+                "end_date": (datetime.now() + timedelta(days=30)).isoformat(),
+                "budget_allocated": 5000.0,
+                "deliverables": ["Deliverable 1", "Deliverable 2"]
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/activities",
+                json=activity_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "id" in data and data.get("title") == activity_data["title"]:
+                    self.activity_id = data["id"]
+                    self.log_result("Create Activity", True, "Activity created successfully")
+                    return True
+                else:
+                    self.log_result("Create Activity", False, "Activity data mismatch", data)
+                    return False
+            else:
+                self.log_result("Create Activity", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Create Activity", False, f"Request error: {str(e)}")
+            return False
+
+    def test_get_activities(self):
+        """Test getting activities"""
+        try:
+            response = self.session.get(f"{self.base_url}/activities")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    self.log_result("Get Activities", True, f"Retrieved {len(data)} activities")
+                    return True
+                else:
+                    self.log_result("Get Activities", False, "Response is not a list", data)
+                    return False
+            else:
+                self.log_result("Get Activities", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Get Activities", False, f"Request error: {str(e)}")
+            return False
+
+    def test_update_activity(self):
+        """Test updating an activity"""
+        if not hasattr(self, 'activity_id'):
+            self.log_result("Update Activity", False, "No activity ID available from previous test")
+            return False
+        
+        try:
+            update_data = {
+                "status": "in_progress",
+                "progress_percentage": 25.0
+            }
+            
+            response = self.session.put(
+                f"{self.base_url}/activities/{self.activity_id}",
+                json=update_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("status") == update_data["status"]:
+                    self.log_result("Update Activity", True, "Activity updated successfully")
+                    return True
+                else:
+                    self.log_result("Update Activity", False, "Activity status not updated", data)
+                    return False
+            else:
+                self.log_result("Update Activity", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Update Activity", False, f"Request error: {str(e)}")
+            return False
+
+    def test_create_budget_item(self):
+        """Test creating a budget item"""
+        if not hasattr(self, 'project_id'):
+            self.log_result("Create Budget Item", False, "No project ID available from previous test")
+            return False
+        
+        try:
+            from datetime import datetime, timedelta
+            
+            budget_data = {
+                "project_id": self.project_id,
+                "category": "training",
+                "description": "Training materials and workshops",
+                "budgeted_amount": 10000.0,
+                "currency": "RWF",
+                "period_start": datetime.now().isoformat(),
+                "period_end": (datetime.now() + timedelta(days=90)).isoformat(),
+                "responsible_user_id": self.user_data["id"]
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/budget",
+                json=budget_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "id" in data and data.get("category") == budget_data["category"]:
+                    self.budget_item_id = data["id"]
+                    self.log_result("Create Budget Item", True, "Budget item created successfully")
+                    return True
+                else:
+                    self.log_result("Create Budget Item", False, "Budget item data mismatch", data)
+                    return False
+            else:
+                self.log_result("Create Budget Item", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Create Budget Item", False, f"Request error: {str(e)}")
+            return False
+
+    def test_get_budget_items(self):
+        """Test getting budget items"""
+        try:
+            response = self.session.get(f"{self.base_url}/budget")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    self.log_result("Get Budget Items", True, f"Retrieved {len(data)} budget items")
+                    return True
+                else:
+                    self.log_result("Get Budget Items", False, "Response is not a list", data)
+                    return False
+            else:
+                self.log_result("Get Budget Items", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Get Budget Items", False, f"Request error: {str(e)}")
+            return False
+
+    def test_get_budget_summary(self):
+        """Test getting budget summary"""
+        try:
+            response = self.session.get(f"{self.base_url}/budget/summary")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("success") and "data" in data):
+                    summary_data = data["data"]
+                    required_fields = ["total_budget", "total_spent", "remaining_budget", "utilization_rate"]
+                    
+                    if all(field in summary_data for field in required_fields):
+                        self.log_result("Get Budget Summary", True, "Budget summary retrieved successfully")
+                        return True
+                    else:
+                        missing_fields = [field for field in required_fields if field not in summary_data]
+                        self.log_result("Get Budget Summary", False, f"Missing fields: {missing_fields}", data)
+                        return False
+                else:
+                    self.log_result("Get Budget Summary", False, "Missing required fields in response", data)
+                    return False
+            else:
+                self.log_result("Get Budget Summary", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Get Budget Summary", False, f"Request error: {str(e)}")
+            return False
+
+    def test_create_kpi_indicator(self):
+        """Test creating a KPI indicator"""
+        if not hasattr(self, 'project_id'):
+            self.log_result("Create KPI Indicator", False, "No project ID available from previous test")
+            return False
+        
+        try:
+            kpi_data = {
+                "project_id": self.project_id,
+                "name": f"Test KPI {uuid.uuid4().hex[:8]}",
+                "description": "Number of people trained in digital literacy",
+                "indicator_type": "quantitative",
+                "level": "output",
+                "baseline_value": 0.0,
+                "target_value": 500.0,
+                "unit_of_measurement": "people",
+                "frequency": "Monthly",
+                "responsible_user_id": self.user_data["id"],
+                "data_source": "Training records",
+                "collection_method": "Manual count"
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/kpis",
+                json=kpi_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "id" in data and data.get("name") == kpi_data["name"]:
+                    self.kpi_id = data["id"]
+                    self.log_result("Create KPI Indicator", True, "KPI indicator created successfully")
+                    return True
+                else:
+                    self.log_result("Create KPI Indicator", False, "KPI data mismatch", data)
+                    return False
+            else:
+                self.log_result("Create KPI Indicator", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Create KPI Indicator", False, f"Request error: {str(e)}")
+            return False
+
+    def test_get_kpi_indicators(self):
+        """Test getting KPI indicators"""
+        try:
+            response = self.session.get(f"{self.base_url}/kpis")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    self.log_result("Get KPI Indicators", True, f"Retrieved {len(data)} KPI indicators")
+                    return True
+                else:
+                    self.log_result("Get KPI Indicators", False, "Response is not a list", data)
+                    return False
+            else:
+                self.log_result("Get KPI Indicators", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Get KPI Indicators", False, f"Request error: {str(e)}")
+            return False
+
+    def test_update_kpi_value(self):
+        """Test updating KPI current value"""
+        if not hasattr(self, 'kpi_id'):
+            self.log_result("Update KPI Value", False, "No KPI ID available from previous test")
+            return False
+        
+        try:
+            current_value = 125.0
+            
+            response = self.session.put(
+                f"{self.base_url}/kpis/{self.kpi_id}/value",
+                json={"current_value": current_value}
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("current_value") == current_value:
+                    self.log_result("Update KPI Value", True, "KPI value updated successfully")
+                    return True
+                else:
+                    self.log_result("Update KPI Value", False, "KPI value not updated", data)
+                    return False
+            else:
+                self.log_result("Update KPI Value", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Update KPI Value", False, f"Request error: {str(e)}")
+            return False
+
+    def test_create_beneficiary(self):
+        """Test creating a beneficiary"""
+        try:
+            from datetime import datetime, timedelta
+            
+            beneficiary_data = {
+                "unique_id": f"BEN-{uuid.uuid4().hex[:8].upper()}",
+                "first_name": "Jean",
+                "last_name": "Uwimana",
+                "date_of_birth": (datetime.now() - timedelta(days=365*25)).isoformat(),
+                "gender": "Male",
+                "location": "Kigali",
+                "contact_phone": "+250788123456",
+                "household_size": 4,
+                "education_level": "Secondary",
+                "employment_status": "Employed"
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/beneficiaries",
+                json=beneficiary_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "id" in data and data.get("unique_id") == beneficiary_data["unique_id"]:
+                    self.beneficiary_id = data["id"]
+                    self.log_result("Create Beneficiary", True, "Beneficiary created successfully")
+                    return True
+                else:
+                    self.log_result("Create Beneficiary", False, "Beneficiary data mismatch", data)
+                    return False
+            else:
+                self.log_result("Create Beneficiary", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Create Beneficiary", False, f"Request error: {str(e)}")
+            return False
+
+    def test_get_beneficiaries(self):
+        """Test getting beneficiaries"""
+        try:
+            response = self.session.get(f"{self.base_url}/beneficiaries")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    self.log_result("Get Beneficiaries", True, f"Retrieved {len(data)} beneficiaries")
+                    return True
+                else:
+                    self.log_result("Get Beneficiaries", False, "Response is not a list", data)
+                    return False
+            else:
+                self.log_result("Get Beneficiaries", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Get Beneficiaries", False, f"Request error: {str(e)}")
+            return False
+
+    def test_get_beneficiary_demographics(self):
+        """Test getting beneficiary demographics"""
+        try:
+            response = self.session.get(f"{self.base_url}/beneficiaries/demographics")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("success") and "data" in data):
+                    demographics_data = data["data"]
+                    required_fields = ["gender_distribution", "age_distribution", "location_distribution"]
+                    
+                    if all(field in demographics_data for field in required_fields):
+                        self.log_result("Get Beneficiary Demographics", True, "Demographics data retrieved successfully")
+                        return True
+                    else:
+                        missing_fields = [field for field in required_fields if field not in demographics_data]
+                        self.log_result("Get Beneficiary Demographics", False, f"Missing fields: {missing_fields}", data)
+                        return False
+                else:
+                    self.log_result("Get Beneficiary Demographics", False, "Missing required fields in response", data)
+                    return False
+            else:
+                self.log_result("Get Beneficiary Demographics", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Get Beneficiary Demographics", False, f"Request error: {str(e)}")
+            return False
+
+    def test_delete_project(self):
+        """Test deleting a project (admin only)"""
+        if not hasattr(self, 'project_id'):
+            self.log_result("Delete Project", False, "No project ID available from previous test")
+            return False
+        
+        try:
+            response = self.session.delete(f"{self.base_url}/projects/{self.project_id}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "deleted successfully" in data.get("message", ""):
+                    self.log_result("Delete Project", True, "Project deleted successfully")
+                    return True
+                else:
+                    self.log_result("Delete Project", False, "Unexpected response message", data)
+                    return False
+            else:
+                self.log_result("Delete Project", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Delete Project", False, f"Request error: {str(e)}")
+            return False
     
     def run_all_tests(self):
         """Run all tests in sequence"""
