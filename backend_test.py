@@ -404,7 +404,9 @@ class DataRWAPITester:
             if response.status_code == 200:
                 data = response.json()
                 if data.get("email") == user_data["email"]:
-                    self.new_user_id = data["id"]
+                    # Handle both 'id' and '_id' fields
+                    user_id = data.get("id") or data.get("_id")
+                    self.new_user_id = user_id
                     self.log_result("Create User", True, "User created successfully")
                     return True
                 else:
