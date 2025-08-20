@@ -53,6 +53,53 @@ class SurveyCreationTester:
             print(f"   Response: {json.dumps(response_data, indent=2)}")
         print()
     
+    def test_user_registration(self):
+        """Step 0: Register a new user first"""
+        print("👤 Step 0: Register a new user")
+        try:
+            registration_data = {
+                "email": self.test_email,
+                "password": self.test_password,
+                "name": self.test_name
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/auth/register",
+                json=registration_data
+            )
+            
+            print(f"   Request: POST {self.base_url}/auth/register")
+            print(f"   Payload: {json.dumps(registration_data, indent=2)}")
+            print(f"   Status Code: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "access_token" in data and "user" in data and "organization" in data:
+                    self.auth_token = data["access_token"]
+                    self.user_data = data["user"]
+                    self.organization_data = data["organization"]
+                    
+                    # Set authorization header for future requests
+                    self.session.headers.update({
+                        "Authorization": f"Bearer {self.auth_token}"
+                    })
+                    
+                    self.log_result("User Registration", True, 
+                                  f"User registered successfully. Token: {self.auth_token[:20]}...", data)
+                    return True
+                else:
+                    self.log_result("User Registration", False, 
+                                  "Missing required fields in response", data)
+                    return False
+            else:
+                error_data = response.json() if response.content else {"error": "No response body"}
+                self.log_result("User Registration", False, 
+                              f"HTTP {response.status_code}", error_data)
+                return False
+        except Exception as e:
+            self.log_result("User Registration", False, f"Request error: {str(e)}")
+            return False
+
     def test_login_for_auth_token(self):
         """Step 1: Login to get auth token"""
         print("🔐 Step 1: Login to get auth token")
