@@ -467,7 +467,7 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
               
               <div>
                 <Label htmlFor="survey-title">Survey Title</Label>
-                <Input
+                <Textarea
                   id="survey-title"
                   value={survey.title}
                   onChange={(e) => {
@@ -476,9 +476,14 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
                       setErrors(prev => ({ ...prev, title: undefined }));
                     }
                   }}
-                  placeholder="Enter survey title..."
-                  className={`mt-1 ${errors.title ? 'border-red-500' : ''}`}
+                  placeholder="Enter a clear, descriptive title for your survey..."
+                  className={`mt-1 min-h-[60px] resize-y ${errors.title ? 'border-red-500' : ''}`}
+                  rows={2}
                 />
+                <div className="text-xs text-gray-500 mt-1 flex justify-between">
+                  <span>{survey.title.length}/200 characters</span>
+                  <span>Keep it concise but descriptive</span>
+                </div>
               </div>
               
               <div>
