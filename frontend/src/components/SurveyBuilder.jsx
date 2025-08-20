@@ -396,9 +396,15 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
           </div>
         </div>
 
-        {question.type === 'multiple_choice' && (
+        {/* Multiple Choice (Single/Multiple) */}
+        {['multiple_choice_single', 'multiple_choice_multiple', 'dropdown', 'ranking'].includes(question.type) && (
           <div>
-            <Label>Answer Options</Label>
+            <div className="flex items-center justify-between">
+              <Label>Answer Options</Label>
+              {question.type === 'multiple_choice_multiple' && (
+                <Badge variant="secondary">Multiple Selection</Badge>
+              )}
+            </div>
             {errors[`question_${index}_options`] && (
               <Alert variant="destructive" className="mt-2">
                 <AlertDescription>{errors[`question_${index}_options`]}</AlertDescription>
@@ -449,32 +455,176 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
           </div>
         )}
 
-        {question.type === 'rating' && (
-          <div>
-            <Label htmlFor={`scale-${question.id}`}>Rating Scale</Label>
-            <Select
-              value={question.scale?.toString()}
-              onValueChange={(value) => updateQuestion(question.id, { scale: parseInt(value) })}
-            >
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Select scale" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">1 to 5</SelectItem>
-                <SelectItem value="10">1 to 10</SelectItem>
-              </SelectContent>
-            </Select>
+        {/* Rating Scale */}
+        {['rating_scale', 'slider', 'numeric_scale'].includes(question.type) && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor={`scale-min-${question.id}`}>Minimum Value</Label>
+              <Input
+                id={`scale-min-${question.id}`}
+                type="number"
+                value={question.scale_min || ''}
+                onChange={(e) => updateQuestion(question.id, { scale_min: parseInt(e.target.value) || null })}
+                placeholder="1"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor={`scale-max-${question.id}`}>Maximum Value</Label>
+              <Input
+                id={`scale-max-${question.id}`}
+                type="number"
+                value={question.scale_max || ''}
+                onChange={(e) => updateQuestion(question.id, { scale_max: parseInt(e.target.value) || null })}
+                placeholder="5"
+                className="mt-1"
+              />
+            </div>
+            {question.type === 'slider' && (
+              <div className="col-span-2">
+                <Label htmlFor={`step-${question.id}`}>Step Size</Label>
+                <Input
+                  id={`step-${question.id}`}
+                  type="number"
+                  step="0.1"
+                  value={question.slider_step || ''}
+                  onChange={(e) => updateQuestion(question.id, { slider_step: parseFloat(e.target.value) || null })}
+                  placeholder="1"
+                  className="mt-1 w-32"
+                />
+              </div>
+            )}
           </div>
         )}
 
+        {/* Likert Scale */}
+        {question.type === 'likert_scale' && (
+          <div>
+            <Label>Scale Labels</Label>
+            <div className="grid grid-cols-1 gap-2 mt-2">
+              {question.scale_labels.map((label, labelIndex) => (
+                <Input
+                  key={labelIndex}
+                  value={label}
+                  onChange={(e) => {
+                    const newLabels = [...question.scale_labels];
+                    newLabels[labelIndex] = e.target.value;
+                    updateQuestion(question.id, { scale_labels: newLabels });
+                  }}
+                  placeholder={`Label ${labelIndex + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Matrix Grid */}
+        {question.type === 'matrix_grid' && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Row Labels</Label>
+              <div className="space-y-2 mt-2">
+                {question.matrix_rows.map((row, rowIndex) => (
+                  <div key={rowIndex} className="flex items-center space-x-2">
+                    <Input
+                      value={row}
+                      onChange={(e) => {
+                        const newRows = [...question.matrix_rows];
+                        newRows[rowIndex] = e.target.value;
+                        updateQuestion(question.id, { matrix_rows: newRows });
+                      }}
+                      placeholder={`Row ${rowIndex + 1}`}
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const newRows = question.matrix_rows.filter((_, i) => i !== rowIndex);
+                        updateQuestion(question.id, { matrix_rows: newRows });
+                      }}
+                      className="text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const newRows = [...question.matrix_rows, `Row ${question.matrix_rows.length + 1}`];
+                    updateQuestion(question.id, { matrix_rows: newRows });
+                  }}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Row
+                </Button>
+              </div>
+            </div>
+            <div>
+              <Label>Column Labels</Label>
+              <div className="space-y-2 mt-2">
+                {question.matrix_columns.map((column, columnIndex) => (
+                  <div key={columnIndex} className="flex items-center space-x-2">
+                    <Input
+                      value={column}
+                      onChange={(e) => {
+                        const newColumns = [...question.matrix_columns];
+                        newColumns[columnIndex] = e.target.value;
+                        updateQuestion(question.id, { matrix_columns: newColumns });
+                      }}
+                      placeholder={`Column ${columnIndex + 1}`}
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const newColumns = question.matrix_columns.filter((_, i) => i !== columnIndex);
+                        updateQuestion(question.id, { matrix_columns: newColumns });
+                      }}
+                      className="text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const newColumns = [...question.matrix_columns, `Column ${question.matrix_columns.length + 1}`];
+                    updateQuestion(question.id, { matrix_columns: newColumns });
+                  }}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Column
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* File Upload Settings */}
         {question.type === 'file_upload' && (
           <div className="space-y-3">
             <div>
               <Label>File Types Allowed</Label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {['PDF', 'Images', 'Documents', 'Spreadsheets'].map(type => (
+                {['PDF', 'DOC', 'DOCX', 'JPG', 'PNG', 'GIF', 'MP4', 'MP3'].map(type => (
                   <div key={type} className="flex items-center space-x-2">
-                    <Checkbox id={`${question.id}-${type}`} />
+                    <Checkbox 
+                      id={`${question.id}-${type}`}
+                      checked={question.file_types_allowed.includes(type.toLowerCase())}
+                      onCheckedChange={(checked) => {
+                        const types = question.file_types_allowed || [];
+                        const newTypes = checked 
+                          ? [...types, type.toLowerCase()]
+                          : types.filter(t => t !== type.toLowerCase());
+                        updateQuestion(question.id, { file_types_allowed: newTypes });
+                      }}
+                    />
                     <Label htmlFor={`${question.id}-${type}`} className="text-sm">{type}</Label>
                   </div>
                 ))}
@@ -485,10 +635,48 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
               <Input
                 id={`max-size-${question.id}`}
                 type="number"
+                value={question.max_file_size_mb || ''}
+                onChange={(e) => updateQuestion(question.id, { max_file_size_mb: parseInt(e.target.value) || null })}
                 placeholder="10"
                 className="mt-1 w-32"
               />
             </div>
+          </div>
+        )}
+
+        {/* Date/Time Picker Settings */}
+        {['date_picker', 'time_picker', 'datetime_picker'].includes(question.type) && (
+          <div>
+            <Label htmlFor={`date-format-${question.id}`}>Date/Time Format</Label>
+            <Select
+              value={question.date_format || ''}
+              onValueChange={(value) => updateQuestion(question.id, { date_format: value })}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select format" />
+              </SelectTrigger>
+              <SelectContent>
+                {question.type === 'date_picker' && (
+                  <>
+                    <SelectItem value="yyyy-mm-dd">YYYY-MM-DD</SelectItem>
+                    <SelectItem value="dd/mm/yyyy">DD/MM/YYYY</SelectItem>
+                    <SelectItem value="mm/dd/yyyy">MM/DD/YYYY</SelectItem>
+                  </>
+                )}
+                {question.type === 'time_picker' && (
+                  <>
+                    <SelectItem value="hh:mm">HH:MM (24-hour)</SelectItem>
+                    <SelectItem value="hh:mm am/pm">HH:MM AM/PM</SelectItem>
+                  </>
+                )}
+                {question.type === 'datetime_picker' && (
+                  <>
+                    <SelectItem value="yyyy-mm-dd hh:mm">YYYY-MM-DD HH:MM</SelectItem>
+                    <SelectItem value="dd/mm/yyyy hh:mm">DD/MM/YYYY HH:MM</SelectItem>
+                  </>
+                )}
+              </SelectContent>
+            </Select>
           </div>
         )}
 
