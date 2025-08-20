@@ -262,6 +262,42 @@ frontend:
           agent: "testing"
           comment: "Comprehensive testing completed successfully. All survey creation functionality working properly: 1) Landing page loads correctly with Get Started button, 2) User registration and authentication flow works seamlessly, 3) Dashboard navigation to Survey Builder is functional, 4) Survey creation form accepts title and description input, 5) Multiple question types (Text Input, Multiple Choice, Rating Scale) can be added successfully, 6) Save Survey functionality works with proper success messaging, 7) Form validation works correctly (tested empty title validation), 8) Survey appears in surveys list after creation, 9) CRITICAL: No 'FileText is not defined' console errors found - this issue has been resolved, 10) No blocking JavaScript errors detected, 11) User experience is smooth with proper loading states and error handling. The FileText import from lucide-react is working correctly in SurveyBuilder.jsx."
 
+  - task: "Enhanced Text Handling for Survey Questions and Options"
+    implemented: false
+    working: "NA"
+    file: "/app/frontend/src/components/SurveyBuilder.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Started implementation of improved text handling for survey questions and multiple choice options. Will replace Input fields with Textarea components for better long text support and add character limits and validation."
+
+  - task: "AI-Powered Survey Generation"
+    implemented: false
+    working: "NA"
+    file: "/app/frontend/src/components/SurveyBuilder.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Will implement AI-powered survey generation using Emergent LLM key. Users will be able to describe their survey needs and AI will generate complete questionnaires."
+
+  - task: "Automatic Survey Translation"
+    implemented: false
+    working: "NA"
+    file: "/app/frontend/src/components/SurveyBuilder.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Will implement automatic translation capabilities focusing on Kinyarwanda and other languages for survey questionnaires."
+
 metadata:
   created_by: "testing_agent"
   version: "1.0"
