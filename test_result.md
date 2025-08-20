@@ -117,6 +117,18 @@ backend:
           agent: "testing"
           comment: "Successfully tested POST /api/auth/register with valid data (name: 'John Doe', email: 'john@test.com', password: 'password123'). Returns proper JWT token, user data, and organization data. All required fields present in response."
 
+  - task: "AI Survey Generation Backend Endpoints"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implemented AI survey generation backend with gpt-4.1. Features include: 1) POST /api/surveys/generate-ai for basic AI generation, 2) POST /api/surveys/upload-context for document uploads, 3) POST /api/surveys/{survey_id}/translate for translation, 4) GET /api/surveys/context/{organization_id} for retrieving context, 5) Complete AI service with emergentintegrations library, 6) Document analysis and categorization, 7) Enhanced question types and models, 8) Emergent LLM key configuration. Ready for testing."
+
   - task: "User Registration Duplicate Email Handling"
     implemented: true
     working: true
