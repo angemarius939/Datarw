@@ -152,6 +152,19 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [documentModalOpen, setDocumentModalOpen] = useState(false);
+  const [translateModalOpen, setTranslateModalOpen] = useState(false);
+  const [aiRequest, setAiRequest] = useState({
+    description: '',
+    target_audience: '',
+    survey_purpose: '',
+    question_count: 10,
+    include_demographics: false
+  });
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [translating, setTranslating] = useState(false);
 
   const validateSurvey = () => {
     const newErrors = {};
