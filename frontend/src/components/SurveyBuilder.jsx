@@ -487,9 +487,14 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
                   id="survey-description"
                   value={survey.description}
                   onChange={(e) => setSurvey(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Describe your survey..."
-                  className="mt-1"
+                  placeholder="Describe your survey purpose, target audience, and any important instructions for respondents..."
+                  className="mt-1 min-h-[100px] resize-y"
+                  rows={4}
                 />
+                <div className="text-xs text-gray-500 mt-1 flex justify-between">
+                  <span>{survey.description.length}/2000 characters</span>
+                  <span>A good description helps respondents understand your survey</span>
+                </div>
               </div>
               
               {errors.questions && (
