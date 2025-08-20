@@ -306,10 +306,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "DataRW Survey Creation Frontend Functionality"
+    - "Enhanced Text Handling for Survey Questions and Options"
+    - "AI-Powered Survey Generation"
+    - "Automatic Survey Translation"
   stuck_tasks: []
   test_all: false
-  test_priority: "high_first"
+  test_priority: "sequential"
 
 agent_communication:
     - agent: "testing"
