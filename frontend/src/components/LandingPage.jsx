@@ -249,7 +249,7 @@ const LandingPage = ({ onGetStarted }) => {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
-            <p>&copy; 2024 DataRW. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} DataRW. All rights reserved. Done by: Research Analytics and AI Solutions Ltd.</p>
           </div>
         </div>
       </footer>
