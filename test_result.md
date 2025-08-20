@@ -270,11 +270,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "User Registration Endpoint"
-    - "User Login Endpoint"
-    - "Protected Endpoints"
-    - "IremboPay Integration"
-    - "Survey Management"
+    - "DataRW Survey Creation Frontend Functionality"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
