@@ -23,6 +23,10 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# Set db in auth module to avoid circular import
+import auth
+auth.db = db
+
 # Initialize services
 db_service = DatabaseService(db)
 payment_service = PaymentService(db)
