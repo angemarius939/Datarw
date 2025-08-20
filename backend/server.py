@@ -35,6 +35,7 @@ auth.db = db
 # Initialize services
 db_service = DatabaseService(db)
 payment_service = IremboPayService(db)
+ai_service = AIService(db)
 
 # Create the main app without a prefix
 app = FastAPI(title="DataRW API", description="Survey and Data Management Platform")
