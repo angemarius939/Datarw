@@ -243,7 +243,29 @@ class TokenData(BaseModel):
     organization_id: str
     role: UserRole
 
-# IremboPay Models
+# AI Survey Generation Models
+class AISurveyGenerationRequest(BaseModel):
+    description: str
+    target_audience: Optional[str] = None
+    survey_purpose: Optional[str] = None
+    question_count: Optional[int] = Field(default=10, ge=1, le=50)
+    include_demographics: bool = False
+    document_context: Optional[str] = None  # Context extracted from uploaded documents
+
+class DocumentUpload(BaseModel):
+    filename: str
+    content_type: str
+    file_size: int
+    content: str  # Extracted text content
+
+class SurveyGenerationContext(BaseDocument):
+    organization_id: str
+    uploaded_documents: List[DocumentUpload] = Field(default_factory=list)
+    business_profile: Optional[str] = None
+    participant_profiles: Optional[str] = None
+    policies: Optional[str] = None
+    strategic_documents: Optional[str] = None
+    last_updated: datetime = Field(default_factory=datetime.utcnow)
 class IremboPayInvoiceRequest(BaseModel):
     transaction_id: str
     amount: float
