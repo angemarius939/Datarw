@@ -31,22 +31,28 @@ class AIService:
         # Build the AI prompt
         prompt = await self._build_survey_generation_prompt(request, context)
         
-        # Initialize LLM chat
-        session_id = f"survey_gen_{organization_id}_{uuid.uuid4().hex[:8]}"
-        chat = LlmChat(
-            api_key=self.emergent_key,
-            session_id=session_id,
-            system_message="You are an expert survey designer with deep knowledge of research methodologies, questionnaire design, and data collection best practices. Your task is to create comprehensive, well-structured surveys that will generate high-quality data."
-        ).with_model("openai", "gpt-4.1")
-        
-        # Create user message
-        user_message = UserMessage(text=prompt)
-        
-        # Get AI response
-        response = await chat.send_message(user_message)
-        
-        # Parse the AI response to extract survey structure
-        survey_data = await self._parse_ai_response(response)
+        try:
+            # Initialize LLM chat
+            session_id = f"survey_gen_{organization_id}_{uuid.uuid4().hex[:8]}"
+            chat = LlmChat(
+                api_key=self.emergent_key,
+                session_id=session_id,
+                system_message="You are an expert survey designer with deep knowledge of research methodologies, questionnaire design, and data collection best practices. Your task is to create comprehensive, well-structured surveys that will generate high-quality data."
+            ).with_model("openai", "gpt-4.1")
+            
+            # Create user message
+            user_message = UserMessage(text=prompt)
+            
+            # Get AI response
+            response = await chat.send_message(user_message)
+            
+            # Parse the AI response to extract survey structure
+            survey_data = await self._parse_ai_response(response)
+            
+        except Exception as e:
+            print(f"AI generation failed: {e}")
+            # Fallback to a template-based survey generation
+            survey_data = await self._generate_fallback_survey(request)
         
         return survey_data
 
