@@ -307,42 +307,65 @@ async def get_analytics(current_user: User = Depends(get_current_active_user)):
     return analytics
 
 # Payment endpoints
-@api_router.post("/payments/checkout/session", response_model=CheckoutSessionResponse)
-async def create_checkout_session(
-    request: Request,
+@api_router.post("/payments/create-invoice", response_model=IremboPayInvoiceResponse)
+async def create_payment_invoice(
     plan: SubscriptionPlan,
     current_user: User = Depends(get_current_active_user)
 ):
-    """Create a Stripe checkout session"""
-    # Get origin URL from request
-    origin_url = str(request.headers.get("origin", "http://localhost:3000"))
-    
+    """Create an IremboPay invoice for subscription"""
     try:
-        session = await payment_service.create_checkout_session(
+        invoice = await payment_service.create_invoice(
             organization_id=current_user.organization_id,
             plan=plan,
             user_id=current_user.id,
-            origin_url=origin_url,
-            metadata={
-                "user_email": current_user.email,
-                "user_name": current_user.name
-            }
+            customer_name=current_user.name,
+            customer_email=current_user.email
         )
-        return session
+        return invoice
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@api_router.get("/payments/checkout/status/{session_id}", response_model=CheckoutStatusResponse)
-async def get_checkout_status(
-    session_id: str,
+@api_router.get("/payments/status/{invoice_number}")
+async def get_payment_status(
+    invoice_number: str,
     current_user: User = Depends(get_current_active_user)
 ):
-    """Get checkout session status"""
+    """Get payment status for an invoice"""
     try:
-        status = await payment_service.get_checkout_status(session_id)
+        status = await payment_service.get_invoice_status(invoice_number)
         return status
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.post("/payments/webhook")
+async def payment_webhook(request: Request):
+    """Handle IremboPay payment webhooks"""
+    try:
+        body = await request.body()
+        signature = request.headers.get("irembopay-signature", "")
+        
+        # Verify webhook signature
+        if not await payment_service.verify_webhook_signature(body.decode(), signature):
+            raise HTTPException(status_code=401, detail="Invalid signature")
+        
+        # Process webhook payload
+        payload = json.loads(body)
+        
+        # Handle payment notification
+        if payload.get("event") == "payment.successful":
+            invoice_number = payload.get("data", {}).get("invoiceNumber")
+            if invoice_number:
+                await payment_service.get_invoice_status(invoice_number)
+        
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"Webhook processing error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.get("/payments/widget-config")
+async def get_payment_widget_config():
+    """Get IremboPay widget configuration"""
+    return payment_service.get_widget_config()
 
 @api_router.get("/payments/history", response_model=List[PaymentTransaction])
 async def get_payment_history(current_user: User = Depends(get_current_active_user)):
@@ -355,6 +378,119 @@ async def get_payment_plans():
     """Get all available payment plans"""
     plans = payment_service.get_all_plans()
     return plans
+
+# Enumerator Management endpoints
+@api_router.get("/enumerators", response_model=List[Enumerator])
+async def get_enumerators(current_user: User = Depends(get_current_active_user)):
+    """Get all enumerators for the organization"""
+    enumerators = await db_service.get_organization_enumerators(current_user.organization_id)
+    return enumerators
+
+@api_router.post("/enumerators", response_model=Enumerator)
+async def create_enumerator(
+    enumerator_data: EnumeratorCreate,
+    current_user: User = Depends(require_admin())
+):
+    """Create a new enumerator"""
+    enumerator = await db_service.create_enumerator(enumerator_data, current_user.organization_id)
+    return enumerator
+
+@api_router.post("/enumerators/assign")
+async def assign_survey_to_enumerator(
+    assignment: EnumeratorAssignment,
+    current_user: User = Depends(require_admin())
+):
+    """Assign a survey to an enumerator"""
+    success = await db_service.assign_survey_to_enumerator(
+        assignment.enumerator_id, 
+        assignment.survey_id,
+        current_user.organization_id
+    )
+    if not success:
+        raise HTTPException(status_code=404, detail="Enumerator or survey not found")
+    return {"message": "Survey assigned successfully"}
+
+@api_router.post("/enumerators/auth")
+async def authenticate_enumerator(credentials: dict):
+    """Authenticate enumerator for mobile app access"""
+    enumerator_id = credentials.get("enumerator_id")
+    access_password = credentials.get("access_password")
+    
+    if not enumerator_id or not access_password:
+        raise HTTPException(status_code=400, detail="Missing credentials")
+    
+    enumerator = await db_service.authenticate_enumerator(enumerator_id, access_password)
+    if not enumerator:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Get assigned surveys
+    surveys = await db_service.get_enumerator_surveys(enumerator.id)
+    
+    return {
+        "enumerator": enumerator,
+        "assigned_surveys": surveys
+    }
+
+# Mobile app sync endpoints
+@api_router.post("/mobile/sync/upload")
+async def mobile_sync_upload(sync_data: dict):
+    """Upload survey responses from mobile app"""
+    try:
+        enumerator_id = sync_data.get("enumerator_id")
+        responses = sync_data.get("responses", [])
+        
+        if not enumerator_id:
+            raise HTTPException(status_code=400, detail="Missing enumerator ID")
+        
+        # Verify enumerator exists
+        enumerator = await db_service.get_enumerator(enumerator_id)
+        if not enumerator:
+            raise HTTPException(status_code=404, detail="Enumerator not found")
+        
+        # Process responses
+        processed_count = 0
+        for response_data in responses:
+            try:
+                # Create survey response
+                response = SurveyResponseCreate(**response_data)
+                await db_service.create_survey_response(response)
+                processed_count += 1
+            except Exception as e:
+                logger.error(f"Error processing response: {str(e)}")
+                continue
+        
+        # Update enumerator's last sync
+        await db_service.update_enumerator_sync(enumerator_id)
+        
+        return {
+            "status": "success",
+            "processed_responses": processed_count,
+            "sync_timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Mobile sync upload error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Sync failed")
+
+@api_router.get("/mobile/sync/download/{enumerator_id}")
+async def mobile_sync_download(enumerator_id: str):
+    """Download assigned surveys for mobile app"""
+    try:
+        enumerator = await db_service.get_enumerator(enumerator_id)
+        if not enumerator:
+            raise HTTPException(status_code=404, detail="Enumerator not found")
+        
+        surveys = await db_service.get_enumerator_surveys(enumerator_id)
+        
+        return {
+            "enumerator": enumerator,
+            "surveys": surveys,
+            "sync_timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Mobile sync download error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Sync failed")
 
 # Include the router in the main app
 app.include_router(api_router)
