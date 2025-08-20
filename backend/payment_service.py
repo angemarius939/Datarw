@@ -1,20 +1,35 @@
-from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
-from models import PaymentTransaction, PaymentTransactionCreate, SubscriptionPlan, PaymentStatus
+import aiohttp
+import json
+import hashlib
+import hmac
+from datetime import datetime, timedelta
+from typing import Optional, Dict, Any, List
+from models import PaymentTransaction, PaymentTransactionCreate, SubscriptionPlan, PaymentStatus, IremboPayInvoiceRequest, IremboPayInvoiceResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
-from typing import Optional, Dict, Any, List
 import logging
 
 logger = logging.getLogger(__name__)
 
-# Stripe Configuration
-STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
+# IremboPay Configuration
+IREMBOPAY_SECRET_KEY = os.environ.get("IREMBOPAY_SECRET_KEY", "")
+IREMBOPAY_PUBLIC_KEY = os.environ.get("IREMBOPAY_PUBLIC_KEY", "")
+IREMBOPAY_PAYMENT_ACCOUNT_ID = os.environ.get("IREMBOPAY_PAYMENT_ACCOUNT_ID", "")
+IREMBOPAY_IS_PRODUCTION = os.environ.get("IREMBOPAY_PRODUCTION", "false").lower() == "true"
+
+# API URLs
+if IREMBOPAY_IS_PRODUCTION:
+    IREMBOPAY_API_BASE = "https://api.irembopay.com"
+    IREMBOPAY_WIDGET_URL = "https://dashboard.irembopay.com/assets/payment/inline.js"
+else:
+    IREMBOPAY_API_BASE = "https://api.sandbox.irembopay.com"
+    IREMBOPAY_WIDGET_URL = "https://dashboard.sandbox.irembopay.com/assets/payment/inline.js"
 
 # Payment Plans Configuration
 PAYMENT_PLANS = {
     SubscriptionPlan.BASIC: {
         "amount": 100000.0,  # 100,000 FRW
-        "currency": "FRW",
+        "currency": "RWF",
         "survey_limit": 4,
         "storage_limit": 1.0,  # 1 GB
         "features": [
@@ -27,7 +42,7 @@ PAYMENT_PLANS = {
     },
     SubscriptionPlan.PROFESSIONAL: {
         "amount": 300000.0,  # 300,000 FRW
-        "currency": "FRW", 
+        "currency": "RWF", 
         "survey_limit": 10,
         "storage_limit": 3.0,  # 3 GB
         "features": [
@@ -42,7 +57,7 @@ PAYMENT_PLANS = {
     },
     SubscriptionPlan.ENTERPRISE: {
         "amount": None,  # Custom pricing
-        "currency": "FRW",
+        "currency": "RWF",
         "survey_limit": -1,  # Unlimited
         "storage_limit": -1.0,  # Unlimited
         "features": [
@@ -58,27 +73,31 @@ PAYMENT_PLANS = {
     }
 }
 
-class PaymentService:
+class IremboPayService:
     def __init__(self, db: AsyncIOMotorClient):
         self.db = db
-        if STRIPE_API_KEY:
-            self.stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY)
-        else:
-            self.stripe_checkout = None
-            logger.warning("Stripe API key not configured")
+        self.headers = {
+            "Content-Type": "application/json",
+            "irembopay-secretkey": IREMBOPAY_SECRET_KEY,
+            "X-API-Version": "2"
+        }
+        
+        if not IREMBOPAY_SECRET_KEY:
+            logger.warning("IremboPay secret key not configured")
 
-    async def create_checkout_session(
+    async def create_invoice(
         self,
         organization_id: str,
         plan: SubscriptionPlan,
-        user_id: Optional[str],
-        origin_url: str,
-        metadata: Optional[Dict[str, Any]] = None
-    ) -> CheckoutSessionResponse:
-        """Create a Stripe checkout session for a subscription plan"""
+        user_id: Optional[str] = None,
+        customer_name: Optional[str] = None,
+        customer_email: Optional[str] = None,
+        customer_phone: Optional[str] = None
+    ) -> IremboPayInvoiceResponse:
+        """Create an IremboPay invoice for a subscription plan"""
         
-        if not self.stripe_checkout:
-            raise ValueError("Stripe not configured")
+        if not IREMBOPAY_SECRET_KEY:
+            raise ValueError("IremboPay not configured")
         
         # Get plan configuration
         plan_config = PAYMENT_PLANS.get(plan)
@@ -88,95 +107,157 @@ class PaymentService:
         if plan == SubscriptionPlan.ENTERPRISE:
             raise ValueError("Enterprise plans require custom pricing")
         
-        # Build success and cancel URLs
-        success_url = f"{origin_url}/dashboard?payment_success=true&session_id={{CHECKOUT_SESSION_ID}}"
-        cancel_url = f"{origin_url}/dashboard?payment_cancelled=true"
+        # Generate unique transaction ID
+        transaction_id = f"DATARW_{organization_id}_{plan.value}_{int(datetime.utcnow().timestamp())}"
         
-        # Prepare metadata
-        session_metadata = {
-            "organization_id": organization_id,
-            "plan": plan.value,
-            "user_id": user_id or "",
-            **(metadata or {})
+        # Prepare invoice request
+        invoice_request = {
+            "transactionId": transaction_id,
+            "paymentAccountIdentifier": IREMBOPAY_PAYMENT_ACCOUNT_ID,
+            "paymentItems": [
+                {
+                    "code": f"DATARW_{plan.value}",
+                    "quantity": 1,
+                    "unitAmount": plan_config["amount"]
+                }
+            ],
+            "description": f"DataRW {plan.value} Plan Subscription",
+            "language": "EN"
         }
         
-        # Create checkout session request
-        checkout_request = CheckoutSessionRequest(
-            amount=plan_config["amount"],
-            currency=plan_config["currency"],
-            success_url=success_url,
-            cancel_url=cancel_url,
-            metadata=session_metadata
-        )
+        # Add customer information if provided
+        if customer_name or customer_email or customer_phone:
+            invoice_request["customer"] = {}
+            if customer_name:
+                invoice_request["customer"]["name"] = customer_name
+            if customer_email:
+                invoice_request["customer"]["email"] = customer_email
+            if customer_phone:
+                invoice_request["customer"]["phoneNumber"] = customer_phone
         
-        # Create checkout session with Stripe
-        session = await self.stripe_checkout.create_checkout_session(checkout_request)
+        # Set expiry to 24 hours from now
+        expiry_time = datetime.utcnow() + timedelta(hours=24)
+        invoice_request["expiryAt"] = expiry_time.strftime("%Y-%m-%dT%H:%M:%S.000+02:00")
         
-        # Store payment transaction in database
-        payment_transaction = PaymentTransactionCreate(
-            organization_id=organization_id,
-            user_id=user_id,
-            stripe_session_id=session.session_id,
-            amount=plan_config["amount"],
-            currency=plan_config["currency"],
-            plan=plan,
-            metadata=session_metadata
-        )
-        
-        payment_doc = PaymentTransaction(**payment_transaction.dict())
-        await self.db.payment_transactions.insert_one(payment_doc.dict(by_alias=True))
-        
-        logger.info(f"Created checkout session {session.session_id} for organization {organization_id}")
-        return session
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{IREMBOPAY_API_BASE}/payments/invoices",
+                    json=invoice_request,
+                    headers=self.headers
+                ) as response:
+                    response_data = await response.json()
+                    
+                    if response.status == 201 and response_data.get("success"):
+                        data = response_data["data"]
+                        
+                        # Store payment transaction in database
+                        payment_transaction = PaymentTransactionCreate(
+                            organization_id=organization_id,
+                            user_id=user_id,
+                            irembopay_invoice_number=data["invoiceNumber"],
+                            transaction_id=transaction_id,
+                            amount=plan_config["amount"],
+                            currency=plan_config["currency"],
+                            plan=plan,
+                            metadata={
+                                "customer_name": customer_name,
+                                "customer_email": customer_email,
+                                "customer_phone": customer_phone
+                            }
+                        )
+                        
+                        payment_doc = PaymentTransaction(**payment_transaction.dict())
+                        await self.db.payment_transactions.insert_one(payment_doc.dict(by_alias=True))
+                        
+                        logger.info(f"Created IremboPay invoice {data['invoiceNumber']} for organization {organization_id}")
+                        
+                        return IremboPayInvoiceResponse(
+                            success=True,
+                            invoice_number=data["invoiceNumber"],
+                            payment_link_url=data["paymentLinkUrl"],
+                            amount=data["amount"],
+                            currency=data["currency"],
+                            status=data["paymentStatus"]
+                        )
+                    else:
+                        error_msg = response_data.get("message", "Unknown error")
+                        logger.error(f"IremboPay invoice creation failed: {error_msg}")
+                        raise ValueError(f"Invoice creation failed: {error_msg}")
+                        
+        except aiohttp.ClientError as e:
+            logger.error(f"IremboPay API request failed: {str(e)}")
+            raise ValueError(f"Payment service unavailable: {str(e)}")
 
-    async def get_checkout_status(self, session_id: str) -> CheckoutStatusResponse:
-        """Get the status of a checkout session"""
+    async def get_invoice_status(self, invoice_number: str) -> Dict[str, Any]:
+        """Get the status of an IremboPay invoice"""
         
-        if not self.stripe_checkout:
-            raise ValueError("Stripe not configured")
+        if not IREMBOPAY_SECRET_KEY:
+            raise ValueError("IremboPay not configured")
         
-        # Get status from Stripe
-        status_response = await self.stripe_checkout.get_checkout_status(session_id)
-        
-        # Update payment transaction in database
-        payment_transaction = await self.db.payment_transactions.find_one(
-            {"stripe_session_id": session_id}
-        )
-        
-        if payment_transaction:
-            update_data = {
-                "payment_status": self._map_stripe_status(status_response.payment_status),
-                "updated_at": datetime.utcnow()
-            }
-            
-            # If payment successful and not already processed
-            if (status_response.payment_status == "paid" and 
-                payment_transaction.get("payment_status") != PaymentStatus.PAID):
-                
-                # Update organization subscription
-                await self._update_organization_subscription(
-                    payment_transaction["organization_id"],
-                    payment_transaction["plan"]
-                )
-                
-                logger.info(f"Payment successful for session {session_id}")
-            
-            await self.db.payment_transactions.update_one(
-                {"stripe_session_id": session_id},
-                {"$set": update_data}
-            )
-        
-        return status_response
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"{IREMBOPAY_API_BASE}/payments/invoices/{invoice_number}",
+                    headers=self.headers
+                ) as response:
+                    response_data = await response.json()
+                    
+                    if response.status == 200 and response_data.get("success"):
+                        data = response_data["data"]
+                        
+                        # Update payment transaction in database
+                        payment_transaction = await self.db.payment_transactions.find_one(
+                            {"irembopay_invoice_number": invoice_number}
+                        )
+                        
+                        if payment_transaction:
+                            update_data = {
+                                "payment_status": self._map_irembopay_status(data["paymentStatus"]),
+                                "updated_at": datetime.utcnow()
+                            }
+                            
+                            if data["paymentStatus"] == "PAID":
+                                update_data["payment_reference"] = data.get("paymentReference")
+                                update_data["payment_method"] = data.get("paymentMethod")
+                                update_data["irembopay_transaction_id"] = data.get("transactionId")
+                            
+                            # If payment successful and not already processed
+                            if (data["paymentStatus"] == "PAID" and 
+                                payment_transaction.get("payment_status") != PaymentStatus.PAID):
+                                
+                                # Update organization subscription
+                                await self._update_organization_subscription(
+                                    payment_transaction["organization_id"],
+                                    payment_transaction["plan"]
+                                )
+                                
+                                logger.info(f"Payment successful for invoice {invoice_number}")
+                            
+                            await self.db.payment_transactions.update_one(
+                                {"irembopay_invoice_number": invoice_number},
+                                {"$set": update_data}
+                            )
+                        
+                        return data
+                    else:
+                        error_msg = response_data.get("message", "Unknown error")
+                        logger.error(f"IremboPay invoice status check failed: {error_msg}")
+                        raise ValueError(f"Status check failed: {error_msg}")
+                        
+        except aiohttp.ClientError as e:
+            logger.error(f"IremboPay API request failed: {str(e)}")
+            raise ValueError(f"Payment service unavailable: {str(e)}")
 
-    def _map_stripe_status(self, stripe_status: str) -> PaymentStatus:
-        """Map Stripe payment status to our PaymentStatus enum"""
+    def _map_irembopay_status(self, irembopay_status: str) -> PaymentStatus:
+        """Map IremboPay payment status to our PaymentStatus enum"""
         mapping = {
-            "paid": PaymentStatus.PAID,
-            "unpaid": PaymentStatus.PENDING,
-            "no_payment_required": PaymentStatus.PAID,
-            "failed": PaymentStatus.FAILED
+            "NEW": PaymentStatus.PENDING,
+            "PAID": PaymentStatus.PAID,
+            "EXPIRED": PaymentStatus.EXPIRED,
+            "FAILED": PaymentStatus.FAILED
         }
-        return mapping.get(stripe_status, PaymentStatus.PENDING)
+        return mapping.get(irembopay_status, PaymentStatus.PENDING)
 
     async def _update_organization_subscription(self, organization_id: str, plan: SubscriptionPlan):
         """Update organization subscription after successful payment"""
@@ -215,6 +296,47 @@ class PaymentService:
     def get_all_plans(self) -> Dict[str, Dict[str, Any]]:
         """Get all available subscription plans"""
         return PAYMENT_PLANS
+
+    def get_widget_config(self) -> Dict[str, str]:
+        """Get IremboPay widget configuration"""
+        return {
+            "widget_url": IREMBOPAY_WIDGET_URL,
+            "public_key": IREMBOPAY_PUBLIC_KEY,
+            "is_production": str(IREMBOPAY_IS_PRODUCTION).lower()
+        }
+
+    async def verify_webhook_signature(self, payload: str, signature: str) -> bool:
+        """Verify IremboPay webhook signature"""
+        try:
+            # Parse signature header: t=timestamp,s=signature
+            parts = signature.split(',')
+            timestamp = None
+            received_signature = None
+            
+            for part in parts:
+                key, value = part.split('=', 1)
+                if key == 't':
+                    timestamp = value
+                elif key == 's':
+                    received_signature = value
+            
+            if not timestamp or not received_signature:
+                return False
+            
+            # Create expected signature
+            payload_to_hash = f"{timestamp}#{payload}"
+            expected_signature = hmac.new(
+                IREMBOPAY_SECRET_KEY.encode(),
+                payload_to_hash.encode(),
+                hashlib.sha256
+            ).hexdigest()
+            
+            # Compare signatures
+            return hmac.compare_digest(expected_signature, received_signature)
+            
+        except Exception as e:
+            logger.error(f"Webhook signature verification failed: {str(e)}")
+            return False
 
 # Additional imports
 from datetime import datetime
