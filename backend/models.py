@@ -330,3 +330,310 @@ class IremboPayInvoiceResponse(BaseModel):
     amount: float
     currency: str
     status: str
+
+# Project Management Models
+class Project(BaseDocument):
+    title: str
+    description: str
+    organization_id: str
+    sector: str
+    donor: str
+    implementation_start: datetime
+    implementation_end: datetime
+    total_budget: float
+    budget_currency: str = "RWF"
+    status: ProjectStatus = ProjectStatus.PLANNING
+    team_members: List[str] = Field(default_factory=list)  # User IDs
+    project_manager_id: Optional[str] = None
+    me_officer_id: Optional[str] = None
+    location: Optional[str] = None
+    target_beneficiaries: Optional[int] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+class ProjectCreate(BaseModel):
+    title: str
+    description: str
+    sector: str
+    donor: str
+    implementation_start: datetime
+    implementation_end: datetime
+    total_budget: float
+    budget_currency: str = "RWF"
+    team_members: List[str] = Field(default_factory=list)
+    project_manager_id: Optional[str] = None
+    me_officer_id: Optional[str] = None
+    location: Optional[str] = None
+    target_beneficiaries: Optional[int] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+class ProjectUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    sector: Optional[str] = None
+    donor: Optional[str] = None
+    implementation_start: Optional[datetime] = None
+    implementation_end: Optional[datetime] = None
+    total_budget: Optional[float] = None
+    budget_currency: Optional[str] = None
+    status: Optional[ProjectStatus] = None
+    team_members: Optional[List[str]] = None
+    project_manager_id: Optional[str] = None
+    me_officer_id: Optional[str] = None
+    location: Optional[str] = None
+    target_beneficiaries: Optional[int] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+class Activity(BaseDocument):
+    project_id: str
+    title: str
+    description: str
+    organization_id: str
+    responsible_user_id: str
+    start_date: datetime
+    end_date: datetime
+    status: ActivityStatus = ActivityStatus.NOT_STARTED
+    progress_percentage: float = Field(default=0.0, ge=0.0, le=100.0)
+    budget_allocated: Optional[float] = None
+    budget_spent: Optional[float] = None
+    deliverables: List[str] = Field(default_factory=list)
+    dependencies: List[str] = Field(default_factory=list)  # Activity IDs
+    results_framework_link: Optional[str] = None
+    notes: Optional[str] = None
+
+class ActivityCreate(BaseModel):
+    project_id: str
+    title: str
+    description: str
+    responsible_user_id: str
+    start_date: datetime
+    end_date: datetime
+    budget_allocated: Optional[float] = None
+    deliverables: List[str] = Field(default_factory=list)
+    dependencies: List[str] = Field(default_factory=list)
+    results_framework_link: Optional[str] = None
+    notes: Optional[str] = None
+
+class ActivityUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    responsible_user_id: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    status: Optional[ActivityStatus] = None
+    progress_percentage: Optional[float] = None
+    budget_spent: Optional[float] = None
+    deliverables: Optional[List[str]] = None
+    dependencies: Optional[List[str]] = None
+    results_framework_link: Optional[str] = None
+    notes: Optional[str] = None
+
+class BudgetItem(BaseDocument):
+    project_id: str
+    organization_id: str
+    category: BudgetCategory
+    description: str
+    budgeted_amount: float
+    spent_amount: float = Field(default=0.0)
+    currency: str = "RWF"
+    period_start: datetime
+    period_end: datetime
+    responsible_user_id: Optional[str] = None
+    notes: Optional[str] = None
+
+class BudgetItemCreate(BaseModel):
+    project_id: str
+    category: BudgetCategory
+    description: str
+    budgeted_amount: float
+    currency: str = "RWF"
+    period_start: datetime
+    period_end: datetime
+    responsible_user_id: Optional[str] = None
+    notes: Optional[str] = None
+
+class BudgetItemUpdate(BaseModel):
+    category: Optional[BudgetCategory] = None
+    description: Optional[str] = None
+    budgeted_amount: Optional[float] = None
+    spent_amount: Optional[float] = None
+    currency: Optional[str] = None
+    period_start: Optional[datetime] = None
+    period_end: Optional[datetime] = None
+    responsible_user_id: Optional[str] = None
+    notes: Optional[str] = None
+
+class KPIIndicator(BaseDocument):
+    project_id: str
+    organization_id: str
+    name: str
+    description: str
+    indicator_type: IndicatorType
+    level: IndicatorLevel
+    baseline_value: Optional[float] = None
+    target_value: Optional[float] = None
+    current_value: Optional[float] = None
+    unit_of_measurement: Optional[str] = None
+    frequency: str  # Monthly, Quarterly, Annually
+    responsible_user_id: Optional[str] = None
+    data_source: Optional[str] = None
+    collection_method: Optional[str] = None
+    disaggregation: Dict[str, Any] = Field(default_factory=dict)  # Gender, Age, Location, etc.
+
+class KPIIndicatorCreate(BaseModel):
+    project_id: str
+    name: str
+    description: str
+    indicator_type: IndicatorType
+    level: IndicatorLevel
+    baseline_value: Optional[float] = None
+    target_value: Optional[float] = None
+    unit_of_measurement: Optional[str] = None
+    frequency: str
+    responsible_user_id: Optional[str] = None
+    data_source: Optional[str] = None
+    collection_method: Optional[str] = None
+    disaggregation: Dict[str, Any] = Field(default_factory=dict)
+
+class KPIIndicatorUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    indicator_type: Optional[IndicatorType] = None
+    level: Optional[IndicatorLevel] = None
+    baseline_value: Optional[float] = None
+    target_value: Optional[float] = None
+    current_value: Optional[float] = None
+    unit_of_measurement: Optional[str] = None
+    frequency: Optional[str] = None
+    responsible_user_id: Optional[str] = None
+    data_source: Optional[str] = None
+    collection_method: Optional[str] = None
+    disaggregation: Optional[Dict[str, Any]] = None
+
+class Beneficiary(BaseDocument):
+    organization_id: str
+    project_ids: List[str] = Field(default_factory=list)
+    unique_id: str  # Organization-specific beneficiary ID
+    first_name: str
+    last_name: str
+    date_of_birth: Optional[datetime] = None
+    gender: Optional[str] = None
+    location: Optional[str] = None
+    contact_phone: Optional[str] = None
+    contact_email: Optional[EmailStr] = None
+    household_size: Optional[int] = None
+    income_level: Optional[str] = None
+    education_level: Optional[str] = None
+    employment_status: Optional[str] = None
+    disability_status: Optional[str] = None
+    program_participation_history: List[Dict[str, Any]] = Field(default_factory=list)
+    custom_fields: Dict[str, Any] = Field(default_factory=dict)
+    consent_forms: List[str] = Field(default_factory=list)  # File URLs
+    photos: List[str] = Field(default_factory=list)  # File URLs
+    documents: List[str] = Field(default_factory=list)  # File URLs
+    geographical_coordinates: Optional[Dict[str, float]] = None  # lat, lng
+
+class BeneficiaryCreate(BaseModel):
+    unique_id: str
+    first_name: str
+    last_name: str
+    date_of_birth: Optional[datetime] = None
+    gender: Optional[str] = None
+    location: Optional[str] = None
+    contact_phone: Optional[str] = None
+    contact_email: Optional[EmailStr] = None
+    household_size: Optional[int] = None
+    income_level: Optional[str] = None
+    education_level: Optional[str] = None
+    employment_status: Optional[str] = None
+    disability_status: Optional[str] = None
+    custom_fields: Dict[str, Any] = Field(default_factory=dict)
+    geographical_coordinates: Optional[Dict[str, float]] = None
+
+class BeneficiaryUpdate(BaseModel):
+    unique_id: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    date_of_birth: Optional[datetime] = None
+    gender: Optional[str] = None
+    location: Optional[str] = None
+    contact_phone: Optional[str] = None
+    contact_email: Optional[EmailStr] = None
+    household_size: Optional[int] = None
+    income_level: Optional[str] = None
+    education_level: Optional[str] = None
+    employment_status: Optional[str] = None
+    disability_status: Optional[str] = None
+    program_participation_history: Optional[List[Dict[str, Any]]] = None
+    custom_fields: Optional[Dict[str, Any]] = None
+    consent_forms: Optional[List[str]] = None
+    photos: Optional[List[str]] = None
+    documents: Optional[List[str]] = None
+    geographical_coordinates: Optional[Dict[str, float]] = None
+
+class ProjectDocument(BaseDocument):
+    project_id: str
+    organization_id: str
+    title: str
+    description: Optional[str] = None
+    document_type: DocumentType
+    file_url: str
+    file_name: str
+    file_size: int
+    mime_type: str
+    version: str = "1.0"
+    uploaded_by: str  # User ID
+    tags: List[str] = Field(default_factory=list)
+    access_level: str = Field(default="project")  # project, organization, public
+    is_latest_version: bool = True
+
+class ProjectDocumentCreate(BaseModel):
+    project_id: str
+    title: str
+    description: Optional[str] = None
+    document_type: DocumentType
+    file_name: str
+    file_size: int
+    mime_type: str
+    tags: List[str] = Field(default_factory=list)
+    access_level: str = "project"
+
+class ProjectDocumentUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    document_type: Optional[DocumentType] = None
+    tags: Optional[List[str]] = None
+    access_level: Optional[str] = None
+
+# Dashboard and Reporting Models
+class ProjectDashboardData(BaseModel):
+    total_projects: int
+    active_projects: int
+    completed_projects: int
+    overdue_activities: int
+    budget_utilization: float
+    kpi_performance: Dict[str, float]
+    recent_activities: List[Dict[str, Any]]
+    project_performance_summary: List[Dict[str, Any]]
+
+class ReportTemplate(BaseDocument):
+    organization_id: str
+    name: str
+    description: str
+    report_type: str  # monthly, quarterly, annual, custom
+    template_structure: Dict[str, Any]
+    default_filters: Dict[str, Any] = Field(default_factory=dict)
+    output_formats: List[str] = Field(default=["pdf", "excel"])
+    created_by: str
+
+class GeneratedReport(BaseDocument):
+    organization_id: str
+    project_id: Optional[str] = None
+    template_id: str
+    report_title: str
+    report_period_start: datetime
+    report_period_end: datetime
+    generated_by: str
+    file_url: str
+    file_format: str
+    generation_date: datetime = Field(default_factory=datetime.utcnow)
+    parameters_used: Dict[str, Any] = Field(default_factory=dict)
