@@ -250,12 +250,12 @@ class DataRWAPITester:
                 "description": "This is a test survey for API testing",
                 "questions": [
                     {
-                        "type": "text",
+                        "type": "short_text",
                         "question": "What is your name?",
                         "required": True
                     },
                     {
-                        "type": "multiple_choice",
+                        "type": "multiple_choice_single",
                         "question": "What is your favorite color?",
                         "required": False,
                         "options": ["Red", "Blue", "Green", "Yellow"]
