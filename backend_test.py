@@ -272,8 +272,10 @@ class DataRWAPITester:
             
             if response.status_code == 200:
                 data = response.json()
-                if "id" in data and data.get("title") == survey_data["title"]:
-                    self.survey_id = data["id"]
+                # Handle both 'id' and '_id' fields
+                survey_id = data.get("id") or data.get("_id")
+                if survey_id and data.get("title") == survey_data["title"]:
+                    self.survey_id = survey_id
                     self.log_result("Create Survey", True, "Survey created successfully")
                     return True
                 else:
