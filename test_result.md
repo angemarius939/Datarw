@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the DataRW frontend survey creation functionality specifically: Navigate to survey creation, test survey creation form, verify the FileText error fix, and test user experience including loading states, success/error messages, and form validation."
+user_problem_statement: "Enhanced DataRW survey building capabilities: Add better text handling for longer questions and options, implement AI-powered survey generation with document context analysis, add comprehensive question types (18 total), provide automatic translation capabilities especially for Kinyarwanda, and fix survey preview functionality."
 
 backend:
   - task: "User Registration Endpoint"
