@@ -447,16 +447,28 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
               <CardTitle>Survey Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {errors.title && (
+                <Alert variant="destructive">
+                  <AlertDescription>{errors.title}</AlertDescription>
+                </Alert>
+              )}
+              
               <div>
                 <Label htmlFor="survey-title">Survey Title</Label>
                 <Input
                   id="survey-title"
                   value={survey.title}
-                  onChange={(e) => setSurvey(prev => ({ ...prev, title: e.target.value }))}
+                  onChange={(e) => {
+                    setSurvey(prev => ({ ...prev, title: e.target.value }));
+                    if (errors.title) {
+                      setErrors(prev => ({ ...prev, title: undefined }));
+                    }
+                  }}
                   placeholder="Enter survey title..."
-                  className="mt-1"
+                  className={`mt-1 ${errors.title ? 'border-red-500' : ''}`}
                 />
               </div>
+              
               <div>
                 <Label htmlFor="survey-description">Description</Label>
                 <Textarea
@@ -467,6 +479,12 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
                   className="mt-1"
                 />
               </div>
+              
+              {errors.questions && (
+                <Alert variant="destructive">
+                  <AlertDescription>{errors.questions}</AlertDescription>
+                </Alert>
+              )}
             </CardContent>
           </Card>
 
