@@ -286,17 +286,24 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
             <Label>Answer Options</Label>
             <div className="space-y-2 mt-2">
               {question.options.map((option, optionIndex) => (
-                <div key={optionIndex} className="flex items-center space-x-2">
-                  <Input
-                    value={option}
-                    onChange={(e) => updateOption(question.id, optionIndex, e.target.value)}
-                    placeholder={`Option ${optionIndex + 1}`}
-                  />
+                <div key={optionIndex} className="flex items-start space-x-2">
+                  <div className="flex-1">
+                    <Textarea
+                      value={option}
+                      onChange={(e) => updateOption(question.id, optionIndex, e.target.value)}
+                      placeholder={`Option ${optionIndex + 1} - Enter your option text here...`}
+                      rows={2}
+                      className="min-h-[60px] resize-y"
+                    />
+                    <div className="text-xs text-gray-500 mt-1">
+                      {option.length}/500 characters
+                    </div>
+                  </div>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => removeOption(question.id, optionIndex)}
-                    className="text-red-600"
+                    className="text-red-600 mt-1 flex-shrink-0"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
