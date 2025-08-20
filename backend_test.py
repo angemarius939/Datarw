@@ -319,7 +319,9 @@ class DataRWAPITester:
             
             if response.status_code == 200:
                 data = response.json()
-                if data.get("id") == self.survey_id:
+                # Handle both 'id' and '_id' fields
+                survey_id = data.get("id") or data.get("_id")
+                if survey_id == self.survey_id:
                     self.log_result("Get Specific Survey", True, "Survey retrieved successfully")
                     return True
                 else:
