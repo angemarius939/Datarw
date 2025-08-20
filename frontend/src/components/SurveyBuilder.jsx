@@ -316,9 +316,10 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
         newErrors[`question_${index}`] = 'Question text must be 1000 characters or less';
       }
       
-      if (question.type === 'multiple_choice') {
+      // Multiple choice validation
+      if (['multiple_choice_single', 'multiple_choice_multiple', 'dropdown', 'ranking'].includes(question.type)) {
         if (question.options.length < 2) {
-          newErrors[`question_${index}_options`] = 'Multiple choice questions need at least 2 options';
+          newErrors[`question_${index}_options`] = 'This question type needs at least 2 options';
         }
         
         // Validate each option
@@ -329,6 +330,32 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
             newErrors[`question_${index}_option_${optionIndex}`] = `Option ${optionIndex + 1} must be 500 characters or less`;
           }
         });
+      }
+      
+      // Scale validation  
+      if (['rating_scale', 'slider', 'numeric_scale'].includes(question.type)) {
+        if (!question.scale_min && !question.scale_max) {
+          newErrors[`question_${index}_scale`] = 'Please set minimum and maximum values';
+        } else if (question.scale_min >= question.scale_max) {
+          newErrors[`question_${index}_scale`] = 'Maximum value must be greater than minimum value';
+        }
+      }
+      
+      // Matrix validation
+      if (question.type === 'matrix_grid') {
+        if (question.matrix_rows.length < 2) {
+          newErrors[`question_${index}_matrix`] = 'Matrix questions need at least 2 rows';
+        }
+        if (question.matrix_columns.length < 2) {
+          newErrors[`question_${index}_matrix`] = 'Matrix questions need at least 2 columns';
+        }
+      }
+      
+      // File upload validation
+      if (question.type === 'file_upload') {
+        if (question.file_types_allowed.length === 0) {
+          newErrors[`question_${index}_files`] = 'Please select at least one allowed file type';
+        }
       }
     });
     
