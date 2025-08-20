@@ -74,14 +74,8 @@ class AIService:
             {"organization_id": organization_id}
         )
         if context_doc:
-            # Convert ObjectId to string if present
-            if "_id" in context_doc:
-                context_doc["_id"] = str(context_doc["_id"])
-            # Also handle any nested ObjectIds in uploaded_documents
-            if "uploaded_documents" in context_doc:
-                for doc in context_doc["uploaded_documents"]:
-                    if "_id" in doc:
-                        doc["_id"] = str(doc["_id"])
+            # Convert all ObjectIds to strings
+            context_doc = convert_objectids_to_strings(context_doc)
             return SurveyGenerationContext(**context_doc)
         return None
 
