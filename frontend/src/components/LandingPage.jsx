@@ -97,7 +97,7 @@ const LandingPage = ({ onGetStarted }) => {
       </section>
 
       {/* Products Overview Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-50 to-indigo-50">
+      <section id="products" className="py-20 bg-gradient-to-r from-blue-50 to-indigo-50">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4 text-gray-900">Two Powerful Platforms, One Account</h2>
