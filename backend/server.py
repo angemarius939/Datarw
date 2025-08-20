@@ -592,6 +592,286 @@ async def get_survey_context(
         logger.error(f"Get context error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get context: {str(e)}")
 
+# Project Management Endpoints
+@api_router.get("/projects/dashboard")
+async def get_project_dashboard(
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get project dashboard data"""
+    try:
+        dashboard_data = await project_service.get_dashboard_data(current_user.organization_id)
+        return {"success": True, "data": dashboard_data.model_dump()}
+    except Exception as e:
+        logger.error(f"Project dashboard error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get dashboard data: {str(e)}")
+
+@api_router.post("/projects", response_model=Project)
+async def create_project(
+    project_data: ProjectCreate,
+    current_user: User = Depends(require_editor())
+):
+    """Create a new project"""
+    try:
+        project = await project_service.create_project(
+            project_data, 
+            current_user.organization_id, 
+            current_user.id
+        )
+        return project
+    except Exception as e:
+        logger.error(f"Project creation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create project: {str(e)}")
+
+@api_router.get("/projects", response_model=List[Project])
+async def get_projects(
+    status: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get all projects for the organization"""
+    try:
+        project_status = ProjectStatus(status) if status else None
+        projects = await project_service.get_projects(current_user.organization_id, project_status)
+        return projects
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid status: {str(e)}")
+    except Exception as e:
+        logger.error(f"Get projects error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get projects: {str(e)}")
+
+@api_router.get("/projects/{project_id}", response_model=Project)
+async def get_project(
+    project_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get a specific project"""
+    try:
+        project = await project_service.get_project(project_id)
+        if not project or project.organization_id != current_user.organization_id:
+            raise HTTPException(status_code=404, detail="Project not found")
+        return project
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Get project error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get project: {str(e)}")
+
+@api_router.put("/projects/{project_id}", response_model=Project)
+async def update_project(
+    project_id: str,
+    updates: ProjectUpdate,
+    current_user: User = Depends(require_editor())
+):
+    """Update a project"""
+    try:
+        # Verify project belongs to organization
+        project = await project_service.get_project(project_id)
+        if not project or project.organization_id != current_user.organization_id:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        updated_project = await project_service.update_project(project_id, updates)
+        if not updated_project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        return updated_project
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Update project error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update project: {str(e)}")
+
+@api_router.delete("/projects/{project_id}")
+async def delete_project(
+    project_id: str,
+    current_user: User = Depends(require_admin())
+):
+    """Delete a project"""
+    try:
+        # Verify project belongs to organization
+        project = await project_service.get_project(project_id)
+        if not project or project.organization_id != current_user.organization_id:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        success = await project_service.delete_project(project_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Project not found")
+        return {"success": True, "message": "Project deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Delete project error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete project: {str(e)}")
+
+# Activity Management Endpoints
+@api_router.post("/activities", response_model=Activity)
+async def create_activity(
+    activity_data: ActivityCreate,
+    current_user: User = Depends(require_editor())
+):
+    """Create a new activity"""
+    try:
+        activity = await project_service.create_activity(activity_data, current_user.organization_id)
+        return activity
+    except Exception as e:
+        logger.error(f"Activity creation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create activity: {str(e)}")
+
+@api_router.get("/activities", response_model=List[Activity])
+async def get_activities(
+    project_id: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get activities for the organization or specific project"""
+    try:
+        activities = await project_service.get_activities(current_user.organization_id, project_id)
+        return activities
+    except Exception as e:
+        logger.error(f"Get activities error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get activities: {str(e)}")
+
+@api_router.put("/activities/{activity_id}", response_model=Activity)
+async def update_activity(
+    activity_id: str,
+    updates: ActivityUpdate,
+    current_user: User = Depends(require_editor())
+):
+    """Update an activity"""
+    try:
+        updated_activity = await project_service.update_activity(activity_id, updates)
+        if not updated_activity:
+            raise HTTPException(status_code=404, detail="Activity not found")
+        return updated_activity
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Update activity error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update activity: {str(e)}")
+
+# Budget Management Endpoints
+@api_router.post("/budget", response_model=BudgetItem)
+async def create_budget_item(
+    budget_data: BudgetItemCreate,
+    current_user: User = Depends(require_editor())
+):
+    """Create a new budget item"""
+    try:
+        budget_item = await project_service.create_budget_item(budget_data, current_user.organization_id)
+        return budget_item
+    except Exception as e:
+        logger.error(f"Budget item creation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create budget item: {str(e)}")
+
+@api_router.get("/budget", response_model=List[BudgetItem])
+async def get_budget_items(
+    project_id: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get budget items for the organization or specific project"""
+    try:
+        budget_items = await project_service.get_budget_items(current_user.organization_id, project_id)
+        return budget_items
+    except Exception as e:
+        logger.error(f"Get budget items error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get budget items: {str(e)}")
+
+@api_router.get("/budget/summary")
+async def get_budget_summary(
+    project_id: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get budget summary with utilization rates"""
+    try:
+        summary = await project_service.get_budget_summary(current_user.organization_id, project_id)
+        return {"success": True, "data": summary}
+    except Exception as e:
+        logger.error(f"Budget summary error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get budget summary: {str(e)}")
+
+# KPI Management Endpoints
+@api_router.post("/kpis", response_model=KPIIndicator)
+async def create_kpi_indicator(
+    kpi_data: KPIIndicatorCreate,
+    current_user: User = Depends(require_editor())
+):
+    """Create a new KPI indicator"""
+    try:
+        kpi = await project_service.create_kpi_indicator(kpi_data, current_user.organization_id)
+        return kpi
+    except Exception as e:
+        logger.error(f"KPI creation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create KPI: {str(e)}")
+
+@api_router.get("/kpis", response_model=List[KPIIndicator])
+async def get_kpi_indicators(
+    project_id: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get KPI indicators for the organization or specific project"""
+    try:
+        kpis = await project_service.get_kpi_indicators(current_user.organization_id, project_id)
+        return kpis
+    except Exception as e:
+        logger.error(f"Get KPIs error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get KPIs: {str(e)}")
+
+@api_router.put("/kpis/{indicator_id}/value")
+async def update_kpi_value(
+    indicator_id: str,
+    current_value: float,
+    current_user: User = Depends(require_editor())
+):
+    """Update the current value of a KPI indicator"""
+    try:
+        kpi = await project_service.update_kpi_current_value(indicator_id, current_value)
+        if not kpi:
+            raise HTTPException(status_code=404, detail="KPI indicator not found")
+        return kpi
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Update KPI value error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update KPI value: {str(e)}")
+
+# Beneficiary Management Endpoints
+@api_router.post("/beneficiaries", response_model=Beneficiary)
+async def create_beneficiary(
+    beneficiary_data: BeneficiaryCreate,
+    current_user: User = Depends(require_editor())
+):
+    """Create a new beneficiary"""
+    try:
+        beneficiary = await project_service.create_beneficiary(beneficiary_data, current_user.organization_id)
+        return beneficiary
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Beneficiary creation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create beneficiary: {str(e)}")
+
+@api_router.get("/beneficiaries", response_model=List[Beneficiary])
+async def get_beneficiaries(
+    project_id: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get beneficiaries for the organization or specific project"""
+    try:
+        beneficiaries = await project_service.get_beneficiaries(current_user.organization_id, project_id)
+        return beneficiaries
+    except Exception as e:
+        logger.error(f"Get beneficiaries error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get beneficiaries: {str(e)}")
+
+@api_router.get("/beneficiaries/demographics")
+async def get_beneficiary_demographics(
+    project_id: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get demographic breakdown of beneficiaries"""
+    try:
+        demographics = await project_service.get_beneficiary_demographics(current_user.organization_id, project_id)
+        return {"success": True, "data": demographics}
+    except Exception as e:
+        logger.error(f"Beneficiary demographics error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get demographics: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
