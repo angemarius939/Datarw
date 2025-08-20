@@ -69,12 +69,12 @@ const LandingPage = ({ onGetStarted }) => {
             🚀 Trusted by 500+ Organizations in Rwanda
           </Badge>
           <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent leading-tight">
-            Powerful Data Collection
+            Complete Data & Project
             <br />
-            <span className="text-blue-600">Made Simple</span>
+            <span className="text-blue-600">Management Platform</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Create sophisticated surveys, manage data effortlessly, and gain insights that drive your organization forward. All in one intelligent platform.
+            From AI-powered surveys to comprehensive project management. Streamline your data collection, monitoring & evaluation, and organizational performance - all in one intelligent platform.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
