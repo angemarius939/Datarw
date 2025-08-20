@@ -51,6 +51,7 @@ const LandingPage = ({ onGetStarted }) => {
               </h1>
             </div>
             <nav className="hidden md:flex items-center space-x-8">
+              <a href="#products" className="text-gray-600 hover:text-blue-600 transition-colors">Products</a>
               <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
               <a href="#pricing" className="text-gray-600 hover:text-blue-600 transition-colors">Pricing</a>
               <a href="#contact" className="text-gray-600 hover:text-blue-600 transition-colors">Contact</a>
