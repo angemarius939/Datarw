@@ -122,10 +122,21 @@ class SurveyQuestion(BaseModel):
     type: QuestionType
     question: str
     required: bool = False
-    options: List[str] = Field(default_factory=list)
-    scale: Optional[int] = None
+    options: List[str] = Field(default_factory=list)  # For multiple choice, dropdown, image choice
+    scale_min: Optional[int] = None  # For rating/slider
+    scale_max: Optional[int] = None  # For rating/slider
+    scale_labels: Optional[List[str]] = Field(default_factory=list)  # For likert scale labels
+    matrix_rows: Optional[List[str]] = Field(default_factory=list)  # For matrix questions
+    matrix_columns: Optional[List[str]] = Field(default_factory=list)  # For matrix questions
+    file_types_allowed: Optional[List[str]] = Field(default_factory=list)  # For file upload
+    max_file_size_mb: Optional[int] = None  # For file upload
+    date_format: Optional[str] = None  # For date/time pickers
+    slider_step: Optional[float] = None  # For slider
+    image_urls: Optional[List[str]] = Field(default_factory=list)  # For image choice
+    multiple_selection: bool = False  # For multiple choice multiple
     skip_logic: Optional[Dict[str, Any]] = None
     calculation: Optional[Dict[str, Any]] = None
+    validation_rules: Optional[Dict[str, Any]] = Field(default_factory=dict)  # Custom validation
 
 class Survey(BaseDocument):
     title: str
