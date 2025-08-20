@@ -940,8 +940,10 @@ class DataRWAPITester:
             
             if response.status_code == 200:
                 data = response.json()
-                if "id" in data and data.get("title") == project_data["title"]:
-                    self.project_id = data["id"]
+                # Handle both 'id' and '_id' fields
+                project_id = data.get("id") or data.get("_id")
+                if project_id and data.get("title") == project_data["title"]:
+                    self.project_id = project_id
                     self.log_result("Create Project", True, "Project created successfully")
                     return True
                 else:
