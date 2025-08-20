@@ -901,6 +901,14 @@ class DataRWAPITester:
             self.test_update_user_role,
             self.test_get_analytics,
             self.test_survey_limit_enforcement,
+            # AI Survey Generation Tests
+            self.test_ai_survey_generation,
+            self.test_document_upload_context,
+            self.test_survey_translation,
+            self.test_get_survey_context,
+            self.test_ai_with_context_generation,
+            self.test_enhanced_question_types,
+            # Cleanup tests
             self.test_delete_user,
             self.test_delete_survey
         ]
