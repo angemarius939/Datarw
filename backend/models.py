@@ -41,7 +41,7 @@ class BaseDocument(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True  # Updated for Pydantic v2
 
 # Organization Models
 class Organization(BaseDocument):
@@ -52,8 +52,7 @@ class Organization(BaseDocument):
     survey_count: int = Field(default=0)
     storage_used: float = Field(default=0.0)  # in GB
     status: str = Field(default="active")
-    stripe_customer_id: Optional[str] = None
-    subscription_id: Optional[str] = None
+    irembopay_account_id: Optional[str] = None
 
 class OrganizationCreate(BaseModel):
     name: str
@@ -153,22 +152,47 @@ class SurveyResponseCreate(BaseModel):
 class PaymentTransaction(BaseDocument):
     organization_id: str
     user_id: Optional[str] = None
-    stripe_session_id: str
+    irembopay_invoice_number: str
+    transaction_id: str
     amount: float
-    currency: str = "FRW"
+    currency: str = "RWF"
     plan: SubscriptionPlan
     payment_status: PaymentStatus = PaymentStatus.PENDING
-    stripe_payment_intent_id: Optional[str] = None
+    irembopay_transaction_id: Optional[str] = None
+    payment_reference: Optional[str] = None
+    payment_method: Optional[str] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 class PaymentTransactionCreate(BaseModel):
     organization_id: str
     user_id: Optional[str] = None
-    stripe_session_id: str
+    irembopay_invoice_number: str
+    transaction_id: str
     amount: float
-    currency: str = "FRW"
+    currency: str = "RWF"
     plan: SubscriptionPlan
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+# Enumerator Models
+class Enumerator(BaseDocument):
+    name: str
+    email: EmailStr
+    phone: str
+    organization_id: str
+    assigned_surveys: List[str] = Field(default_factory=list)
+    access_password: str  # Special password for survey access
+    status: str = Field(default="active")
+    last_sync: Optional[datetime] = None
+
+class EnumeratorCreate(BaseModel):
+    name: str
+    email: EmailStr
+    phone: str
+    access_password: str
+
+class EnumeratorAssignment(BaseModel):
+    enumerator_id: str
+    survey_id: str
 
 # Analytics Models
 class AnalyticsData(BaseModel):
@@ -193,3 +217,21 @@ class TokenData(BaseModel):
     user_id: str
     organization_id: str
     role: UserRole
+
+# IremboPay Models
+class IremboPayInvoiceRequest(BaseModel):
+    transaction_id: str
+    amount: float
+    currency: str = "RWF"
+    description: str
+    customer_email: Optional[str] = None
+    customer_phone: Optional[str] = None
+    customer_name: Optional[str] = None
+
+class IremboPayInvoiceResponse(BaseModel):
+    success: bool
+    invoice_number: str
+    payment_link_url: str
+    amount: float
+    currency: str
+    status: str
