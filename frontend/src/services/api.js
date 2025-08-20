@@ -83,4 +83,24 @@ export const paymentAPI = {
   getPaymentPlans: () => api.get('/payments/plans'),
 };
 
+// AI Survey Generation API
+export const aiAPI = {
+  generateSurvey: (request) => api.post('/surveys/generate-ai', request),
+  uploadContext: (files) => {
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+    return api.post('/surveys/upload-context', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  translateSurvey: (surveyId, targetLanguage) => api.post(`/surveys/${surveyId}/translate`, null, {
+    params: { target_language: targetLanguage }
+  }),
+  getSurveyContext: (organizationId) => api.get(`/surveys/context/${organizationId}`),
+};
+
 export default api;
