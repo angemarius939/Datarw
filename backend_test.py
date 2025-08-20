@@ -1156,8 +1156,10 @@ class DataRWAPITester:
             
             if response.status_code == 200:
                 data = response.json()
-                if "id" in data and data.get("category") == budget_data["category"]:
-                    self.budget_item_id = data["id"]
+                # Handle both 'id' and '_id' fields
+                budget_id = data.get("id") or data.get("_id")
+                if budget_id and data.get("category") == budget_data["category"]:
+                    self.budget_item_id = budget_id
                     self.log_result("Create Budget Item", True, "Budget item created successfully")
                     return True
                 else:
