@@ -521,6 +521,94 @@ const Dashboard = ({ onUpgrade }) => {
               </div>
             </div>
           )}
+
+          {/* Project Management Content Areas */}
+          {activeTab === 'projects-overview' && <ProjectDashboard />}
+          
+          {activeTab === 'projects' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold text-gray-900">Projects & Activities</h1>
+                <Button className="bg-gradient-to-r from-purple-600 to-pink-600">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Project
+                </Button>
+              </div>
+              <div className="text-center py-12 text-gray-500">
+                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-2">Project Management System</p>
+                <p>Create and manage projects, activities, and track implementation progress</p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'budgets' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold text-gray-900">Budget Tracking</h1>
+                <Button className="bg-gradient-to-r from-green-600 to-blue-600">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Budget Item
+                </Button>
+              </div>
+              <div className="text-center py-12 text-gray-500">
+                <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-2">Financial Management</p>
+                <p>Track project budgets, expenditures, and financial performance in real-time</p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'kpis' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold text-gray-900">KPI Dashboard</h1>
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Define KPI
+                </Button>
+              </div>
+              <div className="text-center py-12 text-gray-500">
+                <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-2">Performance Monitoring</p>
+                <p>Define indicators, track progress, and visualize organizational performance</p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'beneficiaries' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold text-gray-900">Beneficiary Management</h1>
+                <Button className="bg-gradient-to-r from-pink-600 to-purple-600">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Beneficiary
+                </Button>
+              </div>
+              <div className="text-center py-12 text-gray-500">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-2">Stakeholder Profiles</p>
+                <p>Manage beneficiary information, demographics, and program participation</p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'documents' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold text-gray-900">Document Repository</h1>
+                <Button className="bg-gradient-to-r from-indigo-600 to-blue-600">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Upload Document
+                </Button>
+              </div>
+              <div className="text-center py-12 text-gray-500">
+                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-2">Secure File Management</p>
+                <p>Store project documents, reports, agreements with version control and access permissions</p>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>
