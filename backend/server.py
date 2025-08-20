@@ -494,6 +494,102 @@ async def mobile_sync_download(enumerator_id: str):
         logger.error(f"Mobile sync download error: {str(e)}")
         raise HTTPException(status_code=500, detail="Sync failed")
 
+# AI Survey Generation endpoints
+@api_router.post("/surveys/generate-ai")
+async def generate_survey_with_ai(
+    request: AISurveyGenerationRequest,
+    current_user: User = Depends(require_editor())
+):
+    """Generate a survey using AI based on user description and optional document context"""
+    try:
+        survey_data = await ai_service.generate_survey_with_ai(request, current_user.organization_id)
+        return {"success": True, "survey_data": survey_data}
+    except Exception as e:
+        logger.error(f"AI survey generation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate survey: {str(e)}")
+
+@api_router.post("/surveys/upload-context")
+async def upload_survey_context(
+    files: List[UploadFile] = File(...),
+    current_user: User = Depends(require_editor())
+):
+    """Upload documents to provide context for AI survey generation"""
+    try:
+        documents = []
+        for file in files:
+            # Read file content
+            content = await file.read()
+            
+            # For now, assume text files. In production, you'd want to handle PDFs, DOCX, etc.
+            try:
+                text_content = content.decode('utf-8')
+            except UnicodeDecodeError:
+                # Skip binary files for now
+                continue
+                
+            document = DocumentUpload(
+                filename=file.filename,
+                content_type=file.content_type,
+                file_size=len(content),
+                content=text_content
+            )
+            documents.append(document)
+        
+        context = await ai_service.save_document_context(current_user.organization_id, documents)
+        return {"success": True, "context_id": context.id, "documents_processed": len(documents)}
+        
+    except Exception as e:
+        logger.error(f"Document upload error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to upload documents: {str(e)}")
+
+@api_router.post("/surveys/{survey_id}/translate")
+async def translate_survey(
+    survey_id: str,
+    target_language: str = "kinyarwanda",
+    current_user: User = Depends(get_current_active_user)
+):
+    """Translate an existing survey to the specified language"""
+    try:
+        # Get the survey
+        survey = await db_service.get_survey(survey_id)
+        if not survey or survey.organization_id != current_user.organization_id:
+            raise HTTPException(status_code=404, detail="Survey not found")
+        
+        # Prepare survey data for translation
+        survey_data = {
+            "title": survey.title,
+            "description": survey.description,
+            "questions": [q.model_dump() for q in survey.questions]
+        }
+        
+        # Translate using AI
+        translated_data = await ai_service.translate_survey(survey_data, target_language)
+        
+        return {"success": True, "translated_survey": translated_data}
+        
+    except Exception as e:
+        logger.error(f"Survey translation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to translate survey: {str(e)}")
+
+@api_router.get("/surveys/context/{organization_id}")
+async def get_survey_context(
+    organization_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get uploaded document context for survey generation"""
+    if organization_id != current_user.organization_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    try:
+        context = await ai_service._get_organization_context(organization_id)
+        if context:
+            return {"success": True, "context": context.model_dump()}
+        else:
+            return {"success": True, "context": None}
+    except Exception as e:
+        logger.error(f"Get context error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get context: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
