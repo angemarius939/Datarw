@@ -1249,8 +1249,10 @@ class DataRWAPITester:
             
             if response.status_code == 200:
                 data = response.json()
-                if "id" in data and data.get("name") == kpi_data["name"]:
-                    self.kpi_id = data["id"]
+                # Handle both 'id' and '_id' fields
+                kpi_id = data.get("id") or data.get("_id")
+                if kpi_id and data.get("name") == kpi_data["name"]:
+                    self.kpi_id = kpi_id
                     self.log_result("Create KPI Indicator", True, "KPI indicator created successfully")
                     return True
                 else:
