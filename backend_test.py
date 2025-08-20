@@ -619,29 +619,29 @@ class DataRWAPITester:
             Our Mission: To provide exceptional dining experiences while preserving Rwandan culinary traditions.
             """
             
-            # Prepare files data (simulating file upload)
-            files_data = [
-                {
-                    "filename": "business_plan.txt",
-                    "content": sample_document.encode('utf-8')
-                }
-            ]
-            
-            # For this test, we'll use the requests-toolbelt or simulate multipart
-            # Since we're testing the API, we'll create a simple multipart request
+            # Create multipart form data manually
             import io
-            from requests_toolbelt.multipart.encoder import MultipartEncoder
+            boundary = '----WebKitFormBoundary7MA4YWxkTrZu0gW'
             
-            multipart_data = MultipartEncoder(
-                fields={
-                    'files': ('business_plan.txt', io.BytesIO(sample_document.encode('utf-8')), 'text/plain')
-                }
-            )
+            # Build multipart body
+            body_parts = []
+            body_parts.append(f'--{boundary}')
+            body_parts.append('Content-Disposition: form-data; name="files"; filename="business_plan.txt"')
+            body_parts.append('Content-Type: text/plain')
+            body_parts.append('')
+            body_parts.append(sample_document)
+            body_parts.append(f'--{boundary}--')
+            
+            body = '\r\n'.join(body_parts)
+            
+            headers = {
+                'Content-Type': f'multipart/form-data; boundary={boundary}'
+            }
             
             response = self.session.post(
                 f"{self.base_url}/surveys/upload-context",
-                data=multipart_data,
-                headers={'Content-Type': multipart_data.content_type}
+                data=body.encode('utf-8'),
+                headers=headers
             )
             
             if response.status_code == 200:
@@ -660,10 +660,6 @@ class DataRWAPITester:
             else:
                 self.log_result("Document Upload Context", False, f"HTTP {response.status_code}", response.text)
                 return False
-        except ImportError:
-            # Fallback test without multipart encoding
-            self.log_result("Document Upload Context", True, "Skipped - requests-toolbelt not available (minor issue)")
-            return True
         except Exception as e:
             self.log_result("Document Upload Context", False, f"Request error: {str(e)}")
             return False
