@@ -31,9 +31,10 @@ class SurveyCreationTester:
         self.organization_data = None
         self.test_results = []
         
-        # Use existing user credentials for login test
-        self.test_email = "john@test.com"
-        self.test_password = "password123"
+        # Generate unique user credentials for testing
+        self.test_email = f"survey.test.{uuid.uuid4().hex[:8]}@datarw.com"
+        self.test_password = "SurveyTest123!"
+        self.test_name = "Survey Test User"
         
     def log_result(self, test_name, success, message, response_data=None):
         """Log test result with detailed response"""
