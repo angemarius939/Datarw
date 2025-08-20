@@ -484,6 +484,12 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
                 </Alert>
               )}
               
+              {errors.description && (
+                <Alert variant="destructive">
+                  <AlertDescription>{errors.description}</AlertDescription>
+                </Alert>
+              )}
+              
               <div>
                 <Label htmlFor="survey-title">Survey Title</Label>
                 <Textarea
