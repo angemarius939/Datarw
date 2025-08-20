@@ -174,14 +174,16 @@ class SurveyCreationTester:
             
             if response.status_code == 200:
                 data = response.json()
-                if "id" in data and data.get("title") == survey_data["title"]:
-                    self.survey_id = data["id"]
+                # Handle both 'id' and '_id' field names
+                survey_id = data.get("id") or data.get("_id")
+                if survey_id and data.get("title") == survey_data["title"]:
+                    self.survey_id = survey_id
                     self.log_result("Survey Creation", True, 
                                   f"Survey created successfully with ID: {self.survey_id}", data)
                     return True
                 else:
                     self.log_result("Survey Creation", False, 
-                                  "Survey data mismatch or missing ID", data)
+                                  f"Survey data mismatch or missing ID. Expected title: {survey_data['title']}, Got title: {data.get('title')}, ID: {survey_id}", data)
                     return False
             else:
                 error_data = response.json() if response.content else {"error": "No response body"}
