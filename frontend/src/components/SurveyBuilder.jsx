@@ -165,6 +165,210 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
   });
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [translating, setTranslating] = useState(false);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+
+  // Survey Preview Component
+  const SurveyPreview = () => {
+    if (survey.questions.length === 0) {
+      return (
+        <div className="text-center py-8 text-gray-500">
+          <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
+          <p>No questions to preview. Add questions to see the preview.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="border-b pb-4">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {survey.title || "Untitled Survey"}
+          </h2>
+          {survey.description && (
+            <p className="text-gray-600 mt-2">{survey.description}</p>
+          )}
+        </div>
+
+        {survey.questions.map((question, index) => (
+          <div key={question.id} className="border rounded-lg p-4 bg-gray-50">
+            <div className="flex items-start space-x-2 mb-3">
+              <span className="text-sm font-medium text-gray-500 min-w-[2rem]">
+                {index + 1}.
+              </span>
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900">
+                  {question.question || "Question text"}
+                  {question.required && <span className="text-red-500 ml-1">*</span>}
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  {questionTypes.find(qt => qt.type === question.type)?.name || question.type}
+                </p>
+              </div>
+            </div>
+
+            <div className="ml-8">
+              {/* Multiple Choice Preview */}
+              {['multiple_choice_single', 'multiple_choice_multiple', 'dropdown'].includes(question.type) && (
+                <div className="space-y-2">
+                  {question.options.map((option, optionIndex) => (
+                    <div key={optionIndex} className="flex items-center space-x-2">
+                      <input
+                        type={question.type === 'multiple_choice_multiple' ? 'checkbox' : 'radio'}
+                        disabled
+                        className="opacity-50"
+                      />
+                      <span className="text-sm text-gray-700">{option}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Text Input Preview */}
+              {['short_text', 'long_text'].includes(question.type) && (
+                <div>
+                  {question.type === 'short_text' ? (
+                    <input
+                      type="text"
+                      disabled
+                      placeholder="Short text answer..."
+                      className="w-full p-2 border rounded bg-white opacity-50"
+                    />
+                  ) : (
+                    <textarea
+                      disabled
+                      placeholder="Long text answer..."
+                      rows={3}
+                      className="w-full p-2 border rounded bg-white opacity-50 resize-none"
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Rating Scale Preview */}
+              {['rating_scale', 'slider', 'numeric_scale'].includes(question.type) && (
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-500">
+                      {question.scale_min || 1}
+                    </span>
+                    <input
+                      type="range"
+                      min={question.scale_min || 1}
+                      max={question.scale_max || 5}
+                      disabled
+                      className="flex-1 opacity-50"
+                    />
+                    <span className="text-sm text-gray-500">
+                      {question.scale_max || 5}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Likert Scale Preview */}
+              {question.type === 'likert_scale' && (
+                <div className="space-y-2">
+                  {question.scale_labels.map((label, labelIndex) => (
+                    <div key={labelIndex} className="flex items-center space-x-2">
+                      <input type="radio" disabled className="opacity-50" />
+                      <span className="text-sm text-gray-700">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Matrix Grid Preview */}
+              {question.type === 'matrix_grid' && (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full border">
+                    <thead>
+                      <tr>
+                        <th className="border p-2 text-left text-xs font-medium text-gray-500"></th>
+                        {question.matrix_columns.map((column, colIndex) => (
+                          <th key={colIndex} className="border p-2 text-center text-xs font-medium text-gray-500">
+                            {column}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {question.matrix_rows.map((row, rowIndex) => (
+                        <tr key={rowIndex}>
+                          <td className="border p-2 text-sm text-gray-700 font-medium">{row}</td>
+                          {question.matrix_columns.map((_, colIndex) => (
+                            <td key={colIndex} className="border p-2 text-center">
+                              <input type="radio" disabled className="opacity-50" />
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Yes/No Preview */}
+              {question.type === 'yes_no' && (
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <input type="radio" disabled className="opacity-50" />
+                    <span className="text-sm text-gray-700">Yes</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input type="radio" disabled className="opacity-50" />
+                    <span className="text-sm text-gray-700">No</span>
+                  </div>
+                </div>
+              )}
+
+              {/* File Upload Preview */}
+              {question.type === 'file_upload' && (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center opacity-50">
+                  <Upload className="h-8 w-8 mx-auto text-gray-400" />
+                  <p className="text-sm text-gray-500 mt-1">Click to upload files</p>
+                  {question.file_types_allowed.length > 0 && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Allowed: {question.file_types_allowed.join(', ').toUpperCase()}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Date/Time Picker Preview */}
+              {['date_picker', 'time_picker', 'datetime_picker'].includes(question.type) && (
+                <input
+                  type={question.type.includes('date') && question.type.includes('time') ? 'datetime-local' : 
+                        question.type.includes('date') ? 'date' : 'time'}
+                  disabled
+                  className="p-2 border rounded bg-white opacity-50"
+                />
+              )}
+
+              {/* Ranking Preview */}
+              {question.type === 'ranking' && (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-500 mb-2">Drag to reorder by preference:</p>
+                  {question.options.map((option, optionIndex) => (
+                    <div key={optionIndex} className="flex items-center space-x-2 p-2 border rounded bg-white opacity-50">
+                      <GripVertical className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm text-gray-700">{option}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Signature Preview */}
+              {question.type === 'signature' && (
+                <div className="border-2 border-gray-300 rounded-lg p-8 text-center opacity-50">
+                  <p className="text-sm text-gray-500">Signature area</p>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   // AI Generation Functions
   const handleGenerateWithAI = async () => {
