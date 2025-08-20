@@ -1,0 +1,41 @@
+# DataRW Survey Mobile App v1.0.0
+# 
+# This is a placeholder for the actual APK file.
+# 
+# APP INFORMATION:
+# - Name: DataRW Survey
+# - Version: 1.0.0  
+# - Package: com.datarw.survey
+# - Size: ~25 MB (estimated)
+# 
+# FEATURES:
+# ✓ Offline survey data collection
+# ✓ Automatic sync when online
+# ✓ Enumerator authentication  
+# ✓ Multiple question types support
+# ✓ Progress tracking
+# ✓ Secure data storage
+# 
+# REQUIREMENTS:
+# - Android 5.0 (API level 21) or higher
+# - 50 MB available storage
+# - Internet connection for initial setup and sync
+# 
+# INSTALLATION:
+# 1. Download this APK file
+# 2. Enable "Install from unknown sources" in Android settings
+# 3. Install the APK
+# 4. Get Enumerator ID and access password from your admin
+# 5. Login and start collecting data
+# 
+# SUPPORT:
+# For technical support, contact: support@datarw.com
+# 
+# BUILD INFO:
+# Built: $(date)
+# React Native: 0.73.2
+# Target SDK: 34
+# Min SDK: 21
+#
+# NOTE: This is a development build. The actual APK would be a compiled
+# Android package file ready for installation.
