@@ -258,13 +258,82 @@ class DatabaseService:
             {"type": "Product Feedback", "count": 23, "percentage": 18}
         ]
         
-        return AnalyticsData(
-            total_responses=total_responses,
-            response_rate=min(response_rate, 100),
-            average_completion_time=avg_completion_time,
-            top_performing_survey=top_performing_survey,
-            monthly_growth=15.3,
-            storage_growth=12.8,
-            responses_by_month=responses_by_month,
-            survey_types=survey_types
+    # Enumerator CRUD
+    async def create_enumerator(self, enumerator: EnumeratorCreate, organization_id: str) -> Enumerator:
+        """Create a new enumerator"""
+        enumerator_doc = Enumerator(
+            name=enumerator.name,
+            email=enumerator.email,
+            phone=enumerator.phone,
+            organization_id=organization_id,
+            access_password=enumerator.access_password
+        )
+        
+        result = await self.db.enumerators.insert_one(enumerator_doc.dict(by_alias=True))
+        enumerator_doc.id = result.inserted_id
+        return enumerator_doc
+
+    async def get_enumerator(self, enumerator_id: str) -> Optional[Enumerator]:
+        """Get enumerator by ID"""
+        enumerator_doc = await self.db.enumerators.find_one({"_id": enumerator_id})
+        if enumerator_doc:
+            return Enumerator(**enumerator_doc)
+        return None
+
+    async def get_organization_enumerators(self, organization_id: str) -> List[Enumerator]:
+        """Get all enumerators for an organization"""
+        enumerators = await self.db.enumerators.find({"organization_id": organization_id}).to_list(1000)
+        return [Enumerator(**enumerator) for enumerator in enumerators]
+
+    async def authenticate_enumerator(self, enumerator_id: str, access_password: str) -> Optional[Enumerator]:
+        """Authenticate enumerator by ID and password"""
+        enumerator_doc = await self.db.enumerators.find_one({
+            "_id": enumerator_id,
+            "access_password": access_password,
+            "status": "active"
+        })
+        if enumerator_doc:
+            return Enumerator(**enumerator_doc)
+        return None
+
+    async def assign_survey_to_enumerator(self, enumerator_id: str, survey_id: str, organization_id: str) -> bool:
+        """Assign a survey to an enumerator"""
+        # Verify both enumerator and survey belong to the organization
+        enumerator = await self.get_enumerator(enumerator_id)
+        survey = await self.get_survey(survey_id)
+        
+        if (not enumerator or not survey or 
+            enumerator.organization_id != organization_id or 
+            survey.organization_id != organization_id):
+            return False
+        
+        # Add survey to enumerator's assigned surveys
+        result = await self.db.enumerators.update_one(
+            {"_id": enumerator_id},
+            {"$addToSet": {"assigned_surveys": survey_id}}
+        )
+        
+        return result.modified_count > 0
+
+    async def get_enumerator_surveys(self, enumerator_id: str) -> List[Survey]:
+        """Get all surveys assigned to an enumerator"""
+        enumerator = await self.get_enumerator(enumerator_id)
+        if not enumerator:
+            return []
+        
+        if not enumerator.assigned_surveys:
+            return []
+        
+        surveys = await self.db.surveys.find({
+            "_id": {"$in": enumerator.assigned_surveys},
+            "status": {"$in": ["active", "draft"]}
+        }).to_list(100)
+        
+        return [Survey(**survey) for survey in surveys]
+
+    async def update_enumerator_sync(self, enumerator_id: str):
+        """Update enumerator's last sync timestamp"""
+        await self.db.enumerators.update_one(
+            {"_id": enumerator_id},
+            {"$set": {"last_sync": datetime.utcnow()}}
         )
