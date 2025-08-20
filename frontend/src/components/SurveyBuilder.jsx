@@ -875,6 +875,211 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Survey Builder</h1>
         <div className="flex space-x-2">
+          <Dialog open={aiModalOpen} onOpenChange={setAiModalOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+                <Sparkles className="h-4 w-4 mr-2 text-purple-600" />
+                Generate with AI
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle className="flex items-center">
+                  <Brain className="h-5 w-5 mr-2 text-purple-600" />
+                  AI Survey Generation
+                </DialogTitle>
+                <DialogDescription>
+                  Describe your survey needs and let AI create a comprehensive questionnaire for you.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div>
+                  <Label htmlFor="ai-description">Survey Description *</Label>
+                  <Textarea
+                    id="ai-description"
+                    value={aiRequest.description}
+                    onChange={(e) => setAiRequest(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="e.g., 'Create a customer satisfaction survey for a restaurant focusing on food quality, service, and ambiance...'"
+                    className="mt-1 min-h-[80px]"
+                    rows={3}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="target-audience">Target Audience</Label>
+                    <Input
+                      id="target-audience"
+                      value={aiRequest.target_audience}
+                      onChange={(e) => setAiRequest(prev => ({ ...prev, target_audience: e.target.value }))}
+                      placeholder="e.g., Restaurant customers"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="survey-purpose">Survey Purpose</Label>
+                    <Input
+                      id="survey-purpose"
+                      value={aiRequest.survey_purpose}
+                      onChange={(e) => setAiRequest(prev => ({ ...prev, survey_purpose: e.target.value }))}
+                      placeholder="e.g., Improve service quality"
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="question-count">Number of Questions</Label>
+                    <Input
+                      id="question-count"
+                      type="number"
+                      min="5"
+                      max="50"
+                      value={aiRequest.question_count}
+                      onChange={(e) => setAiRequest(prev => ({ ...prev, question_count: parseInt(e.target.value) || 10 }))}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2 mt-6">
+                    <Checkbox
+                      id="include-demographics"
+                      checked={aiRequest.include_demographics}
+                      onCheckedChange={(checked) => setAiRequest(prev => ({ ...prev, include_demographics: checked }))}
+                    />
+                    <Label htmlFor="include-demographics" className="text-sm">Include demographic questions</Label>
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setAiModalOpen(false)}>Cancel</Button>
+                  <Button onClick={handleGenerateWithAI} disabled={aiGenerating}>
+                    {aiGenerating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate Survey
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={documentModalOpen} onOpenChange={setDocumentModalOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+                <Upload className="h-4 w-4 mr-2 text-green-600" />
+                Upload Documents
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Upload Context Documents</DialogTitle>
+                <DialogDescription>
+                  Upload business plans, policies, participant profiles, or strategic documents to help AI generate more relevant surveys.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div>
+                  <Label>Select Files</Label>
+                  <Input
+                    type="file"
+                    multiple
+                    accept=".txt,.doc,.docx,.pdf"
+                    onChange={(e) => setUploadedFiles(Array.from(e.target.files))}
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Supported formats: TXT, DOC, DOCX, PDF (up to 10MB each)
+                  </p>
+                </div>
+                {uploadedFiles.length > 0 && (
+                  <div>
+                    <Label>Selected Files:</Label>
+                    <ul className="text-sm text-gray-600 mt-1">
+                      {uploadedFiles.map((file, index) => (
+                        <li key={index}>{file.name} ({Math.round(file.size / 1024)} KB)</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setDocumentModalOpen(false)}>Cancel</Button>
+                  <Button onClick={handleUploadDocuments}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Documents
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={translateModalOpen} onOpenChange={setTranslateModalOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200">
+                <Languages className="h-4 w-4 mr-2 text-blue-600" />
+                Translate
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Translate Survey</DialogTitle>
+                <DialogDescription>
+                  Translate your survey to different languages for broader accessibility.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleTranslateSurvey('Kinyarwanda')}
+                    disabled={translating}
+                    className="h-16 flex-col"
+                  >
+                    <Languages className="h-6 w-6 mb-1" />
+                    Kinyarwanda
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleTranslateSurvey('French')}
+                    disabled={translating}
+                    className="h-16 flex-col"
+                  >
+                    <Languages className="h-6 w-6 mb-1" />
+                    French
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleTranslateSurvey('Swahili')}
+                    disabled={translating}
+                    className="h-16 flex-col"
+                  >
+                    <Languages className="h-6 w-6 mb-1" />
+                    Swahili
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleTranslateSurvey('Spanish')}
+                    disabled={translating}
+                    className="h-16 flex-col"
+                  >
+                    <Languages className="h-6 w-6 mb-1" />
+                    Spanish
+                  </Button>
+                </div>
+                {translating && (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                    <span>Translating survey...</span>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+
           <Button variant="outline">
             <Eye className="h-4 w-4 mr-2" />
             Preview
