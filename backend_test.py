@@ -737,7 +737,12 @@ class DataRWAPITester:
                 self.log_result("Get Survey Context", False, "No organization data available")
                 return False
             
-            org_id = self.organization_data["id"]
+            # Handle both 'id' and '_id' fields
+            org_id = self.organization_data.get("id") or self.organization_data.get("_id")
+            if not org_id:
+                self.log_result("Get Survey Context", False, "No organization ID found in organization data")
+                return False
+                
             response = self.session.get(f"{self.base_url}/surveys/context/{org_id}")
             
             if response.status_code == 200:
