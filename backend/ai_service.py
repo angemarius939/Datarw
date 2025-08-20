@@ -380,4 +380,121 @@ Return the translated survey as JSON.
         except Exception as e:
             print(f"Translation error: {e}")
             # Return original survey if translation fails
-            return survey_data
+    async def _generate_fallback_survey(self, request: AISurveyGenerationRequest) -> Dict[str, Any]:
+        """Generate a fallback survey when AI is not available"""
+        
+        # Create a template-based survey based on the request
+        questions = []
+        
+        # Add demographic questions if requested
+        if request.include_demographics:
+            questions.extend([
+                {
+                    "type": QuestionType.SHORT_TEXT,
+                    "question": "What is your age range?",
+                    "required": False,
+                    "options": [],
+                    "validation_rules": {}
+                },
+                {
+                    "type": QuestionType.MULTIPLE_CHOICE_SINGLE,
+                    "question": "What is your gender?",
+                    "required": False,
+                    "options": ["Male", "Female", "Other", "Prefer not to say"],
+                    "validation_rules": {}
+                }
+            ])
+        
+        # Add questions based on description keywords
+        description_lower = request.description.lower()
+        
+        if "satisfaction" in description_lower or "feedback" in description_lower:
+            questions.extend([
+                {
+                    "type": QuestionType.RATING_SCALE,
+                    "question": "How satisfied are you overall?",
+                    "required": True,
+                    "scale_min": 1,
+                    "scale_max": 5,
+                    "scale_labels": ["Very Dissatisfied", "Dissatisfied", "Neutral", "Satisfied", "Very Satisfied"],
+                    "options": [],
+                    "validation_rules": {}
+                },
+                {
+                    "type": QuestionType.LONG_TEXT,
+                    "question": "What could we improve?",
+                    "required": False,
+                    "options": [],
+                    "validation_rules": {}
+                }
+            ])
+        
+        if "restaurant" in description_lower or "food" in description_lower:
+            questions.extend([
+                {
+                    "type": QuestionType.MULTIPLE_CHOICE_SINGLE,
+                    "question": "How often do you visit restaurants?",
+                    "required": False,
+                    "options": ["Daily", "Weekly", "Monthly", "Rarely", "Never"],
+                    "validation_rules": {}
+                },
+                {
+                    "type": QuestionType.RATING_SCALE,
+                    "question": "How would you rate the food quality?",
+                    "required": True,
+                    "scale_min": 1,
+                    "scale_max": 5,
+                    "options": [],
+                    "validation_rules": {}
+                }
+            ])
+        
+        if "employee" in description_lower or "workplace" in description_lower:
+            questions.extend([
+                {
+                    "type": QuestionType.LIKERT_SCALE,
+                    "question": "I feel valued at my workplace",
+                    "required": True,
+                    "scale_labels": ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"],
+                    "options": [],
+                    "validation_rules": {}
+                },
+                {
+                    "type": QuestionType.MULTIPLE_CHOICE_SINGLE,
+                    "question": "What is your employment status?",
+                    "required": False,
+                    "options": ["Full-time", "Part-time", "Contract", "Intern"],
+                    "validation_rules": {}
+                }
+            ])
+        
+        # Add generic questions if no specific type detected
+        if len(questions) <= 2:  # Only demographics added
+            questions.extend([
+                {
+                    "type": QuestionType.LONG_TEXT,
+                    "question": f"Please share your thoughts about: {request.description}",
+                    "required": True,
+                    "options": [],
+                    "validation_rules": {}
+                },
+                {
+                    "type": QuestionType.RATING_SCALE,
+                    "question": "How important is this topic to you?",
+                    "required": False,
+                    "scale_min": 1,
+                    "scale_max": 10,
+                    "options": [],
+                    "validation_rules": {}
+                }
+            ])
+        
+        # Limit to requested question count
+        if len(questions) > request.question_count:
+            questions = questions[:request.question_count]
+        
+        return {
+            "title": f"Survey: {request.description[:50]}..." if len(request.description) > 50 else f"Survey: {request.description}",
+            "description": f"This survey was generated based on your request: {request.description}",
+            "questions": questions
+        }
