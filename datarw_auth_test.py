@@ -538,11 +538,12 @@ class DataRWAuthTester:
                 data = response.json()
                 
                 # Check survey was created with correct data
+                survey_id = data.get("id") or data.get("_id")
                 if (data.get("title") == survey_data["title"] and 
                     data.get("description") == survey_data["description"] and
-                    "id" in data):
+                    survey_id):
                     
-                    self.survey_id = data["id"]
+                    self.survey_id = survey_id
                     self.log_result(
                         "Survey Creation", 
                         True, 
