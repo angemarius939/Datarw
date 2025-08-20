@@ -278,7 +278,7 @@ frontend:
           comment: "COMPLETED Phase 1: Enhanced text handling implemented successfully. Changes include: 1) Survey title now uses Textarea (200 char limit), 2) Survey description uses larger Textarea (2000 char limit), 3) Question text uses expandable Textarea (1000 char limit), 4) Multiple choice options use Textarea (500 char limit), 5) Added real-time character counters for all text fields, 6) Enhanced validation for character limits, 7) Improved error messaging for individual questions and options, 8) Added helpful tips and placeholders, 9) Better visual hierarchy with proper spacing. All text inputs now support longer content with proper validation."
 
   - task: "AI-Powered Survey Generation"
-    implemented: false
+    implemented: true
     working: "NA"
     file: "/app/frontend/src/components/SurveyBuilder.jsx"
     stuck_count: 0
@@ -288,6 +288,9 @@ frontend:
         - working: "NA"
           agent: "main"
           comment: "Will implement AI-powered survey generation using Emergent LLM key. Users will be able to describe their survey needs and AI will generate complete questionnaires."
+        - working: "NA"
+          agent: "main"
+          comment: "COMPLETED: AI-powered survey generation implemented with gpt-4.1 model. Features include: 1) Basic AI generation from natural language descriptions, 2) Document upload for context (business plans, policies, etc.), 3) Enhanced question types (18 total including multiple choice variants, rating scales, matrix questions, file upload, date/time pickers, etc.), 4) AI translation capabilities, 5) Comprehensive UI with modals for AI generation, document upload, and translation, 6) Backend endpoints for AI processing, 7) Document context analysis for relevant survey generation. Frontend includes intuitive modals and proper error handling."
 
   - task: "Automatic Survey Translation"
     implemented: false
