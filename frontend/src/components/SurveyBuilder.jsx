@@ -8,6 +8,7 @@ import { Badge } from './ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Checkbox } from './ui/checkbox';
 import { Switch } from './ui/switch';
+import { Alert, AlertDescription } from './ui/alert';
 import { 
   Plus, 
   Trash2, 
@@ -17,18 +18,150 @@ import {
   Save,
   ArrowUp,
   ArrowDown,
-  FileText
+  FileText,
+  Loader2
 } from 'lucide-react';
-import { questionTypes } from '../mock/mockData';
+import { useAuth } from '../contexts/AuthContext';
+import { surveysAPI } from '../services/api';
+import { useToast } from '../hooks/use-toast';
 
-const SurveyBuilder = () => {
+// Question types definition
+const questionTypes = [
+  {
+    type: "multiple_choice",
+    name: "Multiple Choice",
+    icon: "☑️",
+    description: "Single or multiple selection from options"
+  },
+  {
+    type: "text",
+    name: "Text Input", 
+    icon: "📝",
+    description: "Short or long text responses"
+  },
+  {
+    type: "rating",
+    name: "Rating Scale",
+    icon: "⭐",
+    description: "1-5 or 1-10 rating scale"
+  },
+  {
+    type: "file_upload",
+    name: "File Upload",
+    icon: "📎", 
+    description: "Allow respondents to upload files"
+  },
+  {
+    type: "calculation",
+    name: "Calculation",
+    icon: "🔢",
+    description: "Calculate values from other fields"
+  },
+  {
+    type: "skip_logic",
+    name: "Skip Logic",
+    icon: "↩️",
+    description: "Conditional question flow"
+  }
+];
+
+const SurveyBuilder = ({ onSurveyCreated }) => {
+  const { toast } = useToast();
+  const { user, organization } = useAuth();
   const [survey, setSurvey] = useState({
     title: '',
     description: '',
     questions: []
   });
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
-  const [selectedQuestionType, setSelectedQuestionType] = useState('');
+  const validateSurvey = () => {
+    const newErrors = {};
+    
+    if (!survey.title.trim()) {
+      newErrors.title = 'Survey title is required';
+    }
+    
+    if (survey.questions.length === 0) {
+      newErrors.questions = 'At least one question is required';
+    }
+    
+    // Validate each question
+    survey.questions.forEach((question, index) => {
+      if (!question.question.trim()) {
+        newErrors[`question_${index}`] = 'Question text is required';
+      }
+      
+      if (question.type === 'multiple_choice' && question.options.length < 2) {
+        newErrors[`question_${index}_options`] = 'Multiple choice questions need at least 2 options';
+      }
+    });
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSaveSurvey = async () => {
+    if (!validateSurvey()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fix the errors before saving.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const surveyData = {
+        title: survey.title.trim(),
+        description: survey.description.trim(),
+        questions: survey.questions.map(q => ({
+          ...q,
+          id: undefined // Let backend generate IDs
+        }))
+      };
+
+      await surveysAPI.createSurvey(surveyData);
+      
+      toast({
+        title: "Success!",
+        description: "Survey created successfully.",
+        variant: "default",
+      });
+
+      // Reset form
+      setSurvey({
+        title: '',
+        description: '',
+        questions: []
+      });
+      setErrors({});
+
+      // Notify parent component
+      if (onSurveyCreated) {
+        onSurveyCreated();
+      }
+
+    } catch (error) {
+      console.error('Error creating survey:', error);
+      
+      let errorMessage = 'Failed to create survey. Please try again.';
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const addQuestion = (type) => {
     const newQuestion = {
