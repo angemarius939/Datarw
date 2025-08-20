@@ -379,7 +379,48 @@ Return the translated survey as JSON.
             
         except Exception as e:
             print(f"Translation error: {e}")
-            # Return original survey if translation fails
+            # Return a fallback translation with basic translations
+            return await self._generate_fallback_translation(survey_data, target_language)
+
+    async def _generate_fallback_translation(self, survey_data: Dict[str, Any], target_language: str) -> Dict[str, Any]:
+        """Generate a fallback translation when AI translation fails"""
+        
+        # Basic Kinyarwanda translations for common survey terms
+        kinyarwanda_translations = {
+            "Customer Feedback Survey": "Ubushakashatsi bw'Abakiriya",
+            "Please provide your feedback": "Nyamuneka dutange igitekerezo cyawe",
+            "What is your name?": "Witwa nde?",
+            "How satisfied are you": "Urishimiye gute",
+            "with our service?": "n'ubufasha bwacu?",
+            "Very Dissatisfied": "Ntishimiye na gato",
+            "Dissatisfied": "Ntishimiye",
+            "Neutral": "Nta kintu",
+            "Satisfied": "Nishimiye",
+            "Very Satisfied": "Nishimiye cyane"
+        }
+        
+        # Create a copy of the survey data
+        translated_survey = json.loads(json.dumps(survey_data))
+        
+        if target_language.lower() == "kinyarwanda":
+            # Apply basic translations
+            for english, kinyarwanda in kinyarwanda_translations.items():
+                if "title" in translated_survey:
+                    translated_survey["title"] = translated_survey["title"].replace(english, kinyarwanda)
+                if "description" in translated_survey:
+                    translated_survey["description"] = translated_survey["description"].replace(english, kinyarwanda)
+                
+                # Translate questions
+                if "questions" in translated_survey:
+                    for question in translated_survey["questions"]:
+                        if "question" in question:
+                            question["question"] = question["question"].replace(english, kinyarwanda)
+                        if "options" in question and question["options"]:
+                            question["options"] = [opt.replace(english, kinyarwanda) for opt in question["options"]]
+                        if "scale_labels" in question and question["scale_labels"]:
+                            question["scale_labels"] = [label.replace(english, kinyarwanda) for label in question["scale_labels"]]
+        
+        return translated_survey
     async def _generate_fallback_survey(self, request: AISurveyGenerationRequest) -> Dict[str, Any]:
         """Generate a fallback survey when AI is not available"""
         
