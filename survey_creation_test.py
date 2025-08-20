@@ -265,7 +265,8 @@ class SurveyCreationTester:
                 if response.status_code == 200:
                     surveys_created += 1
                     data = response.json()
-                    print(f"   ✅ Survey {i+1} created successfully (ID: {data.get('id')})")
+                    survey_id = data.get("id") or data.get("_id")
+                    print(f"   ✅ Survey {i+1} created successfully (ID: {survey_id})")
                 elif response.status_code == 400:
                     data = response.json()
                     if "Survey limit reached" in data.get("detail", ""):
