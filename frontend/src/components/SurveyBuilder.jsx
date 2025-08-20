@@ -1284,10 +1284,25 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
             </DialogContent>
           </Dialog>
 
-          <Button variant="outline">
-            <Eye className="h-4 w-4 mr-2" />
-            Preview
-          </Button>
+          <Dialog open={previewModalOpen} onOpenChange={setPreviewModalOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Eye className="h-4 w-4 mr-2" />
+                Preview
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Survey Preview</DialogTitle>
+                <DialogDescription>
+                  This is how your survey will appear to respondents.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <SurveyPreview />
+              </div>
+            </DialogContent>
+          </Dialog>
           <Button 
             className="bg-gradient-to-r from-green-600 to-blue-600"
             onClick={handleSaveSurvey}
