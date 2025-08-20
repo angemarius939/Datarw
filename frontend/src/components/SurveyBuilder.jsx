@@ -387,9 +387,22 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
             <Eye className="h-4 w-4 mr-2" />
             Preview
           </Button>
-          <Button className="bg-gradient-to-r from-green-600 to-blue-600">
-            <Save className="h-4 w-4 mr-2" />
-            Save Survey
+          <Button 
+            className="bg-gradient-to-r from-green-600 to-blue-600"
+            onClick={handleSaveSurvey}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Save Survey
+              </>
+            )}
           </Button>
         </div>
       </div>
