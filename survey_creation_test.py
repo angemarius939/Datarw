@@ -210,7 +210,7 @@ class SurveyCreationTester:
                     # Check if our created survey appears in the list
                     survey_found = False
                     if hasattr(self, 'survey_id'):
-                        survey_found = any(survey.get("id") == self.survey_id for survey in data)
+                        survey_found = any(survey.get("id") == self.survey_id or survey.get("_id") == self.survey_id for survey in data)
                     
                     message = f"Retrieved {len(data)} surveys"
                     if survey_found:
