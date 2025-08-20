@@ -4,12 +4,24 @@ import uuid
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from bson import ObjectId
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 from models import (
     SurveyQuestion, QuestionType, AISurveyGenerationRequest, 
     SurveyGenerationContext, DocumentUpload
 )
+
+def convert_objectids_to_strings(obj):
+    """Recursively convert ObjectIds to strings in a dictionary or list"""
+    if isinstance(obj, dict):
+        return {key: convert_objectids_to_strings(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_objectids_to_strings(item) for item in obj]
+    elif isinstance(obj, ObjectId):
+        return str(obj)
+    else:
+        return obj
 
 class AIService:
     def __init__(self, db: AsyncIOMotorDatabase):
