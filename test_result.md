@@ -324,6 +324,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "AI Survey Generation Backend Endpoints"
     - "Enhanced Text Handling for Survey Questions and Options"
     - "AI-Powered Survey Generation"
     - "Automatic Survey Translation"
