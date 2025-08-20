@@ -223,6 +223,12 @@ const Dashboard = ({ onUpgrade }) => {
         {/* Sidebar */}
         <aside className="w-64 bg-white border-r min-h-screen">
           <nav className="p-4 space-y-2">
+            {/* DataRW Surveys Section */}
+            <div className="pb-2 border-b mb-4">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                DataRW Surveys
+              </h3>
+            </div>
             <Button
               variant={activeTab === 'overview' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('overview')}
@@ -263,6 +269,61 @@ const Dashboard = ({ onUpgrade }) => {
             >
               <Users className="h-4 w-4 mr-3" />
               User Management
+            </Button>
+
+            {/* DataRW Projects Section */}
+            <div className="pt-4 border-t mt-4">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                DataRW Projects
+              </h3>
+            </div>
+            <Button
+              variant={activeTab === 'projects-overview' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('projects-overview')}
+              className="w-full justify-start"
+            >
+              <BarChart3 className="h-4 w-4 mr-3" />
+              Project Dashboard
+            </Button>
+            <Button
+              variant={activeTab === 'projects' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('projects')}
+              className="w-full justify-start"
+            >
+              <FileText className="h-4 w-4 mr-3" />
+              Projects & Activities
+            </Button>
+            <Button
+              variant={activeTab === 'budgets' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('budgets')}
+              className="w-full justify-start"
+            >
+              <Database className="h-4 w-4 mr-3" />
+              Budget Tracking
+            </Button>
+            <Button
+              variant={activeTab === 'kpis' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('kpis')}
+              className="w-full justify-start"
+            >
+              <TrendingUp className="h-4 w-4 mr-3" />
+              KPI Dashboard
+            </Button>
+            <Button
+              variant={activeTab === 'beneficiaries' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('beneficiaries')}
+              className="w-full justify-start"
+            >
+              <Users className="h-4 w-4 mr-3" />
+              Beneficiaries
+            </Button>
+            <Button
+              variant={activeTab === 'documents' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('documents')}
+              className="w-full justify-start"
+            >
+              <FileText className="h-4 w-4 mr-3" />
+              Document Repository
             </Button>
           </nav>
         </aside>
