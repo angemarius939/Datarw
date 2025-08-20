@@ -81,6 +81,12 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
     
     if (!survey.title.trim()) {
       newErrors.title = 'Survey title is required';
+    } else if (survey.title.length > 200) {
+      newErrors.title = 'Survey title must be 200 characters or less';
+    }
+    
+    if (survey.description.length > 2000) {
+      newErrors.description = 'Survey description must be 2000 characters or less';
     }
     
     if (survey.questions.length === 0) {
@@ -91,10 +97,23 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
     survey.questions.forEach((question, index) => {
       if (!question.question.trim()) {
         newErrors[`question_${index}`] = 'Question text is required';
+      } else if (question.question.length > 1000) {
+        newErrors[`question_${index}`] = 'Question text must be 1000 characters or less';
       }
       
-      if (question.type === 'multiple_choice' && question.options.length < 2) {
-        newErrors[`question_${index}_options`] = 'Multiple choice questions need at least 2 options';
+      if (question.type === 'multiple_choice') {
+        if (question.options.length < 2) {
+          newErrors[`question_${index}_options`] = 'Multiple choice questions need at least 2 options';
+        }
+        
+        // Validate each option
+        question.options.forEach((option, optionIndex) => {
+          if (!option.trim()) {
+            newErrors[`question_${index}_option_${optionIndex}`] = `Option ${optionIndex + 1} cannot be empty`;
+          } else if (option.length > 500) {
+            newErrors[`question_${index}_option_${optionIndex}`] = `Option ${optionIndex + 1} must be 500 characters or less`;
+          }
+        });
       }
     });
     
