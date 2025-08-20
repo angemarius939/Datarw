@@ -166,6 +166,131 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [translating, setTranslating] = useState(false);
 
+  // AI Generation Functions
+  const handleGenerateWithAI = async () => {
+    if (!aiRequest.description.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please provide a survey description.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAiGenerating(true);
+    
+    try {
+      const { aiAPI } = await import('../services/api');
+      const response = await aiAPI.generateSurvey(aiRequest);
+      
+      if (response.data.success) {
+        const { survey_data } = response.data;
+        
+        setSurvey({
+          title: survey_data.title,
+          description: survey_data.description,
+          questions: survey_data.questions.map(q => ({
+            ...q,
+            id: `q_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          }))
+        });
+        
+        toast({
+          title: "Success!",
+          description: "AI has generated your survey. Review and modify as needed.",
+          variant: "default",
+        });
+        
+        setAiModalOpen(false);
+      }
+    } catch (error) {
+      console.error('AI generation error:', error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.detail || "Failed to generate survey with AI.",
+        variant: "destructive",
+      });
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  const handleUploadDocuments = async () => {
+    if (uploadedFiles.length === 0) {
+      toast({
+        title: "No Files",
+        description: "Please select files to upload.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { aiAPI } = await import('../services/api');
+      const response = await aiAPI.uploadContext(uploadedFiles);
+      
+      if (response.data.success) {
+        toast({
+          title: "Success!",
+          description: `Uploaded ${response.data.documents_processed} documents for AI context.`,
+          variant: "default",
+        });
+        
+        setDocumentModalOpen(false);
+        setUploadedFiles([]);
+      }
+    } catch (error) {
+      console.error('Document upload error:', error);
+      toast({
+        title: "Error", 
+        description: error.response?.data?.detail || "Failed to upload documents.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleTranslateSurvey = async (language) => {
+    if (survey.questions.length === 0) {
+      toast({
+        title: "No Survey",
+        description: "Create a survey first before translating.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setTranslating(true);
+    
+    try {
+      // For now, we'll simulate translation by creating a translated version
+      // In practice, you'd save the survey first, then translate it
+      const translatedSurvey = {
+        ...survey,
+        title: `${survey.title} (${language})`,
+        description: `${survey.description} (Translated to ${language})`
+      };
+      
+      setSurvey(translatedSurvey);
+      
+      toast({
+        title: "Translation Complete",
+        description: `Survey translated to ${language}. This is a demo - full translation requires a saved survey.`,
+        variant: "default",
+      });
+      
+      setTranslateModalOpen(false);
+    } catch (error) {
+      console.error('Translation error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to translate survey.",
+        variant: "destructive",
+      });
+    } finally {
+      setTranslating(false);
+    }
+  };
+
   const validateSurvey = () => {
     const newErrors = {};
     
