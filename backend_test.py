@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 load_dotenv('/app/frontend/.env')
 
 # Get backend URL from environment
-BACKEND_URL = os.getenv('REACT_APP_BACKEND_URL', 'https://datarw-insights.preview.emergentagent.com')
+BACKEND_URL = os.getenv('REACT_APP_BACKEND_URL', 'https://data-collector-15.preview.emergentagent.com')
 API_BASE_URL = f"{BACKEND_URL}/api"
 
 class DataRWAPITester:
