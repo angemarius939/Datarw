@@ -298,8 +298,9 @@ class SurveyCreationTester:
         print(f"📍 Testing against: {self.base_url}")
         print("=" * 80)
         
-        # Test sequence as requested
+        # Test sequence as requested (with registration first)
         tests = [
+            ("Step 0: Register a new user", self.test_user_registration),
             ("Step 1: Login to get auth token", self.test_login_for_auth_token),
             ("Step 2: Test survey creation endpoint", self.test_survey_creation_endpoint),
             ("Step 3: Test getting surveys", self.test_getting_surveys),
