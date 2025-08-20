@@ -260,8 +260,21 @@ const SurveyBuilder = ({ onSurveyCreated }) => {
       type: type,
       question: '',
       required: false,
-      options: type === 'multiple_choice' ? ['Option 1', 'Option 2'] : [],
-      scale: type === 'rating' ? 5 : null,
+      options: ['multiple_choice_single', 'multiple_choice_multiple', 'dropdown', 'ranking', 'image_choice'].includes(type) 
+        ? ['Option 1', 'Option 2'] : [],
+      scale_min: ['rating_scale', 'likert_scale', 'slider', 'numeric_scale'].includes(type) ? 1 : null,
+      scale_max: ['rating_scale', 'likert_scale', 'slider', 'numeric_scale'].includes(type) ? 5 : null,
+      scale_labels: type === 'likert_scale' 
+        ? ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'] : [],
+      matrix_rows: type === 'matrix_grid' ? ['Row 1', 'Row 2'] : [],
+      matrix_columns: type === 'matrix_grid' ? ['Column 1', 'Column 2'] : [],
+      file_types_allowed: type === 'file_upload' ? ['pdf', 'doc', 'jpg', 'png'] : [],
+      max_file_size_mb: type === 'file_upload' ? 10 : null,
+      multiple_selection: type === 'multiple_choice_multiple',
+      date_format: ['date_picker', 'datetime_picker'].includes(type) ? 'yyyy-mm-dd' : null,
+      slider_step: type === 'slider' ? 1 : null,
+      image_urls: type === 'image_choice' ? [] : [],
+      validation_rules: {},
       skipLogic: null,
       calculation: null
     };
