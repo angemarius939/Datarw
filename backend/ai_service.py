@@ -56,6 +56,9 @@ class AIService:
             {"organization_id": organization_id}
         )
         if context_doc:
+            # Convert ObjectId to string if present
+            if "_id" in context_doc and hasattr(context_doc["_id"], "hex"):
+                context_doc["_id"] = str(context_doc["_id"])
             return SurveyGenerationContext(**context_doc)
         return None
 
