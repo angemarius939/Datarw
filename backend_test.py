@@ -51,15 +51,7 @@ class DataRWAPITester:
     def test_api_health(self):
         """Test API health endpoint"""
         try:
-            # Try the main app root endpoint first
-            response = self.session.get(f"{BACKEND_URL}/")
-            if response.status_code == 200:
-                data = response.json()
-                if "DataRW API" in data.get("message", ""):
-                    self.log_result("API Health Check", True, "API is running successfully")
-                    return True
-            
-            # If that fails, try a simple API endpoint to verify API is working
+            # Test a simple API endpoint to verify API is working
             response = self.session.post(
                 f"{self.base_url}/auth/register",
                 json={"test": "data"}  # Invalid data to trigger validation
