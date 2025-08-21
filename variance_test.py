@@ -192,7 +192,7 @@ class VarianceEndpointTester:
                         "budget_variance_percentage", 
                         "output_variance_percentage",
                         "completion_variance",
-                        "risk_level"
+                        "risk_assessment"  # Changed from risk_level to risk_assessment
                     ]
                     
                     missing_fields = [field for field in expected_fields if field not in variance_data]
