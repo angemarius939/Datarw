@@ -452,6 +452,11 @@ class ProjectDashboardData(BaseModel):
     recent_activities: List[Dict[str, Any]]
     budget_by_category: Dict[str, float]
     projects_by_status: Dict[str, int]
+    # Enhanced analytics data
+    activity_insights: Dict[str, Any]
+    performance_trends: Dict[str, Any]
+    risk_indicators: Dict[str, Any]
+    completion_analytics: Dict[str, Any]
 
 # AI Survey Generation Models
 class AISurveyGenerationRequest(BaseModel):
