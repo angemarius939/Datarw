@@ -86,9 +86,17 @@ const CreateBeneficiaryModal = ({ onBeneficiaryCreated, trigger }) => {
       const token = localStorage.getItem('access_token');
       
       const beneficiaryData = {
-        ...beneficiary,
+        project_id: beneficiary.project_id,
+        unique_id: beneficiary.unique_id,
+        name: beneficiary.name,
+        gender: beneficiary.gender,
+        age: beneficiary.age ? parseInt(beneficiary.age) : null,
+        location: beneficiary.location || null,
+        contact_info: beneficiary.contact_info || null,
+        beneficiary_type: beneficiary.beneficiary_type,
+        enrollment_date: new Date(beneficiary.enrollment_date).toISOString(),
         household_size: beneficiary.household_size ? parseInt(beneficiary.household_size) : null,
-        date_of_birth: beneficiary.date_of_birth ? new Date(beneficiary.date_of_birth).toISOString() : null
+        education_level: beneficiary.education_level || null
       };
 
       console.log('🚀 Creating beneficiary:', beneficiaryData);
