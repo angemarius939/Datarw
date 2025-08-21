@@ -609,7 +609,146 @@ class ProjectDocumentUpdate(BaseModel):
     tags: Optional[List[str]] = None
     access_level: Optional[str] = None
 
-# Dashboard and Reporting Models
+# Partner Organization Models
+class PartnerOrganization(BaseDocument):
+    name: str
+    description: Optional[str] = None
+    contact_person: str
+    contact_email: EmailStr
+    contact_phone: Optional[str] = None
+    address: Optional[str] = None
+    organization_type: str  # NGO, Government, Private, International
+    partnership_start_date: datetime
+    partnership_end_date: Optional[datetime] = None
+    status: str = Field(default="active")  # active, inactive, suspended
+    logo_url: Optional[str] = None
+    website: Optional[str] = None
+    capabilities: List[str] = Field(default_factory=list)
+    performance_rating: Optional[float] = Field(default=None, ge=0.0, le=5.0)
+    parent_organization_id: str  # Main organization this partner belongs to
+
+class PartnerOrganizationCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    contact_person: str
+    contact_email: EmailStr
+    contact_phone: Optional[str] = None
+    address: Optional[str] = None
+    organization_type: str
+    partnership_start_date: datetime
+    partnership_end_date: Optional[datetime] = None
+    website: Optional[str] = None
+    capabilities: List[str] = Field(default_factory=list)
+
+class PartnerOrganizationUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    contact_person: Optional[str] = None
+    contact_email: Optional[EmailStr] = None
+    contact_phone: Optional[str] = None
+    address: Optional[str] = None
+    organization_type: Optional[str] = None
+    partnership_start_date: Optional[datetime] = None
+    partnership_end_date: Optional[datetime] = None
+    status: Optional[str] = None
+    website: Optional[str] = None
+    capabilities: Optional[List[str]] = None
+    performance_rating: Optional[float] = None
+
+# Partner Performance Tracking
+class PartnerPerformance(BaseDocument):
+    partner_organization_id: str
+    project_id: str
+    period_start: datetime
+    period_end: datetime
+    budget_allocated: float
+    budget_utilized: float
+    activities_completed: int
+    activities_planned: int
+    beneficiaries_reached: int
+    kpi_achievements: Dict[str, float] = Field(default_factory=dict)
+    performance_score: Optional[float] = Field(default=None, ge=0.0, le=100.0)
+    challenges: Optional[str] = None
+    recommendations: Optional[str] = None
+    evaluated_by: str  # User ID who evaluated
+    evaluation_date: datetime = Field(default_factory=datetime.utcnow)
+
+class PartnerPerformanceCreate(BaseModel):
+    partner_organization_id: str
+    project_id: str
+    period_start: datetime
+    period_end: datetime
+    budget_allocated: float
+    budget_utilized: float
+    activities_completed: int
+    activities_planned: int
+    beneficiaries_reached: int
+    kpi_achievements: Dict[str, float] = Field(default_factory=dict)
+    challenges: Optional[str] = None
+    recommendations: Optional[str] = None
+
+# Enhanced User Model with Partner Support
+class UserCreateAdvanced(BaseModel):
+    name: str
+    email: EmailStr
+    password: Optional[str] = None  # Auto-generated if not provided
+    role: UserRole
+    partner_organization_id: Optional[str] = None
+    department: Optional[str] = None
+    position: Optional[str] = None
+    supervisor_id: Optional[str] = None
+    access_level: str = Field(default="standard")  # standard, elevated, restricted
+    permissions: Dict[str, bool] = Field(default_factory=dict)
+    send_credentials_email: bool = Field(default=True)
+    temporary_password: bool = Field(default=True)
+
+# Organization Branding and Settings
+class OrganizationBranding(BaseDocument):
+    organization_id: str
+    logo_url: Optional[str] = None
+    logo_small_url: Optional[str] = None  # For sidebars, favicons
+    primary_color: str = Field(default="#3B82F6")  # Blue
+    secondary_color: str = Field(default="#10B981")  # Green
+    accent_color: str = Field(default="#8B5CF6")  # Purple
+    background_color: str = Field(default="#FFFFFF")  # White
+    text_color: str = Field(default="#1F2937")  # Dark gray
+    custom_css: Optional[str] = None
+    favicon_url: Optional[str] = None
+    email_header_url: Optional[str] = None
+    report_template: Optional[str] = None  # Custom report template
+    white_label_enabled: bool = Field(default=False)
+
+class OrganizationBrandingCreate(BaseModel):
+    logo_url: Optional[str] = None
+    primary_color: Optional[str] = None
+    secondary_color: Optional[str] = None
+    accent_color: Optional[str] = None
+    background_color: Optional[str] = None
+    text_color: Optional[str] = None
+    custom_css: Optional[str] = None
+    white_label_enabled: bool = Field(default=False)
+
+# Mock Email System
+class EmailTemplate(BaseDocument):
+    organization_id: str
+    template_name: str  # welcome, password_reset, credentials, etc.
+    subject: str
+    body_html: str
+    body_text: str
+    variables: List[str] = Field(default_factory=list)  # Available template variables
+    is_active: bool = Field(default=True)
+
+class EmailLog(BaseDocument):
+    organization_id: str
+    recipient_email: str
+    recipient_name: Optional[str] = None
+    template_used: str
+    subject: str
+    body: str
+    status: str = Field(default="pending")  # pending, sent, failed
+    sent_at: Optional[datetime] = None
+    error_message: Optional[str] = None
+    triggered_by: str  # User ID who triggered the email
 class ProjectDashboardData(BaseModel):
     total_projects: int
     active_projects: int
