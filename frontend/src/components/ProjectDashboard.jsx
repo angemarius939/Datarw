@@ -563,6 +563,12 @@ const ProjectDashboard = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Enhanced Activity Tracker Section */}
+      <EnhancedActivityTracker 
+        dashboardData={dashboardData} 
+        onDataRefresh={fetchDashboardData}
+      />
     </div>
   );
 };
