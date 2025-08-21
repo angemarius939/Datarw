@@ -867,7 +867,10 @@ class ProjectService:
     async def get_activity_variance_analysis(self, activity_id: str) -> Dict[str, Any]:
         """Get detailed variance analysis for an activity"""
         
+        # Support both UUID-stored id and Mongo _id
         activity_doc = await self.db.activities.find_one({"_id": ObjectId(activity_id)})
+        if not activity_doc:
+            activity_doc = await self.db.activities.find_one({"id": activity_id})
         if not activity_doc:
             raise ValueError("Activity not found")
         
