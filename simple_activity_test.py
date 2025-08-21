@@ -32,7 +32,8 @@ def test_activity_endpoints():
     }
     
     try:
-        response = session.post(f"{API_BASE_URL}/auth/register", json=reg_data, timeout=10)
+        response = session.post(f"{API_BASE_URL}/auth/register", json=reg_data, timeout=30)
+        print(f"Registration response: {response.status_code}")
         if response.status_code == 200:
             data = response.json()
             token = data["access_token"]
