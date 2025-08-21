@@ -31,6 +31,8 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
     budget_allocated: '',
     planned_output: '',
     target_quantity: '',
+    actual_output: '',
+    achieved_quantity: '',
     status_notes: '',
     risk_level: 'low',
     deliverables: [],
