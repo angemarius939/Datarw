@@ -740,9 +740,9 @@ class ProjectService:
         return {
             "project_success_rate": round(success_rate, 1),
             "on_time_completion_rate": round(on_time_rate, 1),
-            "avg_planned_duration_days": round(data["avg_planned_duration"], 1),
-            "avg_actual_duration_days": round(data["avg_actual_duration"], 1),
-            "avg_schedule_variance_days": round(data["avg_schedule_variance"], 1),
+            "avg_planned_duration_days": round(data["avg_planned_duration"], 1) if data["avg_planned_duration"] is not None else 0,
+            "avg_actual_duration_days": round(data["avg_actual_duration"], 1) if data["avg_actual_duration"] is not None else 0,
+            "avg_schedule_variance_days": round(data["avg_schedule_variance"], 1) if data["avg_schedule_variance"] is not None else 0,
             "total_completed_projects": successful_projects,
             "total_closed_projects": total_closed_projects
         }
