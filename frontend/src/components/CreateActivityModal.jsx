@@ -141,11 +141,19 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
         name: activity.name,
         description: activity.description,
         assigned_to: activity.assigned_to,
+        assigned_team: activity.assigned_team || null,
         start_date: new Date(activity.start_date).toISOString(),
         end_date: new Date(activity.end_date).toISOString(),
+        planned_start_date: activity.planned_start_date ? new Date(activity.planned_start_date).toISOString() : new Date(activity.start_date).toISOString(),
+        planned_end_date: activity.planned_end_date ? new Date(activity.planned_end_date).toISOString() : new Date(activity.end_date).toISOString(),
         budget_allocated: activity.budget_allocated ? parseFloat(activity.budget_allocated) : 0,
+        planned_output: activity.planned_output || null,
+        target_quantity: activity.target_quantity ? parseFloat(activity.target_quantity) : null,
+        status_notes: activity.status_notes || null,
+        risk_level: activity.risk_level || 'low',
         deliverables: activity.deliverables.filter(d => d.trim() !== ''),
-        dependencies: activity.dependencies.filter(d => d.trim() !== '')
+        dependencies: activity.dependencies.filter(d => d.trim() !== ''),
+        milestones: activity.milestones || []
       };
 
       console.log('🚀 Creating activity:', activityData);
