@@ -79,10 +79,18 @@ class ProjectService:
         return result.deleted_count > 0
 
     # Activity Management
-    async def create_activity(self, activity_data: ActivityCreate, organization_id: str) -> Activity:
+    async def create_activity(self, activity_data: ActivityCreate, organization_id: str, creator_id: str) -> Activity:
         """Create a new activity"""
         activity_dict = activity_data.model_dump()
         activity_dict["organization_id"] = organization_id
+        # Ensure planned dates fallback to initial dates if not provided
+        activity_dict["planned_start_date"] = activity_dict.get("planned_start_date") or activity_dict.get("start_date")
+        activity_dict["planned_end_date"] = activity_dict.get("planned_end_date") or activity_dict.get("end_date")
+        # Initialize tracking fields
+        activity_dict["progress_percentage"] = activity_dict.get("progress_percentage", 0.0)
+        activity_dict["completion_variance"] = activity_dict.get("completion_variance", 0.0)
+        activity_dict["schedule_variance_days"] = activity_dict.get("schedule_variance_days", 0)
+        activity_dict["last_updated_by"] = creator_id
         activity_dict["created_at"] = datetime.utcnow()
         activity_dict["updated_at"] = datetime.utcnow()
         
