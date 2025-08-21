@@ -16,18 +16,21 @@ class DatabaseService:
         org_doc = Organization(**organization.dict())
         
         # Set plan limits
-        if org_doc.plan == SubscriptionPlan.BASIC:
+        if org_doc.plan == "Basic":
             org_doc.survey_limit = 4
-            org_doc.storage_limit = 1.0
-        elif org_doc.plan == SubscriptionPlan.PROFESSIONAL:
+            org_doc.storage_limit = 1
+        elif org_doc.plan == "Professional":
             org_doc.survey_limit = 10
-            org_doc.storage_limit = 3.0
-        elif org_doc.plan == SubscriptionPlan.ENTERPRISE:
+            org_doc.storage_limit = 3
+        elif org_doc.plan == "Enterprise":
             org_doc.survey_limit = -1  # Unlimited
-            org_doc.storage_limit = -1.0  # Unlimited
+            org_doc.storage_limit = -1  # Unlimited
         
-        result = await self.db.organizations.insert_one(org_doc.dict(by_alias=True))
-        org_doc.id = result.inserted_id
+        # Prepare document with both id and _id for MongoDB compatibility
+        org_dict = org_doc.dict()
+        org_dict["_id"] = org_doc.id
+        
+        result = await self.db.organizations.insert_one(org_dict)
         return org_doc
 
     async def get_organization(self, organization_id: str) -> Optional[Organization]:
