@@ -746,3 +746,360 @@ class ProjectService:
             "total_completed_projects": successful_projects,
             "total_closed_projects": total_closed_projects
         }
+
+    # Enhanced Activity Management Methods
+    async def update_activity_progress(self, activity_id: str, progress_data: Dict[str, Any], user_id: str) -> Dict[str, Any]:
+        """Update activity progress with variance analysis"""
+        
+        # Get current activity
+        activity_doc = await self.db.activities.find_one({"_id": ObjectId(activity_id)})
+        if not activity_doc:
+            raise ValueError("Activity not found")
+        
+        # Calculate progress percentage based on outputs/milestones
+        progress_percentage = progress_data.get("progress_percentage", activity_doc.get("progress_percentage", 0))
+        
+        # Auto-calculate progress from achieved vs target quantity
+        if progress_data.get("achieved_quantity") and activity_doc.get("target_quantity"):
+            progress_percentage = min(100, (progress_data["achieved_quantity"] / activity_doc["target_quantity"]) * 100)
+        
+        # Calculate schedule variance
+        current_date = datetime.utcnow()
+        planned_end = activity_doc.get("planned_end_date", activity_doc.get("end_date"))
+        if planned_end:
+            schedule_variance_days = (current_date - planned_end).days
+        else:
+            schedule_variance_days = 0
+        
+        # Calculate completion variance (actual vs planned progress)
+        planned_duration = (activity_doc["end_date"] - activity_doc["start_date"]).days
+        elapsed_duration = (current_date - activity_doc["start_date"]).days
+        expected_progress = min(100, (elapsed_duration / planned_duration) * 100) if planned_duration > 0 else 0
+        completion_variance = progress_percentage - expected_progress
+        
+        # Determine risk level based on variances
+        risk_level = "low"
+        if schedule_variance_days > 7 or completion_variance < -20:
+            risk_level = "high"
+        elif schedule_variance_days > 3 or completion_variance < -10:
+            risk_level = "medium"
+        
+        # Update activity with new progress data
+        update_data = {
+            "progress_percentage": progress_percentage,
+            "completion_variance": completion_variance,
+            "schedule_variance_days": schedule_variance_days,
+            "risk_level": risk_level,
+            "last_updated_by": user_id,
+            "updated_at": datetime.utcnow()
+        }
+        
+        # Add optional fields if provided
+        for field in ["actual_output", "achieved_quantity", "status_notes"]:
+            if field in progress_data:
+                update_data[field] = progress_data[field]
+        
+        # Update milestone completion if provided
+        if progress_data.get("milestone_completed"):
+            completed_milestones = activity_doc.get("completed_milestones", [])
+            if progress_data["milestone_completed"] not in completed_milestones:
+                completed_milestones.append(progress_data["milestone_completed"])
+                update_data["completed_milestones"] = completed_milestones
+        
+        # Update activity status based on progress
+        if progress_percentage >= 100:
+            update_data["status"] = "completed"
+        elif progress_percentage > 0:
+            update_data["status"] = "in_progress"
+        elif schedule_variance_days > 0:
+            update_data["status"] = "delayed"
+        
+        await self.db.activities.update_one(
+            {"_id": ObjectId(activity_id)},
+            {"$set": update_data}
+        )
+        
+        # Log progress update
+        progress_log = {
+            "activity_id": activity_id,
+            "progress_percentage": progress_percentage,
+            "actual_output": progress_data.get("actual_output"),
+            "achieved_quantity": progress_data.get("achieved_quantity"),
+            "milestone_completed": progress_data.get("milestone_completed"),
+            "comments": progress_data.get("comments"),
+            "updated_by": user_id,
+            "timestamp": datetime.utcnow()
+        }
+        
+        await self.db.activity_progress_log.insert_one(progress_log)
+        
+        return {
+            "progress_percentage": progress_percentage,
+            "completion_variance": completion_variance,
+            "schedule_variance_days": schedule_variance_days,
+            "risk_level": risk_level,
+            "status": update_data.get("status", activity_doc.get("status"))
+        }
+
+    async def get_activity_variance_analysis(self, activity_id: str) -> Dict[str, Any]:
+        """Get detailed variance analysis for an activity"""
+        
+        activity_doc = await self.db.activities.find_one({"_id": ObjectId(activity_id)})
+        if not activity_doc:
+            raise ValueError("Activity not found")
+        
+        current_date = datetime.utcnow()
+        
+        # Schedule variance analysis
+        planned_start = activity_doc.get("planned_start_date", activity_doc.get("start_date"))
+        planned_end = activity_doc.get("planned_end_date", activity_doc.get("end_date"))
+        actual_start = activity_doc.get("start_date")
+        
+        schedule_variance_days = 0
+        if planned_end:
+            if activity_doc.get("status") == "completed":
+                # Use actual completion date if available
+                actual_end = activity_doc.get("updated_at", current_date)
+                schedule_variance_days = (actual_end - planned_end).days
+            else:
+                # Compare current date to planned end
+                schedule_variance_days = (current_date - planned_end).days
+        
+        # Budget variance analysis
+        budget_allocated = activity_doc.get("budget_allocated", 0)
+        budget_utilized = activity_doc.get("budget_utilized", 0)
+        budget_variance_percentage = 0
+        if budget_allocated > 0:
+            budget_variance_percentage = ((budget_utilized - budget_allocated) / budget_allocated) * 100
+        
+        # Output variance analysis
+        target_quantity = activity_doc.get("target_quantity", 0)
+        achieved_quantity = activity_doc.get("achieved_quantity", 0)
+        output_variance_percentage = 0
+        if target_quantity > 0:
+            output_variance_percentage = ((achieved_quantity - target_quantity) / target_quantity) * 100
+        
+        # Completion variance (actual vs expected progress)
+        completion_variance = activity_doc.get("completion_variance", 0)
+        
+        # Risk assessment
+        risk_level = "low"
+        risk_factors = []
+        
+        if schedule_variance_days > 7:
+            risk_level = "high"
+            risk_factors.append(f"Behind schedule by {schedule_variance_days} days")
+        elif schedule_variance_days > 3:
+            risk_level = "medium"
+            risk_factors.append(f"Behind schedule by {schedule_variance_days} days")
+        
+        if budget_variance_percentage > 20:
+            risk_level = "high"
+            risk_factors.append(f"Budget overrun by {budget_variance_percentage:.1f}%")
+        elif budget_variance_percentage > 10:
+            if risk_level == "low":
+                risk_level = "medium"
+            risk_factors.append(f"Budget overrun by {budget_variance_percentage:.1f}%")
+        
+        if completion_variance < -20:
+            risk_level = "high"
+            risk_factors.append("Significantly behind expected progress")
+        elif completion_variance < -10:
+            if risk_level == "low":
+                risk_level = "medium"
+            risk_factors.append("Behind expected progress")
+        
+        return {
+            "activity_id": activity_id,
+            "activity_name": activity_doc.get("name", "Unknown"),
+            "schedule_variance_days": schedule_variance_days,
+            "budget_variance_percentage": round(budget_variance_percentage, 1),
+            "output_variance_percentage": round(output_variance_percentage, 1),
+            "completion_variance": round(completion_variance, 1),
+            "risk_assessment": risk_level,
+            "risk_factors": risk_factors,
+            "current_progress": activity_doc.get("progress_percentage", 0),
+            "current_status": activity_doc.get("status", "not_started")
+        }
+
+    async def get_project_portfolio_summary(self, organization_id: str) -> Dict[str, Any]:
+        """Get portfolio-level summary across all projects"""
+        
+        # Project counts by status
+        total_projects = await self.db.projects.count_documents({"organization_id": organization_id})
+        active_projects = await self.db.projects.count_documents({
+            "organization_id": organization_id,
+            "status": "active"
+        })
+        completed_projects = await self.db.projects.count_documents({
+            "organization_id": organization_id,
+            "status": "completed"
+        })
+        delayed_projects = await self.db.projects.count_documents({
+            "organization_id": organization_id,
+            "status": "delayed"
+        })
+        
+        # Activity metrics
+        total_activities = await self.db.activities.count_documents({"organization_id": organization_id})
+        
+        current_date = datetime.utcnow()
+        overdue_activities = await self.db.activities.count_documents({
+            "organization_id": organization_id,
+            "end_date": {"$lt": current_date},
+            "status": {"$ne": "completed"}
+        })
+        
+        high_risk_activities = await self.db.activities.count_documents({
+            "organization_id": organization_id,
+            "risk_level": {"$in": ["high", "critical"]}
+        })
+        
+        # Calculate average completion rate
+        completion_pipeline = [
+            {"$match": {"organization_id": organization_id}},
+            {"$group": {
+                "_id": None,
+                "avg_completion": {"$avg": "$progress_percentage"}
+            }}
+        ]
+        
+        completion_result = await self.db.activities.aggregate(completion_pipeline).to_list(1)
+        completion_rate = completion_result[0]["avg_completion"] if completion_result else 0
+        
+        # Calculate average schedule variance
+        variance_pipeline = [
+            {"$match": {"organization_id": organization_id}},
+            {"$group": {
+                "_id": None,
+                "avg_schedule_variance": {"$avg": "$schedule_variance_days"}
+            }}
+        ]
+        
+        variance_result = await self.db.activities.aggregate(variance_pipeline).to_list(1)
+        average_schedule_variance = variance_result[0]["avg_schedule_variance"] if variance_result else 0
+        
+        # Calculate budget utilization across all projects
+        budget_pipeline = [
+            {"$match": {"organization_id": organization_id}},
+            {"$group": {
+                "_id": None,
+                "total_budget": {"$sum": "$budget_total"},
+                "total_utilized": {"$sum": "$budget_utilized"}
+            }}
+        ]
+        
+        budget_result = await self.db.projects.aggregate(budget_pipeline).to_list(1)
+        if budget_result and budget_result[0]["total_budget"] > 0:
+            budget_utilization_rate = (budget_result[0]["total_utilized"] / budget_result[0]["total_budget"]) * 100
+        else:
+            budget_utilization_rate = 0
+        
+        return {
+            "total_projects": total_projects,
+            "active_projects": active_projects,
+            "completed_projects": completed_projects,
+            "delayed_projects": delayed_projects,
+            "total_activities": total_activities,
+            "overdue_activities": overdue_activities,
+            "completion_rate": round(completion_rate, 1),
+            "average_schedule_variance": round(average_schedule_variance, 1),
+            "high_risk_activities": high_risk_activities,
+            "budget_utilization_rate": round(budget_utilization_rate, 1),
+            "performance_indicators": {
+                "on_track_projects": total_projects - delayed_projects,
+                "critical_activities": high_risk_activities,
+                "schedule_performance": "good" if average_schedule_variance >= -3 else "needs_attention",
+                "budget_performance": "good" if 50 <= budget_utilization_rate <= 90 else "needs_attention"
+            }
+        }
+
+    async def flag_delayed_activities(self, organization_id: str) -> List[Dict[str, Any]]:
+        """Automatically flag delayed or at-risk activities"""
+        
+        current_date = datetime.utcnow()
+        
+        # Find overdue activities
+        overdue_pipeline = [
+            {"$match": {
+                "organization_id": organization_id,
+                "end_date": {"$lt": current_date},
+                "status": {"$ne": "completed"}
+            }},
+            {"$project": {
+                "name": 1,
+                "project_id": 1,
+                "assigned_to": 1,
+                "end_date": 1,
+                "progress_percentage": 1,
+                "days_overdue": {
+                    "$divide": [
+                        {"$subtract": [current_date, "$end_date"]},
+                        86400000  # milliseconds to days
+                    ]
+                }
+            }}
+        ]
+        
+        overdue_activities = await self.db.activities.aggregate(overdue_pipeline).to_list(100)
+        
+        # Find at-risk activities (due within 7 days with low progress)
+        seven_days_ahead = current_date + timedelta(days=7)
+        at_risk_pipeline = [
+            {"$match": {
+                "organization_id": organization_id,
+                "end_date": {"$lte": seven_days_ahead, "$gte": current_date},
+                "progress_percentage": {"$lt": 70},
+                "status": {"$ne": "completed"}
+            }},
+            {"$project": {
+                "name": 1,
+                "project_id": 1,
+                "assigned_to": 1,
+                "end_date": 1,
+                "progress_percentage": 1,
+                "days_remaining": {
+                    "$divide": [
+                        {"$subtract": ["$end_date", current_date]},
+                        86400000
+                    ]
+                }
+            }}
+        ]
+        
+        at_risk_activities = await self.db.activities.aggregate(at_risk_pipeline).to_list(100)
+        
+        # Update risk levels for flagged activities
+        flagged_activities = []
+        
+        for activity in overdue_activities:
+            await self.db.activities.update_one(
+                {"_id": activity["_id"]},
+                {"$set": {"status": "delayed", "risk_level": "high"}}
+            )
+            flagged_activities.append({
+                "id": str(activity["_id"]),
+                "name": activity["name"],
+                "project_id": activity["project_id"],
+                "assigned_to": activity["assigned_to"],
+                "flag_type": "overdue",
+                "days_overdue": int(activity["days_overdue"]),
+                "progress": activity["progress_percentage"]
+            })
+        
+        for activity in at_risk_activities:
+            await self.db.activities.update_one(
+                {"_id": activity["_id"]},
+                {"$set": {"risk_level": "medium"}}
+            )
+            flagged_activities.append({
+                "id": str(activity["_id"]),
+                "name": activity["name"],
+                "project_id": activity["project_id"],
+                "assigned_to": activity["assigned_to"],
+                "flag_type": "at_risk",
+                "days_remaining": int(activity["days_remaining"]),
+                "progress": activity["progress_percentage"]
+            })
+        
+        return flagged_activities
