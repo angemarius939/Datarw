@@ -37,6 +37,12 @@ const ProjectDashboard = () => {
       const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
       const token = localStorage.getItem('token');
       
+      console.log('🔍 Dashboard Debug Info:', {
+        backendUrl,
+        hasToken: !!token,
+        tokenPrefix: token ? token.substring(0, 20) + '...' : 'No token'
+      });
+
       const response = await fetch(`${backendUrl}/api/projects/dashboard`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -44,15 +50,24 @@ const ProjectDashboard = () => {
         }
       });
 
+      console.log('📊 Dashboard Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+
       if (response.ok) {
         const data = await response.json();
+        console.log('📊 Dashboard Data:', data);
         setDashboardData(data.data);
       } else {
-        throw new Error('Failed to fetch dashboard data');
+        const errorText = await response.text();
+        console.error('📊 Dashboard Error Response:', errorText);
+        throw new Error(`Server responded with ${response.status}: ${errorText}`);
       }
     } catch (error) {
       console.error('Dashboard fetch error:', error);
-      setError('Failed to load dashboard data');
+      setError(`Failed to load dashboard data: ${error.message}`);
     } finally {
       setLoading(false);
     }
