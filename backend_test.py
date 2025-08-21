@@ -3281,10 +3281,10 @@ class DataRWAPITester:
             result = test()
             if not result and test == self.test_api_health:
                 print("❌ API Health Check failed - stopping tests")
-                return self.generate_summary()
+                return 0, 1
             elif not result and test == self.test_user_registration:
                 print("❌ User Registration failed - stopping tests")
-                return self.generate_summary()
+                return 0, 1
             print()
         
         print("\n🎯 Running FIXED budget and beneficiary tests...")
