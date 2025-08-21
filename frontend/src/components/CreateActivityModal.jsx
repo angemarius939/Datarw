@@ -288,16 +288,16 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
 
           {/* Basic Information */}
           <div>
-            <Label htmlFor="title">Activity Title *</Label>
+            <Label htmlFor="name">Activity Name *</Label>
             <Input
-              id="title"
-              value={activity.title}
-              onChange={(e) => setActivity(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="Enter activity title..."
-              className={`mt-1 ${errors.title ? 'border-red-500' : ''}`}
+              id="name"
+              value={activity.name}
+              onChange={(e) => setActivity(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Enter activity name..."
+              className={`mt-1 ${errors.name ? 'border-red-500' : ''}`}
             />
-            {errors.title && (
-              <div className="text-xs text-red-600 mt-1">{errors.title}</div>
+            {errors.name && (
+              <div className="text-xs text-red-600 mt-1">{errors.name}</div>
             )}
           </div>
           
