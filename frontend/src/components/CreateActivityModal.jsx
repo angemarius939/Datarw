@@ -269,9 +269,9 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
         }
         
         toast({
-          title: "Error",
+          title: 'Error',
           description: errorMessage,
-          variant: "destructive",
+          variant: 'destructive',
         });
       }
     } catch (error) {
