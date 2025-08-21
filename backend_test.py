@@ -4085,7 +4085,22 @@ class DataRWAPITester:
             print()
         
         # Summary
-        self.print_test_summary()
+        print("=" * 60)
+        print("📊 ENHANCED ACTIVITY TEST SUMMARY")
+        print("=" * 60)
+        
+        passed = sum(1 for result in self.test_results if result['success'])
+        failed = len(self.test_results) - passed
+        
+        print(f"✅ Passed: {passed}")
+        print(f"❌ Failed: {failed}")
+        print(f"📈 Success Rate: {(passed/len(self.test_results)*100):.1f}%")
+        
+        if failed > 0:
+            print("\n🔍 FAILED TESTS:")
+            for result in self.test_results:
+                if not result['success']:
+                    print(f"   • {result['test']}: {result['message']}")
 
     def run_all_tests(self):
         """Run all tests in sequence"""
