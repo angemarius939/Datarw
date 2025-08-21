@@ -920,6 +920,100 @@ class DataRWAPITester:
             self.log_result("Project Dashboard", False, f"Request error: {str(e)}")
             return False
 
+    def test_dashboard_pydantic_validation_fix(self):
+        """Test dashboard endpoint for Pydantic validation error fix - specifically projects_by_status and budget_by_category string keys"""
+        try:
+            response = self.session.get(f"{self.base_url}/projects/dashboard")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("success") and "data" in data):
+                    dashboard_data = data["data"]
+                    
+                    # Check for projects_by_status field
+                    if "projects_by_status" in dashboard_data:
+                        projects_by_status = dashboard_data["projects_by_status"]
+                        if isinstance(projects_by_status, dict):
+                            # Verify all keys are strings (not None)
+                            for key in projects_by_status.keys():
+                                if not isinstance(key, str):
+                                    self.log_result("Dashboard Pydantic Fix", False, 
+                                                  f"projects_by_status contains non-string key: {key} (type: {type(key)})", data)
+                                    return False
+                            
+                            # Check if None values were converted to 'unknown' strings
+                            if None in projects_by_status:
+                                self.log_result("Dashboard Pydantic Fix", False, 
+                                              "projects_by_status still contains None key", data)
+                                return False
+                        else:
+                            self.log_result("Dashboard Pydantic Fix", False, 
+                                          f"projects_by_status is not a dict: {type(projects_by_status)}", data)
+                            return False
+                    else:
+                        self.log_result("Dashboard Pydantic Fix", False, "projects_by_status field missing", data)
+                        return False
+                    
+                    # Check for budget_by_category field
+                    if "budget_by_category" in dashboard_data:
+                        budget_by_category = dashboard_data["budget_by_category"]
+                        if isinstance(budget_by_category, dict):
+                            # Verify all keys are strings (not None)
+                            for key in budget_by_category.keys():
+                                if not isinstance(key, str):
+                                    self.log_result("Dashboard Pydantic Fix", False, 
+                                                  f"budget_by_category contains non-string key: {key} (type: {type(key)})", data)
+                                    return False
+                            
+                            # Check if None values were converted to 'unknown' strings
+                            if None in budget_by_category:
+                                self.log_result("Dashboard Pydantic Fix", False, 
+                                              "budget_by_category still contains None key", data)
+                                return False
+                        else:
+                            self.log_result("Dashboard Pydantic Fix", False, 
+                                          f"budget_by_category is not a dict: {type(budget_by_category)}", data)
+                            return False
+                    else:
+                        self.log_result("Dashboard Pydantic Fix", False, "budget_by_category field missing", data)
+                        return False
+                    
+                    # Verify response matches ProjectDashboardData model structure
+                    required_dashboard_fields = ["total_projects", "active_projects", "completed_projects", 
+                                               "overdue_activities", "budget_utilization", "kpi_performance", 
+                                               "recent_activities", "projects_by_status", "budget_by_category"]
+                    
+                    missing_fields = [field for field in required_dashboard_fields if field not in dashboard_data]
+                    if missing_fields:
+                        self.log_result("Dashboard Pydantic Fix", False, 
+                                      f"Missing ProjectDashboardData fields: {missing_fields}", data)
+                        return False
+                    
+                    self.log_result("Dashboard Pydantic Fix", True, 
+                                  "Dashboard endpoint returns valid ProjectDashboardData with string keys - Pydantic validation fix verified")
+                    return True
+                else:
+                    self.log_result("Dashboard Pydantic Fix", False, "Missing success/data fields in response", data)
+                    return False
+            else:
+                # Check if this is the specific Pydantic validation error we're testing for
+                if response.status_code == 500:
+                    error_text = response.text
+                    if "projects_by_status.None.[key] Input should be a valid string" in error_text:
+                        self.log_result("Dashboard Pydantic Fix", False, 
+                                      "CRITICAL: Original Pydantic validation error still present - fix not working", error_text)
+                        return False
+                    elif "budget_by_category.None.[key] Input should be a valid string" in error_text:
+                        self.log_result("Dashboard Pydantic Fix", False, 
+                                      "CRITICAL: Budget category Pydantic validation error present", error_text)
+                        return False
+                
+                self.log_result("Dashboard Pydantic Fix", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Dashboard Pydantic Fix", False, f"Request error: {str(e)}")
+            return False
+
     def test_create_project(self):
         """Test creating a new project"""
         try:
