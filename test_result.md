@@ -316,7 +316,9 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+  - "Create Activity Modal refactor with milestones, planned/actual outputs, assigned person dropdown"
+  - "Activity creation backend alignment (creator auto-stamp, planned dates fallback)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
