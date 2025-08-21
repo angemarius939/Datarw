@@ -2892,6 +2892,7 @@ class DataRWAPITester:
             self.test_enhanced_question_types,
             # Project Management System Tests
             self.test_project_dashboard,
+            self.test_dashboard_pydantic_validation_fix,  # NEW: Test Pydantic validation fix
             self.test_project_creation_with_correct_fields,  # NEW: Test correct field mapping
             self.test_project_creation_validation_errors,    # NEW: Test validation errors  
             self.test_project_creation_with_old_field_names, # NEW: Test old field names rejection
