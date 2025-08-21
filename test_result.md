@@ -631,6 +631,18 @@ agent_communication:
           agent: "testing"
           comment: "ADMIN PANEL BACKEND TESTING COMPLETED: Comprehensive testing of all 9 Admin Panel backend endpoints completed with 100% success rate after minor fix. Key achievements: ✅ Admin Create User Advanced - Director user created successfully with elevated permissions and proper role assignment, ✅ Admin Bulk Create Users - Successfully created 3 users (Officer, Field Staff, Partner Staff) in bulk with proper department assignments, ✅ Admin Create Partner Organization - Partner organization 'Rwanda Youth Development Foundation' created with complete NGO profile, ✅ Admin Get Partner Organizations - Retrieved partner organizations list successfully with proper data structure, ✅ Admin Update Partner Organization - Partner organization updated with performance rating 4.5, ✅ Admin Create Partner Performance - Partner performance record created with calculated score 84.3, ✅ Admin Update Organization Branding - Custom branding colors and settings updated successfully, ✅ Admin Get Organization Branding - Branding settings retrieved with proper color schemes, ✅ Admin Get Email Logs - Email logs system working (empty as expected in test environment), ✅ Admin Get Partner Performance Summary - Fixed NoneType calculation error, now working with proper aggregation. All admin endpoints properly authenticated with role-based access control (Admin/Director only). Mock email system logging credentials correctly. The Admin Panel backend is production-ready and fully operational."
 
+  - task: "Enhanced Activity Creation Endpoints (CreateActivityModal Refactor)"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py, /app/backend/project_service.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "ENHANCED ACTIVITY CREATION TESTING COMPLETED WITH MIXED RESULTS (57% success rate): Tested CreateActivityModal refactor with milestones, planned/actual outputs, and assigned person dropdown. WORKING ENDPOINTS: ✅ GET /api/users - Returns user list with required fields (id, name, email) for assigned person dropdown, ✅ POST /api/projects - Creates minimal project successfully for activity linking, ✅ POST /api/activities - Enhanced activity creation working with all required fields: milestones array with name/planned_date, planned_output/target_quantity, actual_output/achieved_quantity, auto-stamped last_updated_by, planned dates fallback, progress defaults (0%), completion/schedule variance defaults, ✅ Edge cases handled correctly - empty milestones array accepted, ISO date parsing working, no ObjectId serialization issues. CRITICAL ISSUES IDENTIFIED: ❌ GET /api/activities - Returns validation errors for existing activities missing new required fields (planned_start_date, planned_end_date, last_updated_by), ❌ PUT /api/activities/{activity_id}/progress - Returns HTTP 500 due to ObjectId validation error (backend expects MongoDB ObjectId but receives UUID string), ❌ GET /api/activities/{activity_id}/variance - Returns HTTP 500 due to same ObjectId/UUID mismatch issue. ROOT CAUSE: Enhanced Activity model requires new fields that existing database records don't have, and UUID/ObjectId type mismatch in progress/variance endpoints. Enhanced activity creation works perfectly but compatibility with existing data and progress tracking needs fixes."
+
   - task: "DataRW Forms React Child Error Fix"
     implemented: true
     working: true
