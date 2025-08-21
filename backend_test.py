@@ -4178,6 +4178,9 @@ class DataRWAPITester:
             self.test_admin_update_organization_branding,
             self.test_admin_get_organization_branding,
             self.test_admin_get_email_logs,
+            # ENHANCED ACTIVITY CREATION TESTING (NEW - PRIORITY)
+            self.test_enhanced_activity_creation_endpoints,
+            self.test_enhanced_activity_edge_cases,
             self.test_delete_project,
             # Cleanup tests
             self.test_delete_user,
