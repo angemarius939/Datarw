@@ -126,11 +126,14 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: true
           agent: "main"
           comment: "Login API working correctly. Returns proper authentication token and user data. Backend authentication fully functional."
+        - working: true
+          agent: "testing"
+          comment: "POST /api/auth/login tested successfully - returns valid JWT token and user data with last_login field updated. Invalid credentials properly rejected with 401 error and correct error message 'Incorrect email or password'. Authentication working perfectly."
 
   - task: "Database Service User/Organization Creation"
     implemented: true
