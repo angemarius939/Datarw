@@ -7,7 +7,7 @@ base_url = "https://data-collector-15.preview.emergentagent.com/api"
 def test_auth_and_dashboard():
     # First, let's try to login
     login_data = {
-        "username": "admin@datarw.com",  # or the correct email
+        "email": "admin@datarw.com",  # or the correct email
         "password": "password123"  # or the correct password
     }
     
