@@ -425,7 +425,6 @@ class ProjectService:
             })
         
         # Calculate overdue activities
-        from datetime import datetime
         current_date = datetime.utcnow()
         overdue_activities = await self.db.activities.count_documents({
             "organization_id": organization_id,
