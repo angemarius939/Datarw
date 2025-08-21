@@ -320,14 +320,44 @@ class Activity(BaseModel):
     name: str
     description: Optional[str] = None
     status: ActivityStatus = ActivityStatus.NOT_STARTED
-    assigned_to: str
+    assigned_to: str  # User ID
+    assigned_team: Optional[str] = None  # Team/Department name
     start_date: datetime
     end_date: datetime
+    planned_start_date: datetime  # Original planned start
+    planned_end_date: datetime    # Original planned end
+    
+    # Budget and resource allocation
     budget_allocated: float = 0.0
     budget_utilized: float = 0.0
-    progress_percentage: float = 0.0
+    
+    # Output and target tracking
+    planned_output: Optional[str] = None  # Planned deliverable/target
+    target_quantity: Optional[float] = None  # Quantitative target
+    actual_output: Optional[str] = None   # Actual deliverable achieved
+    achieved_quantity: Optional[float] = None  # Quantitative achievement
+    
+    # Progress and completion
+    progress_percentage: float = 0.0  # Auto-calculated from outputs
+    completion_variance: float = 0.0  # Planned vs Actual (%)
+    schedule_variance_days: int = 0   # Days ahead/behind schedule
+    
+    # Milestones and tracking
+    milestones: List[Dict[str, Any]] = []  # Planned milestones with dates
+    completed_milestones: List[str] = []   # IDs of completed milestones
+    
+    # Status and notes
+    status_notes: Optional[str] = None
+    comments: List[Dict[str, Any]] = []  # Status updates and comments
+    risk_level: str = "low"  # low, medium, high, critical
+    
+    # Legacy fields (maintained for compatibility)
     deliverables: List[str] = []
     dependencies: List[str] = []
+    
+    # Tracking fields
+    last_updated_by: str
+    organization_id: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
