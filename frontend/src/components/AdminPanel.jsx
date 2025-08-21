@@ -1,53 +1,147 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Alert, AlertDescription } from './ui/alert';
-import { Badge } from './ui/badge';
-import { Switch } from './ui/switch';
+import { Textarea } from './ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Progress } from './ui/progress';
+import { Alert, AlertDescription } from './ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Checkbox } from './ui/checkbox';
+import { Switch } from './ui/switch';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { 
   Users, 
-  Shield, 
+  UserPlus, 
+  Building2, 
   Plus, 
-  Mail, 
   Settings, 
-  Palette,
-  Building,
-  UserPlus,
-  FileText,
-  Loader2,
-  Check,
-  X,
+  Shield, 
+  Mail, 
+  Edit,
+  Trash2,
   Eye,
-  EyeOff,
-  Upload
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Search,
+  Filter,
+  Download,
+  Upload,
+  Key,
+  Globe,
+  Palette,
+  FileText,
+  BarChart3
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useToast } from '../hooks/use-toast';
+import { adminAPI, usersAPI, partnersAPI } from '../services/api';
 
 const AdminPanel = () => {
   const { user, organization } = useAuth();
-  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('users');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  
+  // Users State
   const [users, setUsers] = useState([]);
+  const [userSearch, setUserSearch] = useState('');
+  const [userFilter, setUserFilter] = useState('all');
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  
+  // Partners State
   const [partners, setPartners] = useState([]);
-  const [emailLogs, setEmailLogs] = useState([]);
-  const [branding, setBranding] = useState(null);
-
-  // User Creation State
-  const [createUserOpen, setCreateUserOpen] = useState(false);
-  const [newUser, setNewUser] = useState({
+  const [partnerSearch, setPartnerSearch] = useState('');
+  const [partnerFilter, setPartnerFilter] = useState('all');
+  
+  // Modals State
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
+  const [showBulkCreateModal, setShowBulkCreateModal] = useState(false);
+  const [showCreatePartnerModal, setShowCreatePartnerModal] = useState(false);
+  const [showBrandingModal, setShowBrandingModal] = useState(false);
+  const [showEmailLogsModal, setShowEmailLogsModal] = useState(false);
+  
+  // Form Data State
+  const [userFormData, setUserFormData] = useState({
     name: '',
     email: '',
-    role: 'Field Staff',
+    password: '',
+    role: 'Viewer',
+    partner_organization_id: '',
     department: '',
     position: '',
+    supervisor_id: '',
+    access_level: 'standard',
+    permissions: {},
     send_credentials_email: true,
+    temporary_password: true
+  });
+  
+  const [partnerFormData, setPartnerFormData] = useState({
+    name: '',
+    description: '',
+    contact_person: '',
+    contact_email: '',
+    contact_phone: '',
+    address: '',
+    organization_type: 'NGO',
+    partnership_start_date: '',
+    partnership_end_date: '',
+    website: '',
+    capabilities: []
+  });
+  
+  const [brandingData, setBrandingData] = useState({
+    logo_url: '',
+    primary_color: '#3B82F6',
+    secondary_color: '#10B981',
+    accent_color: '#8B5CF6',
+    background_color: '#FFFFFF',
+    text_color: '#1F2937',
+    custom_css: '',
+    white_label_enabled: false
+  });
+  
+  const [emailLogs, setEmailLogs] = useState([]);
+  const [bulkUsersData, setBulkUsersData] = useState([]);
+
+  // User Roles and Permissions
+  const userRoles = [
+    'Admin', 'Editor', 'Viewer', 'Project Manager', 'M&E Officer', 
+    'Donor Viewer', 'Director', 'Officer', 'Field Staff', 'Partner Staff', 'System Admin'
+  ];
+  
+  const accessLevels = ['standard', 'elevated', 'restricted'];
+  const organizationTypes = ['NGO', 'Government', 'Private', 'International'];
+  
+  const defaultPermissions = {
+    view_dashboard: true,
+    view_projects: true,
+    view_activities: true,
+    view_kpis: true,
+    view_beneficiaries: true,
+    view_documents: true,
+    view_reports: true,
+    create_projects: false,
+    edit_projects: false,
+    delete_projects: false,
+    create_activities: false,
+    edit_activities: false,
+    delete_activities: false,
+    create_users: false,
+    edit_users: false,
+    delete_users: false,
+    manage_partners: false,
+    view_financial_data: false,
+    edit_financial_data: false,
+    generate_reports: false,
+    export_data: false,
+    system_admin: false
+  };
     temporary_password: true
   });
 
