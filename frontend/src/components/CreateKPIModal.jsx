@@ -348,7 +348,7 @@ const CreateKPIModal = ({ onKPICreated, trigger }) => {
           </div>
 
           {/* Quantitative Values */}
-          {kpi.indicator_type === 'quantitative' && (
+          {kpi.type === 'quantitative' && (
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="baseline">Baseline Value</Label>
