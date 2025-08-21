@@ -276,16 +276,16 @@ const CreateProjectModal = ({ onProjectCreated }) => {
             </div>
             
             <div>
-              <Label htmlFor="donor">Donor/Funder *</Label>
+              <Label htmlFor="donor_organization">Donor/Funder *</Label>
               <Input
-                id="donor"
-                value={project.donor}
-                onChange={(e) => setProject(prev => ({ ...prev, donor: e.target.value }))}
+                id="donor_organization"
+                value={project.donor_organization}
+                onChange={(e) => setProject(prev => ({ ...prev, donor_organization: e.target.value }))}
                 placeholder="e.g., World Bank, USAID..."
-                className={`mt-1 ${errors.donor ? 'border-red-500' : ''}`}
+                className={`mt-1 ${errors.donor_organization ? 'border-red-500' : ''}`}
               />
-              {errors.donor && (
-                <div className="text-xs text-red-600 mt-1">{errors.donor}</div>
+              {errors.donor_organization && (
+                <div className="text-xs text-red-600 mt-1">{errors.donor_organization}</div>
               )}
             </div>
           </div>
