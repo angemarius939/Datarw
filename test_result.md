@@ -247,7 +247,7 @@ test_plan:
 
 agent_communication:
   - agent: "main"
-    message: "MAJOR AUTHENTICATION FIXES COMPLETED: Fixed critical database service bugs causing registration failures. Resolved MongoDB ObjectId to string conversion issues in user and organization creation. Added missing Pydantic models causing server import errors. Both registration and login are now fully functional with stable dashboard access. Ready for backend testing verification."
+    message: "CRITICAL PROJECT CREATION BUG IDENTIFIED: User reported React runtime error during project creation. Investigation revealed mismatched field names between frontend CreateProjectModal and backend ProjectCreate model, plus improper error handling that tries to render validation error objects as React children. Will fix field mapping and error handling to resolve 'Objects are not valid as a React child' error."
 
 backend:
   - task: "User Registration Endpoint"
