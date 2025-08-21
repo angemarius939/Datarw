@@ -899,8 +899,8 @@ class ProjectService:
                 schedule_variance_days = (current_date - planned_end).days
         
         # Budget variance analysis
-        budget_allocated = activity_doc.get("budget_allocated", 0)
-        budget_utilized = activity_doc.get("budget_utilized", 0)
+        budget_allocated = activity_doc.get("budget_allocated", 0) or 0
+        budget_utilized = activity_doc.get("budget_utilized", 0) or 0
         budget_variance_percentage = 0
         if budget_allocated > 0:
             budget_variance_percentage = ((budget_utilized - budget_allocated) / budget_allocated) * 100
