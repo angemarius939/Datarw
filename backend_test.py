@@ -3370,7 +3370,8 @@ class DataRWAPITester:
             self.test_get_survey_context,
             self.test_ai_with_context_generation,
             self.test_enhanced_question_types,
-            # Project Management System Tests
+            # Project Management System Tests - PRIORITY: DateTime Bug Fix Test
+            self.test_project_dashboard_datetime_bug_fix,
             self.test_project_dashboard,
             self.test_dashboard_pydantic_validation_fix,  # NEW: Test Pydantic validation fix
             self.test_project_creation_with_correct_fields,  # NEW: Test correct field mapping
