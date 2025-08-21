@@ -866,23 +866,60 @@ class ActivityCreate(BaseModel):
     project_id: str
     name: str = Field(..., min_length=2, max_length=200)
     description: Optional[str] = None
-    assigned_to: str
+    assigned_to: str  # User ID
+    assigned_team: Optional[str] = None
     start_date: datetime
     end_date: datetime
+    planned_start_date: Optional[datetime] = None  # If not provided, use start_date
+    planned_end_date: Optional[datetime] = None    # If not provided, use end_date
     budget_allocated: float = Field(..., ge=0)
+    
+    # Output and target specifications
+    planned_output: Optional[str] = None
+    target_quantity: Optional[float] = None
+    
+    # Milestones
+    milestones: List[Dict[str, Any]] = []
+    
+    # Legacy fields
     deliverables: List[str] = []
     dependencies: List[str] = []
+    
+    # Status tracking
+    status_notes: Optional[str] = None
+    risk_level: str = "low"
 
 class ActivityUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     status: Optional[ActivityStatus] = None
     assigned_to: Optional[str] = None
+    assigned_team: Optional[str] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
+    planned_start_date: Optional[datetime] = None
+    planned_end_date: Optional[datetime] = None
     budget_allocated: Optional[float] = None
     budget_utilized: Optional[float] = None
+    
+    # Output tracking updates
+    planned_output: Optional[str] = None
+    target_quantity: Optional[float] = None
+    actual_output: Optional[str] = None
+    achieved_quantity: Optional[float] = None
     progress_percentage: Optional[float] = None
+    
+    # Milestones updates
+    milestones: Optional[List[Dict[str, Any]]] = None
+    completed_milestones: Optional[List[str]] = None
+    
+    # Status and notes updates
+    status_notes: Optional[str] = None
+    risk_level: Optional[str] = None
+    
+    # Legacy fields
+    deliverables: Optional[List[str]] = None
+    dependencies: Optional[List[str]] = None
     deliverables: Optional[List[str]] = None
     dependencies: Optional[List[str]] = None
 
