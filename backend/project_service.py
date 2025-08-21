@@ -400,7 +400,10 @@ class ProjectService:
         ]
         
         status_result = await self.db.projects.aggregate(status_pipeline).to_list(100)
-        projects_by_status = {item["_id"]: item["count"] for item in status_result}
+        projects_by_status = {
+            str(item["_id"]) if item["_id"] is not None else "unknown": item["count"] 
+            for item in status_result
+        }
         
         # Recent activities
         recent_activities_cursor = self.db.activities.find(
