@@ -2529,6 +2529,223 @@ class DataRWAPITester:
         except Exception as e:
             self.log_result("Nonexistent Invoice Error", False, f"Request error: {str(e)}")
             return False
+
+    def test_project_creation_with_correct_fields(self):
+        """Test project creation endpoint with correct field mapping"""
+        try:
+            # Get a user ID for project_manager_id (required field)
+            users_response = self.session.get(f"{self.base_url}/users")
+            if users_response.status_code != 200:
+                self.log_result("Project Creation - Get Users", False, "Failed to get users for project manager ID")
+                return False
+            
+            users = users_response.json()
+            if not users:
+                self.log_result("Project Creation - Get Users", False, "No users available for project manager ID")
+                return False
+            
+            # Use the first user as project manager
+            project_manager_id = users[0].get("id") or users[0].get("_id")
+            if not project_manager_id:
+                self.log_result("Project Creation - Get Users", False, "No valid user ID found")
+                return False
+            
+            # Test with correct field mapping as per ProjectCreate model
+            project_data = {
+                "name": "Digital Literacy Training Program",  # NOT title
+                "description": "A comprehensive program to improve digital literacy skills among rural communities in Rwanda",
+                "project_manager_id": project_manager_id,  # Required field
+                "start_date": "2024-02-01T00:00:00Z",  # NOT implementation_start
+                "end_date": "2025-12-31T23:59:59Z",  # NOT implementation_end
+                "budget_total": 2500000.0,  # NOT total_budget
+                "beneficiaries_target": 5000,  # NOT target_beneficiaries
+                "location": "Nyagatare District, Eastern Province",
+                "donor_organization": "World Bank Group",  # NOT donor
+                "implementing_partners": ["Rwanda ICT Chamber", "Digital Opportunity Trust"],
+                "tags": ["education", "technology", "rural development"]
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/projects",
+                json=project_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                project_id = data.get("id") or data.get("_id")
+                
+                # Verify all fields are correctly saved
+                if (project_id and 
+                    data.get("name") == project_data["name"] and
+                    data.get("project_manager_id") == project_data["project_manager_id"] and
+                    data.get("budget_total") == project_data["budget_total"] and
+                    data.get("beneficiaries_target") == project_data["beneficiaries_target"] and
+                    data.get("donor_organization") == project_data["donor_organization"]):
+                    
+                    self.project_id = project_id
+                    self.log_result("Project Creation - Correct Fields", True, 
+                                  f"Project created successfully with correct field mapping. ID: {project_id}")
+                    return True
+                else:
+                    self.log_result("Project Creation - Correct Fields", False, 
+                                  "Project data mismatch or missing fields", data)
+                    return False
+            else:
+                self.log_result("Project Creation - Correct Fields", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+                
+        except Exception as e:
+            self.log_result("Project Creation - Correct Fields", False, f"Request error: {str(e)}")
+            return False
+
+    def test_project_creation_validation_errors(self):
+        """Test project creation with missing required fields"""
+        try:
+            # Test 1: Missing project_manager_id (required field)
+            project_data_missing_manager = {
+                "name": "Test Project Without Manager",
+                "start_date": "2024-02-01T00:00:00Z",
+                "end_date": "2025-12-31T23:59:59Z",
+                "budget_total": 1000000.0,
+                "beneficiaries_target": 1000
+                # Missing project_manager_id
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/projects",
+                json=project_data_missing_manager
+            )
+            
+            if response.status_code == 422:  # Validation error
+                data = response.json()
+                # Check if it's a proper JSON response (not an object that causes React errors)
+                if isinstance(data, dict) and "detail" in data:
+                    self.log_result("Project Creation - Missing Manager Validation", True, 
+                                  "Properly returns validation error for missing project_manager_id")
+                else:
+                    self.log_result("Project Creation - Missing Manager Validation", False, 
+                                  "Invalid response format for validation error", data)
+                    return False
+            else:
+                self.log_result("Project Creation - Missing Manager Validation", False, 
+                              f"Expected 422, got {response.status_code}", response.text)
+                return False
+            
+            # Test 2: Missing name (required field)
+            project_data_missing_name = {
+                "project_manager_id": "test-manager-id",
+                "start_date": "2024-02-01T00:00:00Z",
+                "end_date": "2025-12-31T23:59:59Z",
+                "budget_total": 1000000.0,
+                "beneficiaries_target": 1000
+                # Missing name
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/projects",
+                json=project_data_missing_name
+            )
+            
+            if response.status_code == 422:  # Validation error
+                data = response.json()
+                if isinstance(data, dict) and "detail" in data:
+                    self.log_result("Project Creation - Missing Name Validation", True, 
+                                  "Properly returns validation error for missing name")
+                else:
+                    self.log_result("Project Creation - Missing Name Validation", False, 
+                                  "Invalid response format for validation error", data)
+                    return False
+            else:
+                self.log_result("Project Creation - Missing Name Validation", False, 
+                              f"Expected 422, got {response.status_code}", response.text)
+                return False
+            
+            # Test 3: Invalid budget_total (must be > 0)
+            project_data_invalid_budget = {
+                "name": "Test Project Invalid Budget",
+                "project_manager_id": "test-manager-id",
+                "start_date": "2024-02-01T00:00:00Z",
+                "end_date": "2025-12-31T23:59:59Z",
+                "budget_total": -1000.0,  # Invalid negative budget
+                "beneficiaries_target": 1000
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/projects",
+                json=project_data_invalid_budget
+            )
+            
+            if response.status_code == 422:  # Validation error
+                data = response.json()
+                if isinstance(data, dict) and "detail" in data:
+                    self.log_result("Project Creation - Invalid Budget Validation", True, 
+                                  "Properly returns validation error for invalid budget")
+                    return True
+                else:
+                    self.log_result("Project Creation - Invalid Budget Validation", False, 
+                                  "Invalid response format for validation error", data)
+                    return False
+            else:
+                self.log_result("Project Creation - Invalid Budget Validation", False, 
+                              f"Expected 422, got {response.status_code}", response.text)
+                return False
+                
+        except Exception as e:
+            self.log_result("Project Creation - Validation Errors", False, f"Request error: {str(e)}")
+            return False
+
+    def test_project_creation_with_old_field_names(self):
+        """Test project creation with old field names (should fail)"""
+        try:
+            # Get a user ID for project_manager_id
+            users_response = self.session.get(f"{self.base_url}/users")
+            if users_response.status_code != 200:
+                self.log_result("Project Creation - Old Fields", False, "Failed to get users")
+                return False
+            
+            users = users_response.json()
+            if not users:
+                self.log_result("Project Creation - Old Fields", False, "No users available")
+                return False
+            
+            project_manager_id = users[0].get("id") or users[0].get("_id")
+            
+            # Test with OLD field names (should cause validation errors)
+            project_data_old_fields = {
+                "title": "Project with Old Field Names",  # Should be 'name'
+                "total_budget": 1000000.0,  # Should be 'budget_total'
+                "target_beneficiaries": 1000,  # Should be 'beneficiaries_target'
+                "implementation_start": "2024-02-01T00:00:00Z",  # Should be 'start_date'
+                "implementation_end": "2025-12-31T23:59:59Z",  # Should be 'end_date'
+                "donor": "World Bank",  # Should be 'donor_organization'
+                "project_manager_id": project_manager_id  # This one is correct
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/projects",
+                json=project_data_old_fields
+            )
+            
+            # Should return validation error due to missing required fields
+            if response.status_code == 422:
+                data = response.json()
+                if isinstance(data, dict) and "detail" in data:
+                    self.log_result("Project Creation - Old Field Names", True, 
+                                  "Correctly rejects old field names with validation error")
+                    return True
+                else:
+                    self.log_result("Project Creation - Old Field Names", False, 
+                                  "Invalid response format for validation error", data)
+                    return False
+            else:
+                self.log_result("Project Creation - Old Field Names", False, 
+                              f"Expected 422 validation error, got {response.status_code}", response.text)
+                return False
+                
+        except Exception as e:
+            self.log_result("Project Creation - Old Field Names", False, f"Request error: {str(e)}")
+            return False
     
     def run_all_tests(self):
         """Run all tests in sequence"""
