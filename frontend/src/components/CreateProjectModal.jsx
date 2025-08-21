@@ -337,13 +337,13 @@ const CreateProjectModal = ({ onProjectCreated }) => {
               <Input
                 id="budget"
                 type="number"
-                value={project.total_budget}
-                onChange={(e) => setProject(prev => ({ ...prev, total_budget: e.target.value }))}
+                value={project.budget_total}
+                onChange={(e) => setProject(prev => ({ ...prev, budget_total: e.target.value }))}
                 placeholder="0.00"
-                className={`mt-1 ${errors.total_budget ? 'border-red-500' : ''}`}
+                className={`mt-1 ${errors.budget_total ? 'border-red-500' : ''}`}
               />
-              {errors.total_budget && (
-                <div className="text-xs text-red-600 mt-1">{errors.total_budget}</div>
+              {errors.budget_total && (
+                <div className="text-xs text-red-600 mt-1">{errors.budget_total}</div>
               )}
             </div>
             
