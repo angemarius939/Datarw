@@ -423,6 +423,15 @@ class ProjectService:
                 "updated_at": activity.get("updated_at", datetime.utcnow()).isoformat()
             })
         
+        # Calculate overdue activities
+        from datetime import datetime
+        current_date = datetime.utcnow()
+        overdue_activities = await self.db.activities.count_documents({
+            "organization_id": organization_id,
+            "end_date": {"$lt": current_date},
+            "status": {"$ne": "completed"}
+        })
+        
         return ProjectDashboardData(
             total_projects=total_projects,
             active_projects=active_projects,
@@ -430,9 +439,12 @@ class ProjectService:
             total_budget=total_budget,
             budget_utilized=budget_utilized,
             utilization_rate=utilization_rate,
+            budget_utilization=utilization_rate,  # Same as utilization_rate for frontend compatibility
             total_beneficiaries=total_beneficiaries,
             beneficiaries_reached=beneficiaries_reached,
             kpi_achievement_rate=kpi_achievement_rate,
+            kpi_performance={"average_achievement": kpi_achievement_rate},  # Structured for frontend
+            overdue_activities=overdue_activities,
             recent_activities=recent_activities,
             budget_by_category=budget_by_category,
             projects_by_status=projects_by_status
