@@ -457,22 +457,23 @@ const EnhancedReporting = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {generatedReports.map(report => (
-                    <div key={report.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <h4 className="font-medium text-gray-900">{report.report_type}</h4>
-                            <Badge className={getReportStatusColor(report.status)}>
-                              {report.status}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-gray-600 mt-1">
-                            Project ID: {report.project_id} • Generated: {new Date(report.generated_at).toLocaleDateString()}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            File size: {report.file_size || 'Unknown'}
-                          </p>
+                  {Array.isArray(generatedReports) && generatedReports.length > 0 ? (
+                    generatedReports.map(report => (
+                      <div key={report.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <h4 className="font-medium text-gray-900">{report.report_type}</h4>
+                              <Badge className={getReportStatusColor(report.status)}>
+                                {report.status}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-1">
+                              Project ID: {report.project_id} • Generated: {new Date(report.generated_at).toLocaleDateString()}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              File size: {report.file_size || 'Unknown'}
+                            </p>
                         </div>
                         <div className="flex gap-2">
                           <Button
