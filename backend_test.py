@@ -3099,6 +3099,66 @@ class DataRWAPITester:
         
         return passed, failed
 
+    def run_activity_creation_tests(self):
+        """Run focused tests for activity creation endpoint with corrected field mapping"""
+        print(f"🎯 Starting Activity Creation Tests - Field Mapping Fix Verification")
+        print(f"📍 Testing against: {self.base_url}")
+        print("=" * 80)
+        
+        # Required setup tests
+        setup_tests = [
+            self.test_api_health,
+            self.test_user_registration,
+            self.test_user_login_valid,
+            self.test_create_project,  # Need project for activity creation
+        ]
+        
+        # Activity creation tests
+        activity_tests = [
+            self.test_create_activity_corrected_fields,
+            self.test_create_activity_validation_errors,
+            self.test_create_activity_old_field_names,
+        ]
+        
+        print("🔧 Running setup tests...")
+        for test in setup_tests:
+            test()
+            if not self.test_results[-1]['success']:
+                print(f"❌ Setup failed at {test.__name__}, stopping tests")
+                return 0, len(setup_tests)
+        
+        print("\n🎯 Running activity creation tests...")
+        for test in activity_tests:
+            test()
+            print()  # Add spacing between tests
+        
+        # Summary
+        print("=" * 80)
+        print("📊 ACTIVITY CREATION TEST SUMMARY")
+        print("=" * 80)
+        
+        # Count only activity creation tests for summary
+        activity_results = self.test_results[-len(activity_tests):]
+        passed = sum(1 for result in activity_results if result['success'])
+        failed = len(activity_results) - passed
+        
+        print(f"✅ Passed: {passed}/{len(activity_tests)}")
+        print(f"❌ Failed: {failed}/{len(activity_tests)}")
+        print(f"📈 Success Rate: {(passed/len(activity_tests)*100):.1f}%")
+        
+        if failed > 0:
+            print("\n🔍 FAILED ACTIVITY TESTS:")
+            for result in activity_results:
+                if not result['success']:
+                    print(f"   • {result['test']}: {result['message']}")
+        else:
+            print("\n🎉 ALL ACTIVITY CREATION TESTS PASSED!")
+            print("✅ Corrected field mapping (name, assigned_to) working correctly")
+            print("✅ Proper JSON validation error responses confirmed")
+            print("✅ Old field names (title, responsible_user_id) properly rejected")
+        
+        return passed, failed
+
 def main():
     """Main test execution"""
     tester = DataRWAPITester()
