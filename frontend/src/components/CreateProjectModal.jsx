@@ -139,18 +139,18 @@ const CreateProjectModal = ({ onProjectCreated }) => {
         
         setOpen(false);
         setProject({
-          title: '',
+          name: '',
           description: '',
           sector: '',
-          donor: '',
-          implementation_start: '',
-          implementation_end: '',
-          total_budget: '',
+          donor_organization: '',
+          start_date: '',
+          end_date: '',
+          budget_total: '',
           budget_currency: 'RWF',
           location: '',
-          target_beneficiaries: '',
+          beneficiaries_target: '',
           team_members: [],
-          project_manager_id: '',
+          project_manager_id: user?.id || '',
           me_officer_id: ''
         });
         
