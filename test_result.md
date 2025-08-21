@@ -541,7 +541,7 @@ agent_communication:
     file: "/app/frontend/src/components/CreateProjectModal.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
           agent: "main"
@@ -558,6 +558,9 @@ agent_communication:
         - working: true
           agent: "testing"
           comment: "COMPREHENSIVE PROJECT CREATION TESTING COMPLETED: All project creation endpoint tests passed with 100% success rate (3/3 tests). Key findings: ✅ POST /api/projects with CORRECT field mapping working perfectly - successfully created 'Digital Literacy Training Program' project using proper ProjectCreate model fields: name (not title), budget_total (not total_budget), beneficiaries_target (not target_beneficiaries), start_date (not implementation_start), end_date (not implementation_end), donor_organization (not donor), project_manager_id (required field), ✅ Validation errors properly handled - backend returns proper JSON responses (not objects that cause React errors) with HTTP 422 status for missing required fields (project_manager_id, name) and invalid data (negative budget), ✅ Old field names correctly rejected - backend properly validates against ProjectCreate model and rejects old field names with appropriate validation errors. The backend project creation endpoint is working correctly with proper field mapping and validation. The issue was frontend sending mismatched field names - backend handles corrected data properly."
+        - working: true
+          agent: "testing"
+          comment: "DASHBOARD PYDANTIC VALIDATION FIX VERIFIED: Comprehensive testing of GET /api/projects/dashboard endpoint confirms the Pydantic validation error fix is working correctly. Key findings: ✅ Dashboard endpoint returns HTTP 200 with valid JSON response, ✅ projects_by_status field present as dictionary with all string keys (no None keys found), ✅ budget_by_category field present as dictionary with all string keys (no None keys found), ✅ Response matches ProjectDashboardData model structure, ✅ No Pydantic validation errors 'projects_by_status.None.[key] Input should be a valid string' detected, ✅ Fix implementation verified in project_service.py lines 407-408 and 392-393 where None values are converted to 'unknown'/'uncategorized' strings. The dashboard data endpoint is production-ready and the original user-reported error has been resolved."
 
 frontend:
   - task: "AdminPanel Frontend Component"
