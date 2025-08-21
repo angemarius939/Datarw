@@ -714,7 +714,7 @@ async def create_activity(
 ):
     """Create a new activity"""
     try:
-        activity = await project_service.create_activity(activity_data, current_user.organization_id)
+        activity = await project_service.create_activity(activity_data, current_user.organization_id, current_user.id)
         return activity
     except Exception as e:
         logger.error(f"Activity creation error: {str(e)}")
