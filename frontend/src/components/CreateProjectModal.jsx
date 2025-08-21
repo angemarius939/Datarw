@@ -223,17 +223,17 @@ const CreateProjectModal = ({ onProjectCreated }) => {
           {/* Basic Information */}
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <Label htmlFor="title">Project Title *</Label>
+              <Label htmlFor="name">Project Name *</Label>
               <Input
-                id="title"
-                value={project.title}
-                onChange={(e) => setProject(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="Enter project title..."
-                className={`mt-1 ${errors.title ? 'border-red-500' : ''}`}
+                id="name"
+                value={project.name}
+                onChange={(e) => setProject(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter project name..."
+                className={`mt-1 ${errors.name ? 'border-red-500' : ''}`}
               />
-              {errors.title && (
+              {errors.name && (
                 <Alert variant="destructive" className="mt-2">
-                  <AlertDescription>{errors.title}</AlertDescription>
+                  <AlertDescription>{errors.name}</AlertDescription>
                 </Alert>
               )}
             </div>
