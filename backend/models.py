@@ -486,6 +486,22 @@ class CreateUserRequest(BaseModel):
     send_credentials_email: bool = True
     temporary_password: bool = True
 
+# Advanced user creation (alias for admin panel)
+class UserCreateAdvanced(BaseModel):
+    name: str = Field(..., min_length=2, max_length=100)
+    email: EmailStr
+    password: Optional[str] = None  # Auto-generated if not provided
+    role: UserRole = UserRole.VIEWER
+    phone_number: Optional[str] = Field(None, pattern=r"^07[0-9]{8}$")
+    department: Optional[str] = None
+    position: Optional[str] = None
+    partner_organization_id: Optional[str] = None
+    supervisor_id: Optional[str] = None
+    access_level: str = "standard"  # standard, elevated, restricted
+    permissions: Dict[str, bool] = {}
+    send_credentials_email: bool = True
+    temporary_password: bool = True
+
 class BulkCreateUsersRequest(BaseModel):
     users: List[CreateUserRequest]
     send_emails: bool = True
