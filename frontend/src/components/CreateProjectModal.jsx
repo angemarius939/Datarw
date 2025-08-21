@@ -317,12 +317,12 @@ const CreateProjectModal = ({ onProjectCreated }) => {
               <Input
                 id="end_date"
                 type="date"
-                value={project.implementation_end}
-                onChange={(e) => setProject(prev => ({ ...prev, implementation_end: e.target.value }))}
-                className={`mt-1 ${errors.implementation_end ? 'border-red-500' : ''}`}
+                value={project.end_date}
+                onChange={(e) => setProject(prev => ({ ...prev, end_date: e.target.value }))}
+                className={`mt-1 ${errors.end_date ? 'border-red-500' : ''}`}
               />
-              {errors.implementation_end && (
-                <div className="text-xs text-red-600 mt-1">{errors.implementation_end}</div>
+              {errors.end_date && (
+                <div className="text-xs text-red-600 mt-1">{errors.end_date}</div>
               )}
             </div>
           </div>
