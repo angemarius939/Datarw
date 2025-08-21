@@ -320,7 +320,7 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
           <div>
             <Label htmlFor="responsible" className="flex items-center">
               <User className="h-4 w-4 mr-1" />
-              Responsible Person *
+              Assigned Person *
             </Label>
             <Select value={activity.assigned_to} onValueChange={(value) => setActivity(prev => ({ ...prev, assigned_to: value }))}>
               <SelectTrigger className={`mt-1 ${errors.assigned_to ? 'border-red-500' : ''}`}>
