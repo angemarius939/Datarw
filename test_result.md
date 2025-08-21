@@ -563,14 +563,18 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
-  stuck_tasks: []
+  current_focus:
+    - "Budget Tracking System Backend Endpoints Testing"
+    - "Beneficiary System Backend Endpoints Testing"
+  stuck_tasks:
+    - "Budget Tracking System Backend Endpoints Testing"
+    - "Beneficiary System Backend Endpoints Testing"
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
     - agent: "testing"
-      message: "Completed comprehensive backend testing for DataRW authentication and registration system. All 12 critical tests passed with 100% success rate. Registration, login, protected endpoints, IremboPay integration, and survey management with limit enforcement are all working correctly. No critical issues found. Backend APIs are ready for production use."
+      message: "COMPREHENSIVE PROJECT MANAGEMENT SYSTEM TESTING COMPLETED: Conducted extensive testing of all project management endpoints as requested by user to identify reported issues. OVERALL RESULTS: 66.7% success rate (10/15 tests passed). WORKING SYSTEMS: ✅ Dashboard Data (100% pass) - Dashboard loading working correctly, Pydantic validation fixes verified, ✅ Project System (100% pass) - Project creation and listing working with corrected field mappings, ✅ Activity System (100% pass) - Activity creation and management working with corrected field mappings. CRITICAL ISSUES IDENTIFIED: ❌ Budget Tracking System (33% pass) - Backend model implementation bug: missing 'created_by' field in budget item creation causing HTTP 500 errors, ❌ Beneficiary System (33% pass) - Backend model mismatch: BeneficiaryCreate vs Beneficiary model field inconsistencies causing HTTP 400/500 errors. MINOR ISSUES: ❌ KPI Management (67% pass) - ObjectId/UUID mismatch in value update endpoint. ROOT CAUSE ANALYSIS: User-reported issues confirmed - budget tracking not working and beneficiaries not saving are due to backend service implementation bugs, not frontend issues."
     - agent: "testing"
       message: "Re-tested survey creation functionality as specifically requested. All 4 core survey creation tests passed with 100% success rate: 1) Login authentication working correctly with JWT token generation, 2) Survey creation endpoint successfully creates surveys with proper data structure (uses _id field), 3) Survey listing endpoint correctly retrieves created surveys, 4) Survey limit enforcement properly blocks creation after reaching Basic plan limit (4 surveys). IremboPay integration endpoints also verified working. Backend survey functionality is fully operational."
     - agent: "testing"
