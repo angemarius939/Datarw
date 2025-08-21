@@ -872,6 +872,20 @@ async def get_beneficiary_demographics(
         logger.error(f"Beneficiary demographics error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get demographics: {str(e)}")
 
+# User Management Endpoints  
+@api_router.get("/users", response_model=List[User])
+async def get_organization_users(
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get all users in the current organization"""
+    try:
+        # Get users from the same organization
+        users = await db_service.get_organization_users(current_user.organization_id)
+        return users
+    except Exception as e:
+        logger.error(f"Get organization users error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get users: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
