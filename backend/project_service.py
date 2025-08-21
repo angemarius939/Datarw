@@ -122,10 +122,11 @@ class ProjectService:
         return None
 
     # Budget Management
-    async def create_budget_item(self, budget_data: BudgetItemCreate, organization_id: str) -> BudgetItem:
+    async def create_budget_item(self, budget_data: BudgetItemCreate, organization_id: str, created_by: str) -> BudgetItem:
         """Create a new budget item"""
         budget_dict = budget_data.model_dump()
         budget_dict["organization_id"] = organization_id
+        budget_dict["created_by"] = created_by
         budget_dict["created_at"] = datetime.utcnow()
         budget_dict["updated_at"] = datetime.utcnow()
         
