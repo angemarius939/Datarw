@@ -3160,16 +3160,135 @@ class DataRWAPITester:
         
         return passed, failed
 
+    def run_project_management_comprehensive_tests(self):
+        """Run comprehensive tests for all project management system endpoints as requested by user"""
+        print(f"🎯 COMPREHENSIVE PROJECT MANAGEMENT SYSTEM TESTING")
+        print(f"📍 Testing against: {self.base_url}")
+        print("🔍 Focus: Dashboard Data, Beneficiaries, Budget Tracking, Activities, Projects")
+        print("=" * 80)
+        
+        # Required setup tests
+        setup_tests = [
+            self.test_api_health,
+            self.test_user_registration,
+            self.test_user_login_valid,
+        ]
+        
+        # Core project management tests as requested
+        project_mgmt_tests = [
+            # 1. Dashboard Data Testing
+            self.test_project_dashboard,
+            self.test_dashboard_pydantic_validation_fix,
+            
+            # 2. Project System Testing
+            self.test_project_creation_with_correct_fields,
+            self.test_get_projects,
+            
+            # 3. Activity System Testing  
+            self.test_create_activity_corrected_fields,
+            self.test_get_activities,
+            
+            # 4. Budget Tracking Testing
+            self.test_create_budget_item,
+            self.test_get_budget_items,
+            self.test_get_budget_summary,
+            
+            # 5. Beneficiary System Testing
+            self.test_create_beneficiary,
+            self.test_get_beneficiaries,
+            self.test_get_beneficiary_demographics,
+            
+            # 6. KPI System Testing
+            self.test_create_kpi_indicator,
+            self.test_get_kpi_indicators,
+            self.test_update_kpi_value,
+        ]
+        
+        print("🔧 Running setup tests...")
+        for test in setup_tests:
+            test()
+            if not self.test_results[-1]['success']:
+                print(f"❌ Setup failed at {test.__name__}, stopping tests")
+                return 0, len(setup_tests)
+        
+        print("\n🎯 Running comprehensive project management tests...")
+        for test in project_mgmt_tests:
+            test()
+            print()  # Add spacing between tests
+        
+        # Summary
+        print("=" * 80)
+        print("📊 PROJECT MANAGEMENT SYSTEM TEST SUMMARY")
+        print("=" * 80)
+        
+        # Count only project management tests for summary
+        pm_results = self.test_results[-len(project_mgmt_tests):]
+        passed = sum(1 for result in pm_results if result['success'])
+        failed = len(pm_results) - passed
+        
+        print(f"✅ Passed: {passed}/{len(project_mgmt_tests)}")
+        print(f"❌ Failed: {failed}/{len(project_mgmt_tests)}")
+        print(f"📈 Success Rate: {(passed/len(project_mgmt_tests)*100):.1f}%")
+        
+        # Detailed breakdown by category
+        print("\n📋 DETAILED RESULTS BY CATEGORY:")
+        
+        # Dashboard tests
+        dashboard_tests = [r for r in pm_results if 'dashboard' in r['test'].lower()]
+        dashboard_passed = sum(1 for r in dashboard_tests if r['success'])
+        print(f"   📊 Dashboard Data: {dashboard_passed}/{len(dashboard_tests)} passed")
+        
+        # Project tests
+        project_tests = [r for r in pm_results if 'project' in r['test'].lower() and 'dashboard' not in r['test'].lower()]
+        project_passed = sum(1 for r in project_tests if r['success'])
+        print(f"   📁 Project System: {project_passed}/{len(project_tests)} passed")
+        
+        # Activity tests
+        activity_tests = [r for r in pm_results if 'activity' in r['test'].lower()]
+        activity_passed = sum(1 for r in activity_tests if r['success'])
+        print(f"   ⚡ Activity System: {activity_passed}/{len(activity_tests)} passed")
+        
+        # Budget tests
+        budget_tests = [r for r in pm_results if 'budget' in r['test'].lower()]
+        budget_passed = sum(1 for r in budget_tests if r['success'])
+        print(f"   💰 Budget Tracking: {budget_passed}/{len(budget_tests)} passed")
+        
+        # Beneficiary tests
+        beneficiary_tests = [r for r in pm_results if 'beneficiary' in r['test'].lower() or 'beneficiaries' in r['test'].lower()]
+        beneficiary_passed = sum(1 for r in beneficiary_tests if r['success'])
+        print(f"   👥 Beneficiary System: {beneficiary_passed}/{len(beneficiary_tests)} passed")
+        
+        # KPI tests
+        kpi_tests = [r for r in pm_results if 'kpi' in r['test'].lower()]
+        kpi_passed = sum(1 for r in kpi_tests if r['success'])
+        print(f"   📈 KPI Management: {kpi_passed}/{len(kpi_tests)} passed")
+        
+        if failed > 0:
+            print("\n🔍 FAILED TESTS:")
+            for result in pm_results:
+                if not result['success']:
+                    print(f"   • {result['test']}: {result['message']}")
+        else:
+            print("\n🎉 ALL PROJECT MANAGEMENT TESTS PASSED!")
+            print("✅ Dashboard data loading working correctly")
+            print("✅ Project creation and listing working")
+            print("✅ Activity creation and management working")
+            print("✅ Budget tracking and summary working")
+            print("✅ Beneficiary system working correctly")
+            print("✅ KPI management system working")
+        
+        return passed, failed
+
 def main():
     """Main test execution"""
     tester = DataRWAPITester()
     
-    # Run focused activity creation tests as requested
-    print("🎯 RUNNING FOCUSED ACTIVITY CREATION TESTS")
-    print("Testing POST /api/activities with corrected field mapping")
+    # Run comprehensive project management tests as requested
+    print("🎯 RUNNING COMPREHENSIVE PROJECT MANAGEMENT SYSTEM TESTS")
+    print("Testing all project management endpoints to identify reported issues")
     print()
     
-    passed, failed = tester.run_activity_creation_tests()
+    passed, failed = tester.run_project_management_comprehensive_tests()
     
     # Exit with appropriate code
     exit(0 if failed == 0 else 1)
