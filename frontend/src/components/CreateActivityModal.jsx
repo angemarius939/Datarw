@@ -471,8 +471,58 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
               value={activity.budget_allocated}
               onChange={(e) => setActivity(prev => ({ ...prev, budget_allocated: e.target.value }))}
               placeholder="0.00"
-              className="mt-1"
+              className={`mt-1 ${errors.budget_allocated ? 'border-red-500' : ''}`}
             />
+            {errors.budget_allocated && (
+              <div className="text-xs text-red-600 mt-1">{errors.budget_allocated}</div>
+            )}
+          </div>
+
+          {/* Output and Quantity */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="planned_output">Planned Output</Label>
+              <Input
+                id="planned_output"
+                value={activity.planned_output}
+                onChange={(e) => setActivity(prev => ({ ...prev, planned_output: e.target.value }))}
+                placeholder="Expected output description"
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="target_quantity">Target Quantity</Label>
+              <Input
+                id="target_quantity"
+                type="number"
+                value={activity.target_quantity}
+                onChange={(e) => setActivity(prev => ({ ...prev, target_quantity: e.target.value }))}
+                placeholder="0"
+                className={`mt-1 ${errors.target_quantity ? 'border-red-500' : ''}`}
+              />
+              {errors.target_quantity && (
+                <div className="text-xs text-red-600 mt-1">{errors.target_quantity}</div>
+              )}
+            </div>
+          </div>
+
+          {/* Risk Level */}
+          <div>
+            <Label htmlFor="risk_level" className="flex items-center">
+              <Flag className="h-4 w-4 mr-1" />
+              Risk Level
+            </Label>
+            <Select value={activity.risk_level} onValueChange={(value) => setActivity(prev => ({ ...prev, risk_level: value }))}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select risk level" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">Low Risk</SelectItem>
+                <SelectItem value="medium">Medium Risk</SelectItem>
+                <SelectItem value="high">High Risk</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Deliverables */}
