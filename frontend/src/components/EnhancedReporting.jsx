@@ -392,17 +392,25 @@ const EnhancedReporting = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {templates.map(template => (
-                  <TemplateCard
-                    key={template.id}
-                    template={template}
-                    onGenerate={(templateType, projectId) => {
-                      if (projectId) {
-                        handleGenerateReport(templateType, projectId);
-                      }
-                    }}
-                  />
-                ))}
+                {Array.isArray(templates) && templates.length > 0 ? (
+                  templates.map(template => (
+                    <TemplateCard
+                      key={template.id}
+                      template={template}
+                      onGenerate={(templateType, projectId) => {
+                        if (projectId) {
+                          handleGenerateReport(templateType, projectId);
+                        }
+                      }}
+                    />
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-8">
+                    <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <p className="text-gray-500 text-lg">No report templates available</p>
+                    <p className="text-gray-400 text-sm mt-2">Report templates will appear here once configured</p>
+                  </div>
+                )}
               </div>
               
               {generatingReport && (
