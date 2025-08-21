@@ -151,13 +151,7 @@ const ProjectDashboard = () => {
           <h1 className="text-3xl font-bold text-gray-900">Project Dashboard</h1>
           <p className="text-gray-600">Monitor and manage your organization's projects</p>
         </div>
-        <Button 
-          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-          onClick={() => {/* TODO: Navigate to create project */}}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          New Project
-        </Button>
+        <CreateProjectModal onProjectCreated={handleProjectCreated} />
       </div>
 
       {/* Stats Grid */}
