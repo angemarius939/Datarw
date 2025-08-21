@@ -79,8 +79,8 @@ class AuthenticationTester:
                         "Authorization": f"Bearer {self.auth_token}"
                     })
                     
-                    # Verify user data structure
-                    user_fields = ["id", "email", "name", "role", "organization_id"]
+                    # Verify user data structure (organization_id is in JWT token, not user object)
+                    user_fields = ["id", "email", "name", "role"]
                     user_missing = [field for field in user_fields if field not in self.user_data]
                     
                     # Verify organization data structure  
