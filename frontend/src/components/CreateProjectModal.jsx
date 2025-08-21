@@ -380,8 +380,8 @@ const CreateProjectModal = ({ onProjectCreated }) => {
               <Input
                 id="beneficiaries"
                 type="number"
-                value={project.target_beneficiaries}
-                onChange={(e) => setProject(prev => ({ ...prev, target_beneficiaries: e.target.value }))}
+                value={project.beneficiaries_target}
+                onChange={(e) => setProject(prev => ({ ...prev, beneficiaries_target: e.target.value }))}
                 placeholder="Number of people"
                 className="mt-1"
               />
