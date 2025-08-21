@@ -220,31 +220,28 @@ const CreateBeneficiaryModal = ({ onBeneficiaryCreated, trigger }) => {
           {/* Basic Information */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="first_name">First Name *</Label>
+              <Label htmlFor="name">Full Name *</Label>
               <Input
-                id="first_name"
-                value={beneficiary.first_name}
-                onChange={(e) => setBeneficiary(prev => ({ ...prev, first_name: e.target.value }))}
-                placeholder="Enter first name..."
-                className={`mt-1 ${errors.first_name ? 'border-red-500' : ''}`}
+                id="name"
+                value={beneficiary.name}
+                onChange={(e) => setBeneficiary(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter full name..."
+                className="mt-1"
               />
-              {errors.first_name && (
-                <div className="text-xs text-red-600 mt-1">{errors.first_name}</div>
-              )}
-            </div>
-            
-            <div>
-              <Label htmlFor="last_name">Last Name *</Label>
-              <Input
-                id="last_name"
-                value={beneficiary.last_name}
-                onChange={(e) => setBeneficiary(prev => ({ ...prev, last_name: e.target.value }))}
-                placeholder="Enter last name..."
-                className={`mt-1 ${errors.last_name ? 'border-red-500' : ''}`}
-              />
-              {errors.last_name && (
-                <div className="text-xs text-red-600 mt-1">{errors.last_name}</div>
-              )}
+
+              <Label htmlFor="project">Project *</Label>
+              <Select value={beneficiary.project_id} onValueChange={(value) => setBeneficiary(prev => ({ ...prev, project_id: value }))}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map(project => (
+                    <SelectItem key={project._id || project.id} value={project._id || project.id}>
+                      {project.name || project.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
