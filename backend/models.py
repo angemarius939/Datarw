@@ -443,9 +443,12 @@ class ProjectDashboardData(BaseModel):
     total_budget: float
     budget_utilized: float
     utilization_rate: float
+    budget_utilization: float  # Added for frontend compatibility
     total_beneficiaries: int
     beneficiaries_reached: int
     kpi_achievement_rate: float
+    kpi_performance: Dict[str, Any]  # Added for frontend compatibility
+    overdue_activities: int  # Added for frontend compatibility
     recent_activities: List[Dict[str, Any]]
     budget_by_category: Dict[str, float]
     projects_by_status: Dict[str, int]
