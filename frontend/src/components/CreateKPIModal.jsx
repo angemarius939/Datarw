@@ -117,7 +117,7 @@ const CreateKPIModal = ({ onKPICreated, trigger }) => {
       newErrors.description = 'Description is required';
     }
     
-    if (kpi.indicator_type === 'quantitative') {
+    if (kpi.type === 'quantitative') {
       if (kpi.baseline_value && isNaN(parseFloat(kpi.baseline_value))) {
         newErrors.baseline_value = 'Baseline value must be a number';
       }
