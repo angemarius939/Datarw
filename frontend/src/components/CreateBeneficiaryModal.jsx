@@ -46,6 +46,33 @@ const CreateBeneficiaryModal = ({ onBeneficiaryCreated, trigger }) => {
     }
   }, [open]);
 
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+        const token = localStorage.getItem('access_token');
+        
+        const response = await fetch(`${backendUrl}/api/projects`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const projectsData = await response.json();
+          setProjects(projectsData);
+        }
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+      }
+    };
+
+    if (open) {
+      fetchProjects();
+    }
+  }, [open]);
+
   const validateBeneficiary = () => {
     const newErrors = {};
     
