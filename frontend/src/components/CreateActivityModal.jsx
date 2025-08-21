@@ -96,8 +96,8 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
       newErrors.description = 'Activity description is required';
     }
     
-    if (!activity.responsible_user_id) {
-      newErrors.responsible_user_id = 'Responsible person is required';
+    if (!activity.assigned_to) {
+      newErrors.assigned_to = 'Assigned person is required';
     }
     
     if (!activity.start_date) {
