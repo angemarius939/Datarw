@@ -185,12 +185,19 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
         planned_end_date: activity.planned_end_date ? new Date(activity.planned_end_date).toISOString() : new Date(activity.end_date).toISOString(),
         budget_allocated: activity.budget_allocated ? parseFloat(activity.budget_allocated) : 0,
         planned_output: activity.planned_output || null,
-        target_quantity: activity.target_quantity ? parseFloat(activity.target_quantity) : null,
+        target_quantity: activity.target_quantity !== '' ? parseFloat(activity.target_quantity) : null,
         status_notes: activity.status_notes || null,
         risk_level: activity.risk_level || 'low',
         deliverables: activity.deliverables.filter(d => d.trim() !== ''),
         dependencies: activity.dependencies.filter(d => d.trim() !== ''),
-        milestones: activity.milestones || []
+        milestones: (activity.milestones || []).map(m => ({
+          name: m.name,
+          planned_date: new Date(m.planned_date).toISOString(),
+          status: 'pending'
+        })),
+        // Extras (accepted by backend if allowed; otherwise safely ignored)
+        actual_output: activity.actual_output || undefined,
+        achieved_quantity: activity.achieved_quantity !== '' ? parseFloat(activity.achieved_quantity) : undefined
       };
 
       console.log('🚀 Creating activity:', activityData);
