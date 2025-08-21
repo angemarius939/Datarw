@@ -459,3 +459,290 @@ class ProjectService:
             risk_indicators=risk_indicators,
             completion_analytics=completion_analytics
         )
+
+    async def _calculate_activity_insights(self, organization_id: str) -> Dict[str, Any]:
+        """Calculate insights from activity progress"""
+        
+        # Activity completion rates by status
+        activity_pipeline = [
+            {"$match": {"organization_id": organization_id}},
+            {"$group": {
+                "_id": "$status",
+                "count": {"$sum": 1},
+                "avg_progress": {"$avg": "$progress_percentage"},
+                "total_budget": {"$sum": "$budget_allocated"}
+            }}
+        ]
+        
+        activity_stats = await self.db.activities.aggregate(activity_pipeline).to_list(100)
+        
+        # Weekly activity completion trend (last 8 weeks)
+        eight_weeks_ago = datetime.utcnow() - timedelta(weeks=8)
+        completion_trend_pipeline = [
+            {"$match": {
+                "organization_id": organization_id,
+                "updated_at": {"$gte": eight_weeks_ago},
+                "status": "completed"
+            }},
+            {"$group": {
+                "_id": {
+                    "year": {"$year": "$updated_at"},
+                    "week": {"$week": "$updated_at"}
+                },
+                "count": {"$sum": 1}
+            }},
+            {"$sort": {"_id.year": 1, "_id.week": 1}}
+        ]
+        
+        completion_trend = await self.db.activities.aggregate(completion_trend_pipeline).to_list(100)
+        
+        # Activity efficiency (avg days to complete)
+        efficiency_pipeline = [
+            {"$match": {
+                "organization_id": organization_id,
+                "status": "completed",
+                "start_date": {"$exists": True},
+                "end_date": {"$exists": True}
+            }},
+            {"$addFields": {
+                "completion_days": {
+                    "$divide": [
+                        {"$subtract": ["$end_date", "$start_date"]},
+                        86400000  # Convert milliseconds to days
+                    ]
+                }
+            }},
+            {"$group": {
+                "_id": None,
+                "avg_completion_days": {"$avg": "$completion_days"},
+                "median_completion_days": {"$push": "$completion_days"}
+            }}
+        ]
+        
+        efficiency_result = await self.db.activities.aggregate(efficiency_pipeline).to_list(1)
+        avg_completion_days = efficiency_result[0]["avg_completion_days"] if efficiency_result else 0
+        
+        return {
+            "activity_status_breakdown": {
+                item["_id"] if item["_id"] else "unknown": {
+                    "count": item["count"],
+                    "avg_progress": round(item["avg_progress"], 1),
+                    "budget_allocated": item["total_budget"]
+                }
+                for item in activity_stats
+            },
+            "completion_trend_weekly": [
+                {
+                    "week": f"{item['_id']['year']}-W{item['_id']['week']}",
+                    "completed": item["count"]
+                }
+                for item in completion_trend
+            ],
+            "avg_completion_days": round(avg_completion_days, 1) if avg_completion_days else 0,
+            "total_activities": sum(item["count"] for item in activity_stats)
+        }
+
+    async def _calculate_performance_trends(self, organization_id: str) -> Dict[str, Any]:
+        """Calculate performance trends over time"""
+        
+        # Monthly budget utilization trend (last 6 months)
+        six_months_ago = datetime.utcnow() - timedelta(days=180)
+        
+        budget_trend_pipeline = [
+            {"$match": {
+                "organization_id": organization_id,
+                "created_at": {"$gte": six_months_ago}
+            }},
+            {"$group": {
+                "_id": {
+                    "year": {"$year": "$created_at"},
+                    "month": {"$month": "$created_at"}
+                },
+                "total_spent": {"$sum": "$budgeted_amount"}
+            }},
+            {"$sort": {"_id.year": 1, "_id.month": 1}}
+        ]
+        
+        budget_trend = await self.db.budget_items.aggregate(budget_trend_pipeline).to_list(100)
+        
+        # KPI achievement trend
+        kpi_trend_pipeline = [
+            {"$match": {
+                "organization_id": organization_id,
+                "updated_at": {"$gte": six_months_ago}
+            }},
+            {"$addFields": {
+                "achievement_rate": {
+                    "$cond": [
+                        {"$and": [{"$ne": ["$target_value", None]}, {"$gt": ["$target_value", 0]}]},
+                        {"$multiply": [{"$divide": ["$current_value", "$target_value"]}, 100]},
+                        0
+                    ]
+                }
+            }},
+            {"$group": {
+                "_id": {
+                    "year": {"$year": "$updated_at"},
+                    "month": {"$month": "$updated_at"}
+                },
+                "avg_achievement": {"$avg": "$achievement_rate"}
+            }},
+            {"$sort": {"_id.year": 1, "_id.month": 1}}
+        ]
+        
+        kpi_trend = await self.db.kpi_indicators.aggregate(kpi_trend_pipeline).to_list(100)
+        
+        return {
+            "budget_trend_monthly": [
+                {
+                    "month": f"{item['_id']['year']}-{item['_id']['month']:02d}",
+                    "amount": item["total_spent"]
+                }
+                for item in budget_trend
+            ],
+            "kpi_trend_monthly": [
+                {
+                    "month": f"{item['_id']['year']}-{item['_id']['month']:02d}",
+                    "achievement": round(item["avg_achievement"], 1)
+                }
+                for item in kpi_trend
+            ]
+        }
+
+    async def _calculate_risk_indicators(self, organization_id: str, current_date: datetime) -> Dict[str, Any]:
+        """Calculate risk indicators for projects and activities"""
+        
+        # Budget risk (projects with high utilization)
+        budget_risk_pipeline = [
+            {"$match": {"organization_id": organization_id}},
+            {"$addFields": {
+                "utilization_rate": {
+                    "$cond": [
+                        {"$gt": ["$budget_total", 0]},
+                        {"$multiply": [{"$divide": ["$budget_utilized", "$budget_total"]}, 100]},
+                        0
+                    ]
+                }
+            }},
+            {"$match": {"utilization_rate": {"$gt": 80}}},
+            {"$count": "high_utilization_projects"}
+        ]
+        
+        high_utilization_result = await self.db.projects.aggregate(budget_risk_pipeline).to_list(1)
+        high_utilization_projects = high_utilization_result[0]["high_utilization_projects"] if high_utilization_result else 0
+        
+        # Timeline risk (projects approaching deadline)
+        thirty_days_ahead = current_date + timedelta(days=30)
+        timeline_risk = await self.db.projects.count_documents({
+            "organization_id": organization_id,
+            "end_date": {"$lte": thirty_days_ahead, "$gte": current_date},
+            "status": {"$ne": "completed"}
+        })
+        
+        # Performance risk (activities with low progress)
+        performance_risk = await self.db.activities.count_documents({
+            "organization_id": organization_id,
+            "progress_percentage": {"$lt": 50},
+            "status": {"$in": ["in_progress", "delayed"]},
+            "start_date": {"$lte": current_date - timedelta(days=30)}
+        })
+        
+        return {
+            "budget_risk": {
+                "high_utilization_projects": high_utilization_projects,
+                "threshold": 80,
+                "description": "Projects with >80% budget utilization"
+            },
+            "timeline_risk": {
+                "projects_due_soon": timeline_risk,
+                "threshold_days": 30,
+                "description": "Projects due within 30 days"
+            },
+            "performance_risk": {
+                "low_progress_activities": performance_risk,
+                "threshold": 50,
+                "description": "Activities with <50% progress after 30+ days"
+            }
+        }
+
+    async def _calculate_completion_analytics(self, organization_id: str) -> Dict[str, Any]:
+        """Calculate completion analytics and success rates"""
+        
+        # Project success rate
+        total_closed_projects = await self.db.projects.count_documents({
+            "organization_id": organization_id,
+            "status": {"$in": ["completed", "cancelled"]}
+        })
+        
+        successful_projects = await self.db.projects.count_documents({
+            "organization_id": organization_id,
+            "status": "completed"
+        })
+        
+        success_rate = (successful_projects / total_closed_projects * 100) if total_closed_projects > 0 else 0
+        
+        # Time-to-completion analysis
+        completion_analysis_pipeline = [
+            {"$match": {
+                "organization_id": organization_id,
+                "status": "completed",
+                "start_date": {"$exists": True},
+                "end_date": {"$exists": True}
+            }},
+            {"$addFields": {
+                "planned_duration": {
+                    "$divide": [
+                        {"$subtract": ["$end_date", "$start_date"]},
+                        86400000
+                    ]
+                },
+                "actual_duration": {
+                    "$divide": [
+                        {"$subtract": ["$updated_at", "$created_at"]},
+                        86400000
+                    ]
+                }
+            }},
+            {"$addFields": {
+                "schedule_variance": {
+                    "$subtract": ["$actual_duration", "$planned_duration"]
+                }
+            }},
+            {"$group": {
+                "_id": None,
+                "avg_planned_duration": {"$avg": "$planned_duration"},
+                "avg_actual_duration": {"$avg": "$actual_duration"},
+                "avg_schedule_variance": {"$avg": "$schedule_variance"},
+                "on_time_projects": {
+                    "$sum": {
+                        "$cond": [{"$lte": ["$schedule_variance", 0]}, 1, 0]
+                    }
+                },
+                "total_projects": {"$sum": 1}
+            }}
+        ]
+        
+        completion_result = await self.db.projects.aggregate(completion_analysis_pipeline).to_list(1)
+        
+        if completion_result:
+            data = completion_result[0]
+            on_time_rate = (data["on_time_projects"] / data["total_projects"] * 100) if data["total_projects"] > 0 else 0
+        else:
+            data = {
+                "avg_planned_duration": 0,
+                "avg_actual_duration": 0,
+                "avg_schedule_variance": 0,
+                "on_time_projects": 0,
+                "total_projects": 0
+            }
+            on_time_rate = 0
+        
+        return {
+            "project_success_rate": round(success_rate, 1),
+            "on_time_completion_rate": round(on_time_rate, 1),
+            "avg_planned_duration_days": round(data["avg_planned_duration"], 1),
+            "avg_actual_duration_days": round(data["avg_actual_duration"], 1),
+            "avg_schedule_variance_days": round(data["avg_schedule_variance"], 1),
+            "total_completed_projects": successful_projects,
+            "total_closed_projects": total_closed_projects
+        }
