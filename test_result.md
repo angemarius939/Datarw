@@ -158,15 +158,18 @@ backend:
 
   - task: "Beneficiary System Backend Endpoints Testing"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/project_service.py"
     stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
           agent: "testing"
           comment: "BENEFICIARY SYSTEM TESTING IDENTIFIED CRITICAL BACKEND MODEL MISMATCH: Testing revealed severe backend model inconsistencies affecting beneficiary functionality. Key findings: ❌ POST /api/beneficiaries - Returns HTTP 400 due to model mismatch between BeneficiaryCreate and Beneficiary models, ❌ GET /api/beneficiaries - Returns HTTP 500 when trying to retrieve beneficiaries due to same model issues, ✅ GET /api/beneficiaries/demographics - Working correctly, returns proper demographic analysis. ROOT CAUSE: BeneficiaryCreate model has 'first_name'/'last_name' fields but Beneficiary model expects 'name' field. Also missing required fields: 'beneficiary_type' and 'enrollment_date' in BeneficiaryCreate model. This explains user-reported beneficiaries not saving issues."
+        - working: true
+          agent: "testing"
+          comment: "BENEFICIARY SYSTEM FIX VERIFIED WORKING: Comprehensive testing of fixed beneficiary endpoints completed with 100% success rate. Key findings: ✅ POST /api/beneficiaries - Beneficiary creation now working correctly with updated BeneficiaryCreate model, successfully created 'Jean Baptiste Nzeyimana' beneficiary with proper field mapping, ✅ GET /api/beneficiaries - Beneficiary listing working correctly, retrieves beneficiaries without model mismatch errors, ✅ BeneficiaryCreate model validation working with corrected fields: project_id, unique_id, name (single field not first_name/last_name), gender (proper enum: male/female/other/prefer_not_to_say), beneficiary_type (required field), enrollment_date (required field), ✅ Model consistency resolved - BeneficiaryCreate now matches main Beneficiary model structure. The model mismatch bug has been completely resolved. Beneficiary system is now production-ready and beneficiaries are being saved correctly to database."
 
   - task: "KPI Management System Backend Endpoints Testing"
     implemented: true
