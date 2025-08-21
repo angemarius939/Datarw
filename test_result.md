@@ -592,11 +592,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Budget Tracking System Backend Endpoints Testing"
-    - "Beneficiary System Backend Endpoints Testing"
+    - "Enhanced Activity Creation Endpoints (CreateActivityModal Refactor)"
   stuck_tasks:
-    - "Budget Tracking System Backend Endpoints Testing"
-    - "Beneficiary System Backend Endpoints Testing"
+    - "Enhanced Activity Creation Endpoints (CreateActivityModal Refactor)"
   test_all: false
   test_priority: "high_first"
 
