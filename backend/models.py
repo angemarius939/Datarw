@@ -595,6 +595,32 @@ class OrganizationBrandingCreate(BaseModel):
     custom_domain: Optional[str] = None
     footer_text: Optional[str] = None
 
+class EmailTemplate(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    subject: str
+    body_html: str
+    body_text: Optional[str] = None
+    organization_id: str
+    template_type: str  # welcome, password_reset, credentials, etc.
+    variables: List[str] = []  # Available template variables
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class EmailLog(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: str
+    recipient_email: str
+    recipient_name: Optional[str] = None
+    subject: str
+    template_id: Optional[str] = None
+    template_type: Optional[str] = None
+    status: str = "sent"  # sent, failed, pending
+    sent_at: datetime = Field(default_factory=datetime.utcnow)
+    error_message: Optional[str] = None
+    metadata: Dict[str, Any] = {}
+
 # Response models
 class UserResponse(BaseModel):
     id: str
