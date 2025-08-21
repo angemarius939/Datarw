@@ -120,7 +120,7 @@ class PaymentResponse(BaseModel):
 class SubscriptionPaymentRequest(BaseModel):
     user_email: EmailStr
     user_name: str = Field(..., min_length=2, max_length=100)
-    phone_number: str = Field(..., regex=r"^07[0-9]{8}$")
+    phone_number: str = Field(..., pattern=r"^07[0-9]{8}$")
     plan_name: SubscriptionPlan
     payment_method: PaymentProvider = PaymentProvider.MTN
 
