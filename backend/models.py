@@ -104,7 +104,7 @@ class InvoiceResponse(BaseModel):
 
 class InitiatePaymentRequest(BaseModel):
     invoice_number: str
-    phone_number: str = Field(..., regex=r"^07[0-9]{8}$")
+    phone_number: str = Field(..., pattern=r"^07[0-9]{8}$")
     provider: PaymentProvider
 
 class PaymentResponse(BaseModel):
