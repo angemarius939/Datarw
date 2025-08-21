@@ -678,6 +678,176 @@ class DocumentUpload(BaseModel):
     file_size: int
     content: str
 
+# Project service models
+class ProjectCreate(BaseModel):
+    name: str = Field(..., min_length=2, max_length=200)
+    description: Optional[str] = None
+    project_manager_id: str
+    start_date: datetime
+    end_date: datetime
+    budget_total: float = Field(..., gt=0)
+    beneficiaries_target: int = Field(..., ge=0)
+    location: Optional[str] = None
+    donor_organization: Optional[str] = None
+    implementing_partners: List[str] = []
+    tags: List[str] = []
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    project_manager_id: Optional[str] = None
+    status: Optional[ProjectStatus] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    budget_total: Optional[float] = None
+    beneficiaries_target: Optional[int] = None
+    location: Optional[str] = None
+    donor_organization: Optional[str] = None
+    implementing_partners: Optional[List[str]] = None
+    tags: Optional[List[str]] = None
+
+class ActivityCreate(BaseModel):
+    project_id: str
+    name: str = Field(..., min_length=2, max_length=200)
+    description: Optional[str] = None
+    assigned_to: str
+    start_date: datetime
+    end_date: datetime
+    budget_allocated: float = Field(..., ge=0)
+    deliverables: List[str] = []
+    dependencies: List[str] = []
+
+class ActivityUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[ActivityStatus] = None
+    assigned_to: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    budget_allocated: Optional[float] = None
+    budget_utilized: Optional[float] = None
+    progress_percentage: Optional[float] = None
+    deliverables: Optional[List[str]] = None
+    dependencies: Optional[List[str]] = None
+
+class BudgetItem(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    project_id: str
+    category: FinancialCategory
+    item_name: str
+    description: Optional[str] = None
+    budgeted_amount: float
+    allocated_amount: float = 0.0
+    utilized_amount: float = 0.0
+    remaining_amount: float = 0.0
+    budget_period: str
+    created_by: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class BudgetItemCreate(BaseModel):
+    project_id: str
+    category: FinancialCategory
+    item_name: str = Field(..., min_length=2, max_length=200)
+    description: Optional[str] = None
+    budgeted_amount: float = Field(..., gt=0)
+    budget_period: str = Field(..., min_length=1)
+
+class BudgetItemUpdate(BaseModel):
+    category: Optional[FinancialCategory] = None
+    item_name: Optional[str] = None
+    description: Optional[str] = None
+    budgeted_amount: Optional[float] = None
+    allocated_amount: Optional[float] = None
+    utilized_amount: Optional[float] = None
+    budget_period: Optional[str] = None
+
+class KPIIndicatorCreate(BaseModel):
+    project_id: str
+    name: str = Field(..., min_length=2, max_length=200)
+    description: Optional[str] = None
+    type: KPIType
+    measurement_unit: Optional[str] = None
+    baseline_value: Optional[float] = None
+    target_value: Optional[float] = None
+    data_source: Optional[str] = None
+    frequency: str = "monthly"
+    responsible_person: str
+
+class KPIIndicatorUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    type: Optional[KPIType] = None
+    measurement_unit: Optional[str] = None
+    baseline_value: Optional[float] = None
+    target_value: Optional[float] = None
+    current_value: Optional[float] = None
+    data_source: Optional[str] = None
+    frequency: Optional[str] = None
+    responsible_person: Optional[str] = None
+
+class BeneficiaryCreate(BaseModel):
+    project_id: str
+    unique_id: str = Field(..., min_length=1)
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
+    date_of_birth: datetime
+    gender: str
+    location: Optional[str] = None
+    contact_phone: Optional[str] = None
+    household_size: Optional[int] = None
+    education_level: Optional[str] = None
+    employment_status: Optional[str] = None
+
+class BeneficiaryUpdate(BaseModel):
+    unique_id: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    date_of_birth: Optional[datetime] = None
+    gender: Optional[str] = None
+    location: Optional[str] = None
+    contact_phone: Optional[str] = None
+    household_size: Optional[int] = None
+    education_level: Optional[str] = None
+    employment_status: Optional[str] = None
+    status: Optional[str] = None
+
+class ProjectDocument(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    project_id: str
+    name: str
+    description: Optional[str] = None
+    document_type: DocumentType
+    file_name: str
+    file_size: int
+    mime_type: str
+    file_url: str
+    version: str = "1.0"
+    uploaded_by: str
+    access_level: ProjectAccessLevel = ProjectAccessLevel.RESTRICTED
+    tags: List[str] = []
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class ProjectDocumentCreate(BaseModel):
+    project_id: str
+    name: str = Field(..., min_length=2, max_length=200)
+    description: Optional[str] = None
+    document_type: DocumentType
+    file_name: str
+    file_size: int
+    mime_type: str
+    file_url: str
+    access_level: ProjectAccessLevel = ProjectAccessLevel.RESTRICTED
+    tags: List[str] = []
+
+class ProjectDocumentUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    document_type: Optional[DocumentType] = None
+    access_level: Optional[ProjectAccessLevel] = None
+    tags: Optional[List[str]] = None
+
 class PartnerResponse(BaseModel):
     id: str
     name: str
