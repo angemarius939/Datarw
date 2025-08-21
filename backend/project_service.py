@@ -432,6 +432,12 @@ class ProjectService:
             "status": {"$ne": "completed"}
         })
         
+        # Calculate advanced analytics
+        activity_insights = await self._calculate_activity_insights(organization_id)
+        performance_trends = await self._calculate_performance_trends(organization_id)
+        risk_indicators = await self._calculate_risk_indicators(organization_id, current_date)
+        completion_analytics = await self._calculate_completion_analytics(organization_id)
+        
         return ProjectDashboardData(
             total_projects=total_projects,
             active_projects=active_projects,
@@ -447,5 +453,9 @@ class ProjectService:
             overdue_activities=overdue_activities,
             recent_activities=recent_activities,
             budget_by_category=budget_by_category,
-            projects_by_status=projects_by_status
+            projects_by_status=projects_by_status,
+            activity_insights=activity_insights,
+            performance_trends=performance_trends,
+            risk_indicators=risk_indicators,
+            completion_analytics=completion_analytics
         )
