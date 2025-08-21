@@ -3580,6 +3580,513 @@ class DataRWAPITester:
             self.log_result("Enhanced Project Dashboard Analytics", False, f"Request error: {str(e)}")
             return False
 
+    def test_enhanced_activity_creation_endpoints(self):
+        """Test enhanced activity creation endpoints as per CreateActivityModal refactor"""
+        print("\n" + "="*60)
+        print("TESTING ENHANCED ACTIVITY CREATION ENDPOINTS")
+        print("="*60)
+        
+        # Test 1: GET /api/users - ensure it returns user list with id,name,email for assigned person dropdown
+        self.test_get_users_for_dropdown()
+        
+        # Test 2: POST /api/projects - create a minimal project to link activities
+        self.test_create_minimal_project_for_activities()
+        
+        # Test 3: POST /api/activities - create activity with enhanced fields
+        self.test_create_enhanced_activity()
+        
+        # Test 4: GET /api/activities - ensure activity appears and fields serialize correctly
+        self.test_get_activities_enhanced()
+        
+        # Test 5: PUT /api/activities/{activity_id}/progress - update progress
+        self.test_update_activity_progress()
+        
+        # Test 6: GET /api/activities/{activity_id}/variance - returns variance analysis
+        self.test_get_activity_variance_analysis()
+
+    def test_get_users_for_dropdown(self):
+        """Test GET /api/users for assigned person dropdown"""
+        try:
+            response = self.session.get(f"{self.base_url}/users")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list) and len(data) > 0:
+                    # Verify required fields for dropdown
+                    user = data[0]
+                    required_fields = ["id", "name", "email"]
+                    missing_fields = [field for field in required_fields if field not in user]
+                    
+                    if not missing_fields:
+                        self.log_result("GET /api/users for dropdown", True, 
+                                      f"Retrieved {len(data)} users with required fields (id, name, email)")
+                        return True
+                    else:
+                        self.log_result("GET /api/users for dropdown", False, 
+                                      f"Missing required fields: {missing_fields}", data)
+                        return False
+                else:
+                    self.log_result("GET /api/users for dropdown", False, 
+                                  "No users found or invalid response", data)
+                    return False
+            else:
+                self.log_result("GET /api/users for dropdown", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("GET /api/users for dropdown", False, f"Request error: {str(e)}")
+            return False
+
+    def test_create_minimal_project_for_activities(self):
+        """Test creating a minimal project to link activities"""
+        try:
+            from datetime import datetime, timedelta
+            
+            project_data = {
+                "name": f"Enhanced Activity Test Project {uuid.uuid4().hex[:8]}",
+                "description": "Minimal project for testing enhanced activity creation",
+                "project_manager_id": self.user_data["id"],
+                "start_date": (datetime.now() + timedelta(days=1)).isoformat(),
+                "end_date": (datetime.now() + timedelta(days=90)).isoformat(),
+                "budget_total": 1000000.0,  # 1M RWF
+                "beneficiaries_target": 100
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/projects",
+                json=project_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                project_id = data.get("id") or data.get("_id")
+                if project_id and data.get("name") == project_data["name"]:
+                    self.enhanced_project_id = project_id
+                    self.log_result("Create minimal project for activities", True, 
+                                  "Minimal project created successfully for activity testing")
+                    return True
+                else:
+                    self.log_result("Create minimal project for activities", False, 
+                                  "Project data mismatch", data)
+                    return False
+            else:
+                self.log_result("Create minimal project for activities", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Create minimal project for activities", False, f"Request error: {str(e)}")
+            return False
+
+    def test_create_enhanced_activity(self):
+        """Test creating activity with enhanced fields including milestones, planned/actual outputs"""
+        if not hasattr(self, 'enhanced_project_id'):
+            self.log_result("Create enhanced activity", False, "No project ID available from previous test")
+            return False
+        
+        try:
+            from datetime import datetime, timedelta
+            
+            # Enhanced activity data with all new fields
+            activity_data = {
+                "project_id": self.enhanced_project_id,
+                "name": f"Enhanced Digital Training Workshop {uuid.uuid4().hex[:8]}",
+                "description": "Comprehensive digital literacy training workshop with milestone tracking and output measurement",
+                "assigned_to": self.user_data["id"],
+                "start_date": (datetime.now() + timedelta(days=7)).isoformat(),
+                "end_date": (datetime.now() + timedelta(days=21)).isoformat(),
+                "budget_allocated": 250000.0,  # 250K RWF
+                
+                # Enhanced output tracking
+                "planned_output": "50 participants trained in basic digital skills with certification",
+                "target_quantity": 50.0,
+                
+                # Milestones array with name and planned_date
+                "milestones": [
+                    {
+                        "name": "Training materials preparation completed",
+                        "planned_date": (datetime.now() + timedelta(days=5)).isoformat(),
+                        "description": "All training materials, handouts, and digital resources prepared"
+                    },
+                    {
+                        "name": "Participant registration completed",
+                        "planned_date": (datetime.now() + timedelta(days=10)).isoformat(),
+                        "description": "50 participants registered and confirmed for training"
+                    },
+                    {
+                        "name": "Training sessions completed",
+                        "planned_date": (datetime.now() + timedelta(days=18)).isoformat(),
+                        "description": "All 5 training sessions conducted successfully"
+                    },
+                    {
+                        "name": "Certification and evaluation completed",
+                        "planned_date": (datetime.now() + timedelta(days=21)).isoformat(),
+                        "description": "Participants assessed and certificates issued"
+                    }
+                ],
+                
+                # Initial actual output and achieved quantity (can be set at creation)
+                "actual_output": "Training preparation phase initiated with 80% materials ready",
+                "achieved_quantity": 0.0,  # No participants trained yet
+                
+                # Status and risk tracking
+                "status_notes": "Activity created with comprehensive milestone tracking and output measurement",
+                "risk_level": "low",
+                
+                # Legacy fields for compatibility
+                "deliverables": [
+                    "Training curriculum and materials",
+                    "Participant certificates",
+                    "Training completion report",
+                    "Skills assessment results"
+                ],
+                "dependencies": [
+                    "Venue booking confirmation",
+                    "Equipment setup completion"
+                ]
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/activities",
+                json=activity_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                activity_id = data.get("id") or data.get("_id")
+                
+                # Verify enhanced fields are present and correctly set
+                validation_checks = [
+                    (data.get("name") == activity_data["name"], "Activity name matches"),
+                    (data.get("organization_id") is not None, "Organization ID is set"),
+                    (data.get("planned_start_date") is not None, "Planned start date fallback set"),
+                    (data.get("planned_end_date") is not None, "Planned end date fallback set"),
+                    (data.get("progress_percentage") == 0.0, "Progress percentage default set to 0"),
+                    (data.get("last_updated_by") == self.user_data["id"], "Last updated by auto-stamped"),
+                    (data.get("completion_variance") == 0.0, "Completion variance default set"),
+                    (data.get("schedule_variance_days") == 0, "Schedule variance default set"),
+                    (isinstance(data.get("milestones", []), list), "Milestones array present"),
+                    (len(data.get("milestones", [])) == 4, "All 4 milestones saved"),
+                    (data.get("planned_output") == activity_data["planned_output"], "Planned output saved"),
+                    (data.get("target_quantity") == activity_data["target_quantity"], "Target quantity saved"),
+                    (data.get("actual_output") == activity_data["actual_output"], "Actual output saved"),
+                    (data.get("achieved_quantity") == activity_data["achieved_quantity"], "Achieved quantity saved")
+                ]
+                
+                failed_checks = [check[1] for check in validation_checks if not check[0]]
+                
+                if activity_id and not failed_checks:
+                    self.enhanced_activity_id = activity_id
+                    self.log_result("Create enhanced activity", True, 
+                                  "Enhanced activity created successfully with all required fields: milestones, planned/actual outputs, auto-stamped creator, planned dates fallback, progress defaults")
+                    return True
+                else:
+                    self.log_result("Create enhanced activity", False, 
+                                  f"Validation failed: {failed_checks}", data)
+                    return False
+            else:
+                self.log_result("Create enhanced activity", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Create enhanced activity", False, f"Request error: {str(e)}")
+            return False
+
+    def test_get_activities_enhanced(self):
+        """Test GET /api/activities to ensure enhanced activity appears with correct field serialization"""
+        try:
+            response = self.session.get(f"{self.base_url}/activities")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list) and len(data) > 0:
+                    # Find our enhanced activity
+                    enhanced_activity = None
+                    if hasattr(self, 'enhanced_activity_id'):
+                        enhanced_activity = next((act for act in data if act.get("id") == self.enhanced_activity_id or act.get("_id") == self.enhanced_activity_id), None)
+                    
+                    if enhanced_activity:
+                        # Verify field serialization (strings for IDs/dates as ISO)
+                        serialization_checks = [
+                            (isinstance(enhanced_activity.get("id") or enhanced_activity.get("_id"), str), "Activity ID serialized as string"),
+                            (isinstance(enhanced_activity.get("organization_id"), str), "Organization ID serialized as string"),
+                            (isinstance(enhanced_activity.get("project_id"), str), "Project ID serialized as string"),
+                            (isinstance(enhanced_activity.get("assigned_to"), str), "Assigned to ID serialized as string"),
+                            (isinstance(enhanced_activity.get("last_updated_by"), str), "Last updated by ID serialized as string"),
+                            ("T" in str(enhanced_activity.get("start_date", "")), "Start date in ISO format"),
+                            ("T" in str(enhanced_activity.get("end_date", "")), "End date in ISO format"),
+                            ("T" in str(enhanced_activity.get("planned_start_date", "")), "Planned start date in ISO format"),
+                            ("T" in str(enhanced_activity.get("planned_end_date", "")), "Planned end date in ISO format"),
+                            ("T" in str(enhanced_activity.get("created_at", "")), "Created at in ISO format"),
+                            ("T" in str(enhanced_activity.get("updated_at", "")), "Updated at in ISO format"),
+                            (isinstance(enhanced_activity.get("milestones", []), list), "Milestones serialized as array"),
+                            (isinstance(enhanced_activity.get("progress_percentage"), (int, float)), "Progress percentage as number"),
+                            (isinstance(enhanced_activity.get("target_quantity"), (int, float)), "Target quantity as number"),
+                            (isinstance(enhanced_activity.get("achieved_quantity"), (int, float)), "Achieved quantity as number")
+                        ]
+                        
+                        failed_serialization = [check[1] for check in serialization_checks if not check[0]]
+                        
+                        if not failed_serialization:
+                            self.log_result("GET /api/activities enhanced serialization", True, 
+                                          f"Enhanced activity appears correctly with proper field serialization (strings for IDs, ISO dates, proper data types)")
+                            return True
+                        else:
+                            self.log_result("GET /api/activities enhanced serialization", False, 
+                                          f"Serialization issues: {failed_serialization}", enhanced_activity)
+                            return False
+                    else:
+                        self.log_result("GET /api/activities enhanced serialization", False, 
+                                      "Enhanced activity not found in activities list", data)
+                        return False
+                else:
+                    self.log_result("GET /api/activities enhanced serialization", False, 
+                                  "No activities found or invalid response", data)
+                    return False
+            else:
+                self.log_result("GET /api/activities enhanced serialization", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("GET /api/activities enhanced serialization", False, f"Request error: {str(e)}")
+            return False
+
+    def test_update_activity_progress(self):
+        """Test PUT /api/activities/{activity_id}/progress with achieved_quantity and status_notes"""
+        if not hasattr(self, 'enhanced_activity_id'):
+            self.log_result("Update activity progress", False, "No enhanced activity ID available from previous test")
+            return False
+        
+        try:
+            # Progress update data
+            progress_data = {
+                "achieved_quantity": 25.0,  # 25 out of 50 participants trained (50% progress)
+                "status_notes": "Training sessions 1-3 completed successfully. 25 participants have completed basic digital skills modules. On track for full completion.",
+                "actual_output": "25 participants completed basic digital skills training with hands-on practice sessions",
+                "milestone_completed": "Training materials preparation completed",  # Mark first milestone as completed
+                "comments": "Excellent participant engagement. All participants showing good progress in basic computer operations."
+            }
+            
+            response = self.session.put(
+                f"{self.base_url}/activities/{self.enhanced_activity_id}/progress",
+                json=progress_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    result_data = data.get("data", {})
+                    
+                    # Verify progress update results
+                    progress_checks = [
+                        (result_data.get("progress_percentage") == 50.0, "Progress percentage auto-calculated from achieved_quantity (25/50 = 50%)"),
+                        (isinstance(result_data.get("completion_variance"), (int, float)), "Completion variance calculated"),
+                        (isinstance(result_data.get("schedule_variance_days"), int), "Schedule variance days calculated"),
+                        (result_data.get("risk_level") in ["low", "medium", "high"], "Risk level assessed"),
+                        (result_data.get("status") in ["not_started", "in_progress", "completed", "delayed"], "Status updated based on progress")
+                    ]
+                    
+                    failed_progress_checks = [check[1] for check in progress_checks if not check[0]]
+                    
+                    if not failed_progress_checks:
+                        self.log_result("Update activity progress", True, 
+                                      f"Activity progress updated successfully: {result_data.get('progress_percentage')}% complete, variance analysis calculated, status updated to '{result_data.get('status')}'")
+                        return True
+                    else:
+                        self.log_result("Update activity progress", False, 
+                                      f"Progress update validation failed: {failed_progress_checks}", data)
+                        return False
+                else:
+                    self.log_result("Update activity progress", False, 
+                                  "Success flag not set in response", data)
+                    return False
+            else:
+                self.log_result("Update activity progress", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Update activity progress", False, f"Request error: {str(e)}")
+            return False
+
+    def test_get_activity_variance_analysis(self):
+        """Test GET /api/activities/{activity_id}/variance for variance analysis structure"""
+        if not hasattr(self, 'enhanced_activity_id'):
+            self.log_result("Get activity variance analysis", False, "No enhanced activity ID available from previous test")
+            return False
+        
+        try:
+            response = self.session.get(f"{self.base_url}/activities/{self.enhanced_activity_id}/variance")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    variance_data = data.get("data", {})
+                    
+                    # Verify variance analysis structure
+                    variance_structure_checks = [
+                        ("schedule_variance" in variance_data, "Schedule variance analysis present"),
+                        ("budget_variance" in variance_data, "Budget variance analysis present"),
+                        ("output_variance" in variance_data, "Output variance analysis present"),
+                        ("completion_variance" in variance_data, "Completion variance analysis present"),
+                        ("risk_assessment" in variance_data, "Risk assessment present"),
+                        ("milestone_analysis" in variance_data, "Milestone analysis present"),
+                        ("performance_indicators" in variance_data, "Performance indicators present")
+                    ]
+                    
+                    # Verify data types and structure
+                    if variance_data:
+                        data_type_checks = [
+                            (isinstance(variance_data.get("schedule_variance", {}), dict), "Schedule variance is structured object"),
+                            (isinstance(variance_data.get("budget_variance", {}), dict), "Budget variance is structured object"),
+                            (isinstance(variance_data.get("output_variance", {}), dict), "Output variance is structured object"),
+                            (isinstance(variance_data.get("risk_assessment"), str), "Risk assessment is string"),
+                            (isinstance(variance_data.get("milestone_analysis", {}), dict), "Milestone analysis is structured object")
+                        ]
+                    else:
+                        data_type_checks = [(False, "Variance data is empty")]
+                    
+                    all_checks = variance_structure_checks + data_type_checks
+                    failed_variance_checks = [check[1] for check in all_checks if not check[0]]
+                    
+                    if not failed_variance_checks:
+                        self.log_result("Get activity variance analysis", True, 
+                                      "Variance analysis structure returned correctly with all required components: schedule, budget, output, completion variance, risk assessment, milestone analysis")
+                        return True
+                    else:
+                        self.log_result("Get activity variance analysis", False, 
+                                      f"Variance analysis structure issues: {failed_variance_checks}", data)
+                        return False
+                else:
+                    self.log_result("Get activity variance analysis", False, 
+                                  "Success flag not set in response", data)
+                    return False
+            else:
+                self.log_result("Get activity variance analysis", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Get activity variance analysis", False, f"Request error: {str(e)}")
+            return False
+
+    def test_enhanced_activity_edge_cases(self):
+        """Test edge cases for enhanced activity creation"""
+        if not hasattr(self, 'enhanced_project_id'):
+            self.log_result("Enhanced activity edge cases", False, "No project ID available")
+            return False
+        
+        try:
+            from datetime import datetime, timedelta
+            
+            # Test 1: Activity with empty milestones array (should be accepted)
+            activity_data_empty_milestones = {
+                "project_id": self.enhanced_project_id,
+                "name": f"Edge Case Activity - Empty Milestones {uuid.uuid4().hex[:8]}",
+                "assigned_to": self.user_data["id"],
+                "start_date": (datetime.now() + timedelta(days=1)).isoformat(),
+                "end_date": (datetime.now() + timedelta(days=14)).isoformat(),
+                "budget_allocated": 100000.0,
+                "planned_output": "Test output with no milestones",
+                "target_quantity": 10.0,
+                "milestones": []  # Empty array should be accepted
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/activities",
+                json=activity_data_empty_milestones
+            )
+            
+            empty_milestones_success = response.status_code == 200
+            
+            # Test 2: Activity with milestone dates in ISO format parsing
+            activity_data_iso_dates = {
+                "project_id": self.enhanced_project_id,
+                "name": f"Edge Case Activity - ISO Dates {uuid.uuid4().hex[:8]}",
+                "assigned_to": self.user_data["id"],
+                "start_date": (datetime.now() + timedelta(days=2)).isoformat(),
+                "end_date": (datetime.now() + timedelta(days=16)).isoformat(),
+                "budget_allocated": 150000.0,
+                "planned_output": "Test output with ISO date milestones",
+                "target_quantity": 15.0,
+                "milestones": [
+                    {
+                        "name": "ISO Date Milestone",
+                        "planned_date": (datetime.now() + timedelta(days=8)).isoformat()  # ISO format
+                    }
+                ]
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/activities",
+                json=activity_data_iso_dates
+            )
+            
+            iso_dates_success = response.status_code == 200
+            
+            # Verify no ObjectId serialization issues by checking response format
+            if iso_dates_success:
+                data = response.json()
+                no_objectid_issues = (
+                    isinstance(data.get("id") or data.get("_id"), str) and
+                    not str(data.get("id", "")).startswith("ObjectId(") and
+                    not str(data.get("_id", "")).startswith("ObjectId(")
+                )
+            else:
+                no_objectid_issues = False
+            
+            # Summary of edge case tests
+            edge_case_results = [
+                (empty_milestones_success, "Empty milestones array accepted"),
+                (iso_dates_success, "ISO date parsing in milestones working"),
+                (no_objectid_issues, "No ObjectId serialization issues")
+            ]
+            
+            failed_edge_cases = [check[1] for check in edge_case_results if not check[0]]
+            
+            if not failed_edge_cases:
+                self.log_result("Enhanced activity edge cases", True, 
+                              "All edge cases handled correctly: empty milestones accepted, ISO date parsing working, no ObjectId serialization issues")
+                return True
+            else:
+                self.log_result("Enhanced activity edge cases", False, 
+                              f"Edge case failures: {failed_edge_cases}")
+                return False
+                
+        except Exception as e:
+            self.log_result("Enhanced activity edge cases", False, f"Request error: {str(e)}")
+            return False
+
+    def run_enhanced_activity_tests_only(self):
+        """Run only the enhanced activity creation tests"""
+        print("=" * 80)
+        print("TESTING ENHANCED ACTIVITY CREATION ENDPOINTS ONLY")
+        print("=" * 80)
+        
+        # Required setup tests
+        setup_tests = [
+            self.test_api_health,
+            self.test_user_registration,
+            self.test_user_login_valid
+        ]
+        
+        # Enhanced activity tests
+        enhanced_tests = [
+            self.test_enhanced_activity_creation_endpoints,
+            self.test_enhanced_activity_edge_cases
+        ]
+        
+        # Run setup
+        for test in setup_tests:
+            if not test():
+                print("❌ Setup failed - stopping tests")
+                return
+        
+        # Run enhanced activity tests
+        for test in enhanced_tests:
+            test()
+            print()
+        
+        # Summary
+        self.print_test_summary()
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print(f"🚀 Starting DataRW Backend API Tests")
