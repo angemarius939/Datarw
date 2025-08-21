@@ -656,6 +656,28 @@ class IremboPayInvoiceResponse(BaseModel):
     currency: str
     status: str
 
+# AI Service models
+class SurveyQuestion(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    type: QuestionType
+    question: str
+    required: bool = False
+    options: Optional[List[str]] = None
+    validation: Optional[Dict[str, Any]] = None
+
+class SurveyGenerationContext(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: str
+    documents: List[Dict[str, Any]] = []
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class DocumentUpload(BaseModel):
+    filename: str
+    content_type: str
+    file_size: int
+    content: str
+
 class PartnerResponse(BaseModel):
     id: str
     name: str
