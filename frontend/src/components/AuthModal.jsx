@@ -35,8 +35,11 @@ const AuthModal = ({ isOpen, onClose }) => {
     const result = await login(loginData);
     
     if (result.success) {
-      onClose();
-      setLoginData({ email: '', password: '' });
+      // Add a small delay to ensure auth state updates before closing modal
+      setTimeout(() => {
+        onClose();
+        setLoginData({ email: '', password: '' });
+      }, 100);
     } else {
       setError(result.error);
     }
