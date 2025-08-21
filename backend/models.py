@@ -12,6 +12,11 @@ class UserRole(str, Enum):
     PROJECT_MANAGER = "Project Manager"
     ME_OFFICER = "M&E Officer"
     DONOR_VIEWER = "Donor Viewer"
+    DIRECTOR = "Director"
+    OFFICER = "Officer"
+    FIELD_STAFF = "Field Staff"
+    PARTNER_STAFF = "Partner Staff"
+    SYSTEM_ADMIN = "System Admin"
 
 class SubscriptionPlan(str, Enum):
     BASIC = "Basic"
