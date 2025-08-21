@@ -892,6 +892,99 @@ class DataRWAPITester:
             return False
 
     # Project Management Tests
+    def test_project_dashboard_datetime_bug_fix(self):
+        """Test project dashboard endpoint specifically for datetime variable scoping bug fix"""
+        try:
+            response = self.session.get(f"{self.base_url}/projects/dashboard")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("success") and "data" in data):
+                    dashboard_data = data["data"]
+                    
+                    # Verify all required dashboard fields are present
+                    required_fields = [
+                        "total_projects", "active_projects", "completed_projects", 
+                        "overdue_activities", "budget_utilization", "kpi_performance", 
+                        "recent_activities", "projects_by_status", "budget_by_category"
+                    ]
+                    
+                    missing_fields = [field for field in required_fields if field not in dashboard_data]
+                    if missing_fields:
+                        self.log_result("Project Dashboard DateTime Fix", False, 
+                                      f"Missing required fields: {missing_fields}", data)
+                        return False
+                    
+                    # Verify recent_activities structure (this uses datetime operations)
+                    recent_activities = dashboard_data.get("recent_activities", [])
+                    if isinstance(recent_activities, list):
+                        for activity in recent_activities:
+                            if not isinstance(activity, dict):
+                                self.log_result("Project Dashboard DateTime Fix", False, 
+                                              "recent_activities contains non-dict items", data)
+                                return False
+                            # Check for datetime-related fields
+                            if "updated_at" in activity:
+                                try:
+                                    # Verify the datetime string is valid ISO format
+                                    datetime.fromisoformat(activity["updated_at"].replace('Z', '+00:00'))
+                                except ValueError:
+                                    self.log_result("Project Dashboard DateTime Fix", False, 
+                                                  f"Invalid datetime format in recent_activities: {activity['updated_at']}", data)
+                                    return False
+                    
+                    # Verify overdue_activities calculation (uses datetime comparison)
+                    overdue_activities = dashboard_data.get("overdue_activities", 0)
+                    if not isinstance(overdue_activities, (int, float)):
+                        self.log_result("Project Dashboard DateTime Fix", False, 
+                                      f"overdue_activities should be numeric, got {type(overdue_activities)}", data)
+                        return False
+                    
+                    # Verify projects_by_status has string keys (not None)
+                    projects_by_status = dashboard_data.get("projects_by_status", {})
+                    if isinstance(projects_by_status, dict):
+                        for key in projects_by_status.keys():
+                            if not isinstance(key, str):
+                                self.log_result("Project Dashboard DateTime Fix", False, 
+                                              f"projects_by_status contains non-string key: {key}", data)
+                                return False
+                    
+                    # Verify budget_by_category has string keys (not None)
+                    budget_by_category = dashboard_data.get("budget_by_category", {})
+                    if isinstance(budget_by_category, dict):
+                        for key in budget_by_category.keys():
+                            if not isinstance(key, str):
+                                self.log_result("Project Dashboard DateTime Fix", False, 
+                                              f"budget_by_category contains non-string key: {key}", data)
+                                return False
+                    
+                    self.log_result("Project Dashboard DateTime Fix", True, 
+                                  "Dashboard endpoint working correctly - datetime scoping issue resolved, all datetime operations successful")
+                    return True
+                else:
+                    self.log_result("Project Dashboard DateTime Fix", False, 
+                                  "Missing success/data fields in response", data)
+                    return False
+            else:
+                # Check specifically for the datetime scoping error
+                if response.status_code == 500:
+                    error_text = response.text
+                    if "cannot access local variable 'datetime' where it is not associated with a value" in error_text:
+                        self.log_result("Project Dashboard DateTime Fix", False, 
+                                      "CRITICAL: Original datetime scoping error still present - fix not working", error_text)
+                        return False
+                    elif "Failed to get dashboard data" in error_text and "datetime" in error_text:
+                        self.log_result("Project Dashboard DateTime Fix", False, 
+                                      "CRITICAL: Datetime-related error in dashboard data retrieval", error_text)
+                        return False
+                
+                self.log_result("Project Dashboard DateTime Fix", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Project Dashboard DateTime Fix", False, f"Request error: {str(e)}")
+            return False
+
     def test_project_dashboard(self):
         """Test project dashboard endpoint"""
         try:
