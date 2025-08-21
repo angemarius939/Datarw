@@ -425,6 +425,19 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
             )}
           </div>
 
+
+          {/* Assigned Team (optional) */}
+          <div>
+            <Label htmlFor="assigned_team">Assigned Team (optional)</Label>
+            <Input
+              id="assigned_team"
+              value={activity.assigned_team}
+              onChange={(e) => setActivity(prev => ({ ...prev, assigned_team: e.target.value }))}
+              placeholder="Team/Department name"
+              className="mt-1"
+            />
+          </div>
+
           {/* Timeline */}
           <div className="grid grid-cols-2 gap-4">
             <div>
