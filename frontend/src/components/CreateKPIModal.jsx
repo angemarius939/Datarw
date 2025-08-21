@@ -317,7 +317,7 @@ const CreateKPIModal = ({ onKPICreated, trigger }) => {
                 <BarChart3 className="h-4 w-4 mr-1" />
                 Indicator Type *
               </Label>
-              <Select value={kpi.indicator_type} onValueChange={(value) => setKPI(prev => ({ ...prev, indicator_type: value }))}>
+              <Select value={kpi.type} onValueChange={(value) => setKPI(prev => ({ ...prev, type: value }))}>
                 <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
