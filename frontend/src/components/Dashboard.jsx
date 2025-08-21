@@ -27,6 +27,11 @@ import { surveysAPI, analyticsAPI, usersAPI, organizationAPI } from '../services
 import SurveyBuilder from './SurveyBuilder';
 import UserManagement from './UserManagement';
 import ProjectDashboard from './ProjectDashboard';
+import CreateProjectModal from './CreateProjectModal';
+import CreateActivityModal from './CreateActivityModal';
+import CreateBeneficiaryModal from './CreateBeneficiaryModal';
+import CreateKPIModal from './CreateKPIModal';
+import CreateBudgetItemModal from './CreateBudgetItemModal';
 
 const Dashboard = ({ onUpgrade }) => {
   const { user, organization, logout, updateOrganization } = useAuth();
