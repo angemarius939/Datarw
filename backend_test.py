@@ -1916,6 +1916,619 @@ class DataRWAPITester:
         except Exception as e:
             self.log_result("Admin Get Email Logs", False, f"Request error: {str(e)}")
             return False
+
+    # IremboPay Payment Integration Tests
+    def test_payment_plans_endpoint(self):
+        """Test GET /api/payments/plans endpoint"""
+        try:
+            response = self.session.get(f"{self.base_url}/payments/plans")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "success" in data and data["success"] and "plans" in data:
+                    plans = data["plans"]
+                    if "Basic" in plans and "Professional" in plans and "Enterprise" in plans:
+                        basic_plan = plans["Basic"]
+                        professional_plan = plans["Professional"]
+                        enterprise_plan = plans["Enterprise"]
+                        
+                        # Verify Basic plan details
+                        if (basic_plan.get("price") == 100000 and 
+                            basic_plan.get("currency") == "RWF" and
+                            "features" in basic_plan):
+                            
+                            # Verify Professional plan details
+                            if (professional_plan.get("price") == 300000 and
+                                professional_plan.get("currency") == "RWF"):
+                                
+                                # Verify Enterprise plan shows custom pricing
+                                if enterprise_plan.get("price") == "Custom":
+                                    self.log_result("Payment Plans Endpoint", True, 
+                                                  "All payment plans retrieved with correct pricing")
+                                    return True
+                                else:
+                                    self.log_result("Payment Plans Endpoint", False, 
+                                                  "Enterprise plan pricing incorrect", data)
+                                    return False
+                            else:
+                                self.log_result("Payment Plans Endpoint", False, 
+                                              "Professional plan details incorrect", data)
+                                return False
+                        else:
+                            self.log_result("Payment Plans Endpoint", False, 
+                                          "Basic plan details incorrect", data)
+                            return False
+                    else:
+                        self.log_result("Payment Plans Endpoint", False, 
+                                      "Missing required plans", data)
+                        return False
+                else:
+                    self.log_result("Payment Plans Endpoint", False, 
+                                  "Invalid response structure", data)
+                    return False
+            else:
+                self.log_result("Payment Plans Endpoint", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Payment Plans Endpoint", False, f"Request error: {str(e)}")
+            return False
+
+    def test_create_invoice_endpoint(self):
+        """Test POST /api/payments/create-invoice endpoint"""
+        try:
+            invoice_data = {
+                "customer": {
+                    "email": "jean.uwimana@example.com",
+                    "name": "Jean Uwimana",
+                    "phone_number": "0788123456"
+                },
+                "payment_items": [
+                    {
+                        "unit_amount": 100000,
+                        "quantity": 1,
+                        "code": "BASIC-PLAN",
+                        "description": "DataRW Basic Plan - Monthly Subscription"
+                    }
+                ],
+                "description": "DataRW Basic Plan Subscription Payment",
+                "currency": "RWF"
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/payments/create-invoice",
+                json=invoice_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ["invoice_number", "transaction_id", "status", 
+                                 "amount", "currency", "payment_url", "expiry_at"]
+                
+                if all(field in data for field in required_fields):
+                    if (data["amount"] == 100000 and 
+                        data["currency"] == "RWF" and
+                        data["status"] == "pending"):
+                        
+                        self.test_invoice_number = data["invoice_number"]
+                        self.log_result("Create Invoice Endpoint", True, 
+                                      f"Invoice created successfully: {data['invoice_number']}")
+                        return True
+                    else:
+                        self.log_result("Create Invoice Endpoint", False, 
+                                      "Invoice data incorrect", data)
+                        return False
+                else:
+                    missing_fields = [field for field in required_fields if field not in data]
+                    self.log_result("Create Invoice Endpoint", False, 
+                                  f"Missing fields: {missing_fields}", data)
+                    return False
+            else:
+                self.log_result("Create Invoice Endpoint", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Create Invoice Endpoint", False, f"Request error: {str(e)}")
+            return False
+
+    def test_initiate_mtn_payment(self):
+        """Test POST /api/payments/initiate with MTN mobile money"""
+        if not hasattr(self, 'test_invoice_number'):
+            self.log_result("Initiate MTN Payment", False, "No invoice number from previous test")
+            return False
+        
+        try:
+            payment_data = {
+                "invoice_number": self.test_invoice_number,
+                "phone_number": "0788123456",
+                "provider": "MTN"
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/payments/initiate",
+                json=payment_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ["payment_reference", "status", "message", 
+                                 "amount", "currency", "provider", "phone_number"]
+                
+                if all(field in data for field in required_fields):
+                    if (data["provider"] == "MTN" and 
+                        data["status"] == "processing" and
+                        data["amount"] == 100000):
+                        
+                        self.test_payment_reference = data["payment_reference"]
+                        self.log_result("Initiate MTN Payment", True, 
+                                      f"MTN payment initiated: {data['payment_reference']}")
+                        return True
+                    else:
+                        self.log_result("Initiate MTN Payment", False, 
+                                      "Payment data incorrect", data)
+                        return False
+                else:
+                    missing_fields = [field for field in required_fields if field not in data]
+                    self.log_result("Initiate MTN Payment", False, 
+                                  f"Missing fields: {missing_fields}", data)
+                    return False
+            else:
+                self.log_result("Initiate MTN Payment", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Initiate MTN Payment", False, f"Request error: {str(e)}")
+            return False
+
+    def test_initiate_airtel_payment(self):
+        """Test POST /api/payments/initiate with Airtel mobile money"""
+        # Create a new invoice for Airtel test
+        try:
+            invoice_data = {
+                "customer": {
+                    "email": "marie.mukamana@example.com",
+                    "name": "Marie Mukamana",
+                    "phone_number": "0738456789"
+                },
+                "payment_items": [
+                    {
+                        "unit_amount": 300000,
+                        "quantity": 1,
+                        "code": "PROFESSIONAL-PLAN",
+                        "description": "DataRW Professional Plan - Monthly Subscription"
+                    }
+                ],
+                "description": "DataRW Professional Plan Subscription Payment",
+                "currency": "RWF"
+            }
+            
+            invoice_response = self.session.post(
+                f"{self.base_url}/payments/create-invoice",
+                json=invoice_data
+            )
+            
+            if invoice_response.status_code != 200:
+                self.log_result("Initiate Airtel Payment", False, "Failed to create invoice for Airtel test")
+                return False
+            
+            invoice_data = invoice_response.json()
+            airtel_invoice_number = invoice_data["invoice_number"]
+            
+            # Now initiate Airtel payment
+            payment_data = {
+                "invoice_number": airtel_invoice_number,
+                "phone_number": "0738456789",
+                "provider": "AIRTEL"
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/payments/initiate",
+                json=payment_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("provider") == "AIRTEL" and 
+                    data.get("status") == "processing" and
+                    data.get("amount") == 300000):
+                    
+                    self.log_result("Initiate Airtel Payment", True, 
+                                  f"Airtel payment initiated: {data['payment_reference']}")
+                    return True
+                else:
+                    self.log_result("Initiate Airtel Payment", False, 
+                                  "Airtel payment data incorrect", data)
+                    return False
+            else:
+                self.log_result("Initiate Airtel Payment", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Initiate Airtel Payment", False, f"Request error: {str(e)}")
+            return False
+
+    def test_subscription_payment_basic_plan(self):
+        """Test POST /api/payments/subscription for Basic plan"""
+        try:
+            subscription_data = {
+                "user_email": "alice.uwimana@example.com",
+                "user_name": "Alice Uwimana",
+                "phone_number": "0788987654",
+                "plan_name": "Basic",
+                "payment_method": "MTN"
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/payments/subscription",
+                json=subscription_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("success") and 
+                    "data" in data and
+                    data["data"].get("plan") == "Basic" and
+                    data["data"].get("amount") == 100000):
+                    
+                    # Store invoice number for status checking
+                    if "invoice" in data["data"]:
+                        self.basic_subscription_invoice = data["data"]["invoice"]["invoiceNumber"]
+                    
+                    self.log_result("Subscription Payment Basic Plan", True, 
+                                  "Basic plan subscription payment created successfully")
+                    return True
+                else:
+                    self.log_result("Subscription Payment Basic Plan", False, 
+                                  "Subscription data incorrect", data)
+                    return False
+            else:
+                self.log_result("Subscription Payment Basic Plan", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Subscription Payment Basic Plan", False, f"Request error: {str(e)}")
+            return False
+
+    def test_subscription_payment_professional_plan(self):
+        """Test POST /api/payments/subscription for Professional plan"""
+        try:
+            subscription_data = {
+                "user_email": "bob.nzeyimana@example.com",
+                "user_name": "Bob Nzeyimana",
+                "phone_number": "0738123456",
+                "plan_name": "Professional",
+                "payment_method": "AIRTEL"
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/payments/subscription",
+                json=subscription_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("success") and 
+                    "data" in data and
+                    data["data"].get("plan") == "Professional" and
+                    data["data"].get("amount") == 300000):
+                    
+                    # Store invoice number for status checking
+                    if "invoice" in data["data"]:
+                        self.professional_subscription_invoice = data["data"]["invoice"]["invoiceNumber"]
+                    
+                    self.log_result("Subscription Payment Professional Plan", True, 
+                                  "Professional plan subscription payment created successfully")
+                    return True
+                else:
+                    self.log_result("Subscription Payment Professional Plan", False, 
+                                  "Subscription data incorrect", data)
+                    return False
+            else:
+                self.log_result("Subscription Payment Professional Plan", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Subscription Payment Professional Plan", False, f"Request error: {str(e)}")
+            return False
+
+    def test_subscription_payment_enterprise_plan(self):
+        """Test POST /api/payments/subscription for Enterprise plan (should show custom pricing)"""
+        try:
+            subscription_data = {
+                "user_email": "ceo@bigcompany.com",
+                "user_name": "CEO BigCompany",
+                "phone_number": "0788555666",
+                "plan_name": "Enterprise",
+                "payment_method": "MTN"
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/payments/subscription",
+                json=subscription_data
+            )
+            
+            # Enterprise should return an error about custom pricing
+            if response.status_code == 500:
+                data = response.json()
+                if "custom pricing" in data.get("detail", "").lower():
+                    self.log_result("Subscription Payment Enterprise Plan", True, 
+                                  "Enterprise plan correctly shows custom pricing message")
+                    return True
+                else:
+                    self.log_result("Subscription Payment Enterprise Plan", False, 
+                                  "Wrong error message for Enterprise plan", data)
+                    return False
+            else:
+                self.log_result("Subscription Payment Enterprise Plan", False, 
+                              f"Expected 500 error, got {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Subscription Payment Enterprise Plan", False, f"Request error: {str(e)}")
+            return False
+
+    def test_payment_status_endpoint(self):
+        """Test GET /api/payments/status/{invoice_number}"""
+        if not hasattr(self, 'test_invoice_number'):
+            self.log_result("Payment Status Endpoint", False, "No invoice number from previous test")
+            return False
+        
+        try:
+            response = self.session.get(f"{self.base_url}/payments/status/{self.test_invoice_number}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ["invoice_number", "status", "amount", "currency", "created_at"]
+                
+                if all(field in data for field in required_fields):
+                    if (data["invoice_number"] == self.test_invoice_number and
+                        data["amount"] == 100000 and
+                        data["currency"] == "RWF"):
+                        
+                        self.log_result("Payment Status Endpoint", True, 
+                                      f"Payment status retrieved: {data['status']}")
+                        return True
+                    else:
+                        self.log_result("Payment Status Endpoint", False, 
+                                      "Payment status data incorrect", data)
+                        return False
+                else:
+                    missing_fields = [field for field in required_fields if field not in data]
+                    self.log_result("Payment Status Endpoint", False, 
+                                  f"Missing fields: {missing_fields}", data)
+                    return False
+            else:
+                self.log_result("Payment Status Endpoint", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Payment Status Endpoint", False, f"Request error: {str(e)}")
+            return False
+
+    def test_payment_history_endpoint(self):
+        """Test GET /api/payments/history"""
+        try:
+            response = self.session.get(f"{self.base_url}/payments/history")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if ("payments" in data and 
+                    "total" in data and
+                    isinstance(data["payments"], list)):
+                    
+                    # Check if we have payments from our tests
+                    payments = data["payments"]
+                    if len(payments) > 0:
+                        # Verify payment structure
+                        first_payment = payments[0]
+                        required_fields = ["id", "invoice_number", "status", "amount", "currency", "created_at"]
+                        
+                        if all(field in first_payment for field in required_fields):
+                            self.log_result("Payment History Endpoint", True, 
+                                          f"Payment history retrieved with {len(payments)} payments")
+                            return True
+                        else:
+                            missing_fields = [field for field in required_fields if field not in first_payment]
+                            self.log_result("Payment History Endpoint", False, 
+                                          f"Payment missing fields: {missing_fields}", first_payment)
+                            return False
+                    else:
+                        self.log_result("Payment History Endpoint", True, 
+                                      "Payment history endpoint working (no payments yet)")
+                        return True
+                else:
+                    self.log_result("Payment History Endpoint", False, 
+                                  "Invalid response structure", data)
+                    return False
+            else:
+                self.log_result("Payment History Endpoint", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Payment History Endpoint", False, f"Request error: {str(e)}")
+            return False
+
+    def test_webhook_endpoint(self):
+        """Test POST /api/webhooks/irembopay webhook processing"""
+        try:
+            import hmac
+            import hashlib
+            import json
+            
+            # Create mock webhook payload
+            webhook_payload = {
+                "id": str(uuid.uuid4()),
+                "type": "payment.completed",
+                "createdAt": datetime.now().isoformat(),
+                "data": {
+                    "invoiceNumber": getattr(self, 'test_invoice_number', '880123456789'),
+                    "transactionId": "TXN-TEST-123456",
+                    "paymentReference": "MTN-123456",
+                    "amount": 100000,
+                    "currency": "RWF",
+                    "provider": "MTN",
+                    "completedAt": datetime.now().isoformat()
+                }
+            }
+            
+            payload_str = json.dumps(webhook_payload)
+            
+            # Generate mock signature
+            webhook_secret = "mock_webhook_secret_key_for_development"
+            signature = hmac.new(
+                webhook_secret.encode('utf-8'),
+                payload_str.encode('utf-8'),
+                hashlib.sha256
+            ).hexdigest()
+            
+            headers = {
+                "X-IremboPay-Signature": f"sha256={signature}",
+                "Content-Type": "application/json"
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/webhooks/irembopay",
+                data=payload_str,
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("status") == "success":
+                    self.log_result("Webhook Endpoint", True, 
+                                  "Webhook processed successfully")
+                    return True
+                else:
+                    self.log_result("Webhook Endpoint", False, 
+                                  "Webhook response incorrect", data)
+                    return False
+            else:
+                self.log_result("Webhook Endpoint", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Webhook Endpoint", False, f"Request error: {str(e)}")
+            return False
+
+    def test_webhook_signature_validation(self):
+        """Test webhook signature validation (should reject invalid signatures)"""
+        try:
+            import json
+            
+            # Create mock webhook payload
+            webhook_payload = {
+                "id": str(uuid.uuid4()),
+                "type": "payment.failed",
+                "createdAt": datetime.now().isoformat(),
+                "data": {
+                    "invoiceNumber": "880987654321",
+                    "transactionId": "TXN-FAIL-123456",
+                    "failureReason": "Insufficient funds"
+                }
+            }
+            
+            payload_str = json.dumps(webhook_payload)
+            
+            # Use invalid signature
+            headers = {
+                "X-IremboPay-Signature": "sha256=invalid_signature_here",
+                "Content-Type": "application/json"
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/webhooks/irembopay",
+                data=payload_str,
+                headers=headers
+            )
+            
+            # Should return 401 for invalid signature
+            if response.status_code == 401:
+                data = response.json()
+                if "signature" in data.get("detail", "").lower():
+                    self.log_result("Webhook Signature Validation", True, 
+                                  "Invalid webhook signature correctly rejected")
+                    return True
+                else:
+                    self.log_result("Webhook Signature Validation", False, 
+                                  "Wrong error message for invalid signature", data)
+                    return False
+            else:
+                self.log_result("Webhook Signature Validation", False, 
+                              f"Expected 401, got {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Webhook Signature Validation", False, f"Request error: {str(e)}")
+            return False
+
+    def test_invalid_phone_number_error(self):
+        """Test error handling for invalid phone numbers"""
+        try:
+            invoice_data = {
+                "customer": {
+                    "email": "test@example.com",
+                    "name": "Test User",
+                    "phone_number": "123456789"  # Invalid format
+                },
+                "payment_items": [
+                    {
+                        "unit_amount": 100000,
+                        "quantity": 1,
+                        "code": "TEST-PLAN",
+                        "description": "Test Plan"
+                    }
+                ],
+                "description": "Test payment with invalid phone",
+                "currency": "RWF"
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/payments/create-invoice",
+                json=invoice_data
+            )
+            
+            # Should return validation error
+            if response.status_code == 422:
+                data = response.json()
+                if "phone_number" in str(data).lower():
+                    self.log_result("Invalid Phone Number Error", True, 
+                                  "Invalid phone number correctly rejected")
+                    return True
+                else:
+                    self.log_result("Invalid Phone Number Error", False, 
+                                  "Wrong validation error message", data)
+                    return False
+            else:
+                self.log_result("Invalid Phone Number Error", False, 
+                              f"Expected 422, got {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Invalid Phone Number Error", False, f"Request error: {str(e)}")
+            return False
+
+    def test_nonexistent_invoice_error(self):
+        """Test error handling for non-existent invoices"""
+        try:
+            fake_invoice_number = "880999999999"
+            
+            response = self.session.get(f"{self.base_url}/payments/status/{fake_invoice_number}")
+            
+            # Should return 404 or 500 with appropriate error
+            if response.status_code in [404, 500]:
+                data = response.json()
+                if "not found" in data.get("detail", "").lower():
+                    self.log_result("Nonexistent Invoice Error", True, 
+                                  "Non-existent invoice correctly handled")
+                    return True
+                else:
+                    self.log_result("Nonexistent Invoice Error", False, 
+                                  "Wrong error message for non-existent invoice", data)
+                    return False
+            else:
+                self.log_result("Nonexistent Invoice Error", False, 
+                              f"Expected 404/500, got {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Nonexistent Invoice Error", False, f"Request error: {str(e)}")
+            return False
     
     def run_all_tests(self):
         """Run all tests in sequence"""
