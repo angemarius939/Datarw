@@ -377,7 +377,7 @@ class ProjectService:
         ]
         
         kpi_result = await self.db.kpi_indicators.aggregate(kpi_pipeline).to_list(1)
-        kpi_achievement_rate = kpi_result[0]["avg_achievement"] if kpi_result else 0
+        kpi_achievement_rate = kpi_result[0]["avg_achievement"] if kpi_result and kpi_result[0]["avg_achievement"] is not None else 0
         
         # Budget by category
         budget_pipeline = [
