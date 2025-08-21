@@ -276,7 +276,7 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
               <SelectContent>
                 {projects.map(project => (
                   <SelectItem key={project._id || project.id} value={project._id || project.id}>
-                    {project.title}
+                    {project.name || project.title}
                   </SelectItem>
                 ))}
               </SelectContent>
