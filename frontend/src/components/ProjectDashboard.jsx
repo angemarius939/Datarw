@@ -281,22 +281,42 @@ const ProjectDashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2">
-              <Plus className="h-6 w-6 text-blue-600" />
-              <span className="text-sm">New Project</span>
-            </Button>
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2">
-              <Calendar className="h-6 w-6 text-green-600" />
-              <span className="text-sm">Add Activity</span>
-            </Button>
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2">
-              <Users className="h-6 w-6 text-purple-600" />
-              <span className="text-sm">Add Beneficiary</span>
-            </Button>
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2">
-              <TrendingUp className="h-6 w-6 text-orange-600" />
-              <span className="text-sm">Add KPI</span>
-            </Button>
+            <CreateProjectModal 
+              onProjectCreated={handleProjectCreated}
+              trigger={
+                <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2">
+                  <Plus className="h-6 w-6 text-blue-600" />
+                  <span className="text-sm">New Project</span>
+                </Button>
+              }
+            />
+            <CreateActivityModal
+              onActivityCreated={() => fetchDashboardData()}
+              trigger={
+                <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2">
+                  <Calendar className="h-6 w-6 text-green-600" />
+                  <span className="text-sm">Add Activity</span>
+                </Button>
+              }
+            />
+            <CreateBeneficiaryModal
+              onBeneficiaryCreated={() => fetchDashboardData()}
+              trigger={
+                <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2">
+                  <Users className="h-6 w-6 text-purple-600" />
+                  <span className="text-sm">Add Beneficiary</span>
+                </Button>
+              }
+            />
+            <CreateKPIModal
+              onKPICreated={() => fetchDashboardData()}
+              trigger={
+                <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2">
+                  <TrendingUp className="h-6 w-6 text-orange-600" />
+                  <span className="text-sm">Add KPI</span>
+                </Button>
+              }
+            />
           </div>
         </CardContent>
       </Card>
