@@ -13,7 +13,14 @@ import {
   AlertTriangle,
   Clock,
   CheckCircle,
-  Loader2
+  Loader2,
+  BarChart3,
+  Target,
+  Activity,
+  Zap,
+  TrendingDown,
+  Brain,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
