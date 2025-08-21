@@ -1966,6 +1966,17 @@ class DataRWAPITester:
             self.test_create_beneficiary,
             self.test_get_beneficiaries,
             self.test_get_beneficiary_demographics,
+            # Admin Panel Tests
+            self.test_admin_create_user_advanced,
+            self.test_admin_bulk_create_users,
+            self.test_admin_create_partner_organization,
+            self.test_admin_get_partner_organizations,
+            self.test_admin_update_partner_organization,
+            self.test_admin_create_partner_performance,
+            self.test_admin_get_partner_performance_summary,
+            self.test_admin_update_organization_branding,
+            self.test_admin_get_organization_branding,
+            self.test_admin_get_email_logs,
             self.test_delete_project,
             # Cleanup tests
             self.test_delete_user,
