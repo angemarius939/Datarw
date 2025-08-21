@@ -518,6 +518,100 @@ class UserResponse(BaseModel):
     last_login: Optional[datetime] = None
     created_at: datetime
 
+# Additional Create/Update models
+class OrganizationCreate(BaseModel):
+    name: str = Field(..., min_length=2, max_length=200)
+    plan: str = "Basic"
+
+class OrganizationUpdate(BaseModel):
+    name: Optional[str] = None
+    plan: Optional[str] = None
+    survey_limit: Optional[int] = None
+    storage_limit: Optional[int] = None
+
+class UserCreate(BaseModel):
+    name: str = Field(..., min_length=2, max_length=100)
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+    role: UserRole = UserRole.VIEWER
+    organization_id: Optional[str] = None
+    phone_number: Optional[str] = None
+    department: Optional[str] = None
+    position: Optional[str] = None
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    role: Optional[UserRole] = None
+    phone_number: Optional[str] = None
+    department: Optional[str] = None
+    position: Optional[str] = None
+    status: Optional[str] = None
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    expires_in: int
+    user: UserResponse
+    organization: Organization
+
+class SurveyCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = None
+    questions: List[Question] = []
+    status: str = "draft"
+
+class SurveyUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    questions: Optional[List[Question]] = None
+    status: Optional[str] = None
+
+class SurveyResponseCreate(BaseModel):
+    survey_id: Optional[str] = None
+    responses: Dict[str, Any] = {}
+    respondent_info: Optional[Dict[str, Any]] = None
+
+class SurveyResponse(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    survey_id: str
+    responses: Dict[str, Any] = {}
+    respondent_info: Optional[Dict[str, Any]] = None
+    submitted_at: datetime = Field(default_factory=datetime.utcnow)
+
+class AnalyticsData(BaseModel):
+    total_responses: int = 0
+    response_rate: float = 0.0
+    average_completion_time: float = 0.0
+    top_performing_survey: Optional[str] = None
+    monthly_growth: float = 0.0
+    storage_growth: float = 0.0
+
+class Enumerator(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    email: EmailStr
+    phone_number: str
+    organization_id: str
+    access_password: str
+    assigned_surveys: List[str] = []
+    status: str = "active"
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    last_sync: Optional[datetime] = None
+
+class EnumeratorCreate(BaseModel):
+    name: str = Field(..., min_length=2, max_length=100)
+    email: EmailStr
+    phone_number: str
+    access_password: str = Field(..., min_length=6)
+
+class EnumeratorAssignment(BaseModel):
+    enumerator_id: str
+    survey_id: str
+
 class PartnerResponse(BaseModel):
     id: str
     name: str
