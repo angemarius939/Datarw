@@ -131,10 +131,13 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
       const token = localStorage.getItem('access_token');
       
       const activityData = {
-        ...activity,
-        budget_allocated: activity.budget_allocated ? parseFloat(activity.budget_allocated) : null,
+        project_id: activity.project_id,
+        name: activity.name,
+        description: activity.description,
+        assigned_to: activity.assigned_to,
         start_date: new Date(activity.start_date).toISOString(),
         end_date: new Date(activity.end_date).toISOString(),
+        budget_allocated: activity.budget_allocated ? parseFloat(activity.budget_allocated) : 0,
         deliverables: activity.deliverables.filter(d => d.trim() !== ''),
         dependencies: activity.dependencies.filter(d => d.trim() !== '')
       };
