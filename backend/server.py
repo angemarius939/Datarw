@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, File, UploadFile
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, File, UploadFile, BackgroundTasks
 from fastapi.security import HTTPBearer
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -6,9 +6,10 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import sys
 import logging
+import json
 from pathlib import Path
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 # Add current directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
