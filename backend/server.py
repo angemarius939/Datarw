@@ -1084,6 +1084,485 @@ async def root():
     return {"message": "DataRW API is running!", "version": "1.0.0"}
 
 # Also add a root endpoint for the main app
-@app.get("/")
-async def app_root():
-    return {"message": "DataRW API Server", "version": "1.0.0", "docs": "/docs"}
+# Payment Processing Endpoints
+@app.post("/api/payments/create-invoice", response_model=InvoiceResponse)
+async def create_payment_invoice(
+    request: CreateInvoiceRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Create a payment invoice"""
+    try:
+        # Get current user
+        current_user = await get_current_user(credentials)
+        
+        # Prepare invoice data for IremboPay
+        invoice_data = {
+            "transaction_id": request.transaction_id or f"TXN-{uuid.uuid4().hex[:12]}",
+            "customer": request.customer.dict(),
+            "payment_items": [item.dict() for item in request.payment_items],
+            "description": request.description,
+            "currency": request.currency
+        }
+        
+        # Create invoice with IremboPay service
+        invoice_response = await irembopay_service.create_invoice(invoice_data)
+        
+        # Store payment record in database
+        payment_record = PaymentRecord(
+            user_id=current_user["id"],
+            invoice_number=invoice_response["invoiceNumber"],
+            transaction_id=invoice_response["transactionId"],
+            status=PaymentStatus(invoice_response["status"]),
+            amount=invoice_response["amount"],
+            currency=invoice_response["currency"]
+        )
+        
+        # Insert into database
+        result = await db.payment_records.insert_one(payment_record.dict())
+        
+        return InvoiceResponse(
+            invoice_number=invoice_response["invoiceNumber"],
+            transaction_id=invoice_response["transactionId"],
+            status=PaymentStatus(invoice_response["status"]),
+            amount=invoice_response["amount"],
+            currency=invoice_response["currency"],
+            payment_url=invoice_response["paymentUrl"],
+            customer=request.customer,
+            description=request.description,
+            expiry_at=datetime.fromisoformat(invoice_response["expiryAt"].replace('Z', '+00:00')),
+            created_at=datetime.fromisoformat(invoice_response["createdAt"].replace('Z', '+00:00'))
+        )
+        
+    except Exception as e:
+        logger.error(f"Error creating invoice: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create invoice: {str(e)}")
+
+@app.post("/api/payments/initiate", response_model=PaymentResponse)
+async def initiate_payment(
+    request: InitiatePaymentRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Initiate mobile money payment"""
+    try:
+        # Get current user
+        current_user = await get_current_user(credentials)
+        
+        # Find payment record
+        payment_record = await db.payment_records.find_one({
+            "invoice_number": request.invoice_number,
+            "user_id": current_user["id"]
+        })
+        
+        if not payment_record:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+        
+        # Initiate mobile money payment
+        payment_response = await irembopay_service.initiate_mobile_money_payment(
+            request.invoice_number,
+            request.phone_number,
+            request.provider
+        )
+        
+        # Update payment record
+        await db.payment_records.update_one(
+            {"invoice_number": request.invoice_number},
+            {
+                "$set": {
+                    "provider": request.provider,
+                    "phone_number": request.phone_number,
+                    "payment_reference": payment_response["paymentReference"],
+                    "status": payment_response["status"],
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        return PaymentResponse(
+            payment_reference=payment_response["paymentReference"],
+            status=PaymentStatus(payment_response["status"]),
+            message=payment_response["message"],
+            amount=payment_response["amount"],
+            currency=payment_response["currency"],
+            provider=PaymentProvider(payment_response["provider"]),
+            phone_number=payment_response["phoneNumber"],
+            estimated_processing_time=payment_response["estimatedProcessingTime"]
+        )
+        
+    except Exception as e:
+        logger.error(f"Error initiating payment: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to initiate payment: {str(e)}")
+
+@app.post("/api/payments/subscription")
+async def create_subscription_payment(
+    request: SubscriptionPaymentRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Create subscription payment for DataRW plans"""
+    try:
+        # Get current user
+        current_user = await get_current_user(credentials)
+        
+        # Create subscription payment
+        subscription_response = await irembopay_service.create_subscription_payment(
+            user_email=request.user_email,
+            user_name=request.user_name,
+            phone_number=request.phone_number,
+            plan_name=request.plan_name,
+            payment_method=request.payment_method
+        )
+        
+        # Store payment record
+        payment_record = PaymentRecord(
+            user_id=current_user["id"],
+            invoice_number=subscription_response["invoice"]["invoiceNumber"],
+            transaction_id=subscription_response["invoice"]["transactionId"],
+            status=PaymentStatus.PENDING,
+            amount=subscription_response["amount"],
+            currency=subscription_response["currency"],
+            provider=request.payment_method,
+            phone_number=request.phone_number,
+            plan_name=request.plan_name
+        )
+        
+        if "payment" in subscription_response:
+            payment_record.payment_reference = subscription_response["payment"]["paymentReference"]
+            payment_record.status = PaymentStatus(subscription_response["payment"]["status"])
+        
+        # Insert into database
+        await db.payment_records.insert_one(payment_record.dict())
+        
+        return {
+            "success": True,
+            "message": "Subscription payment created successfully",
+            "data": subscription_response
+        }
+        
+    except Exception as e:
+        logger.error(f"Error creating subscription payment: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create subscription payment: {str(e)}")
+
+@app.get("/api/payments/status/{invoice_number}")
+async def get_payment_status(
+    invoice_number: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get payment status"""
+    try:
+        # Get current user
+        current_user = await get_current_user(credentials)
+        
+        # Check local database first
+        payment_record = await db.payment_records.find_one({
+            "invoice_number": invoice_number,
+            "user_id": current_user["id"]
+        })
+        
+        if not payment_record:
+            raise HTTPException(status_code=404, detail="Payment not found")
+        
+        # Get status from IremboPay
+        invoice_status = await irembopay_service.get_invoice_status(invoice_number)
+        
+        # Update local record if status changed
+        if invoice_status["status"] != payment_record["status"]:
+            update_data = {
+                "status": invoice_status["status"],
+                "updated_at": datetime.utcnow()
+            }
+            
+            if invoice_status["status"] == "completed":
+                update_data["completed_at"] = datetime.utcnow()
+                
+                # Handle subscription activation
+                if payment_record.get("plan_name"):
+                    await activate_user_subscription(
+                        current_user["id"], 
+                        payment_record["plan_name"], 
+                        payment_record["id"]
+                    )
+            
+            await db.payment_records.update_one(
+                {"invoice_number": invoice_number},
+                {"$set": update_data}
+            )
+        
+        return {
+            "invoice_number": invoice_number,
+            "status": invoice_status["status"],
+            "amount": invoice_status["amount"],
+            "currency": invoice_status["currency"],
+            "created_at": invoice_status["createdAt"],
+            "completed_at": invoice_status.get("completedAt"),
+            "last_updated": invoice_status["lastUpdated"]
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting payment status: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get payment status: {str(e)}")
+
+@app.get("/api/payments/history")
+async def get_payment_history(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    limit: int = 10,
+    offset: int = 0
+):
+    """Get user payment history"""
+    try:
+        # Get current user
+        current_user = await get_current_user(credentials)
+        
+        # Get payment records
+        cursor = db.payment_records.find({
+            "user_id": current_user["id"]
+        }).sort("created_at", -1).skip(offset).limit(limit)
+        
+        payments = []
+        async for payment in cursor:
+            payments.append({
+                "id": payment["id"],
+                "invoice_number": payment["invoice_number"],
+                "status": payment["status"],
+                "amount": payment["amount"],
+                "currency": payment["currency"],
+                "provider": payment.get("provider"),
+                "plan_name": payment.get("plan_name"),
+                "created_at": payment["created_at"],
+                "completed_at": payment.get("completed_at")
+            })
+        
+        # Get total count
+        total = await db.payment_records.count_documents({"user_id": current_user["id"]})
+        
+        return {
+            "payments": payments,
+            "total": total,
+            "limit": limit,
+            "offset": offset
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting payment history: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get payment history: {str(e)}")
+
+@app.get("/api/payments/plans")
+async def get_pricing_plans():
+    """Get available pricing plans"""
+    try:
+        pricing_tiers = irembopay_service.get_pricing_tiers()
+        return {
+            "success": True,
+            "plans": pricing_tiers
+        }
+    except Exception as e:
+        logger.error(f"Error getting pricing plans: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get pricing plans: {str(e)}")
+
+# Webhook endpoint for payment notifications
+@app.post("/api/webhooks/irembopay")
+async def handle_irembopay_webhook(
+    request: Request,
+    background_tasks: BackgroundTasks
+):
+    """Handle IremboPay webhook notifications"""
+    try:
+        # Get raw body and signature
+        body = await request.body()
+        signature = request.headers.get("X-IremboPay-Signature", "")
+        
+        # Verify signature
+        if not irembopay_service.verify_webhook_signature(body.decode(), signature):
+            logger.warning(f"Invalid webhook signature: {signature}")
+            raise HTTPException(status_code=401, detail="Invalid signature")
+        
+        # Parse webhook data
+        webhook_data = json.loads(body.decode())
+        
+        # Log webhook event
+        await db.webhook_logs.insert_one({
+            "event_id": webhook_data.get("id"),
+            "event_type": webhook_data.get("type"),
+            "data": webhook_data.get("data", {}),
+            "signature": signature,
+            "processed": False,
+            "created_at": datetime.utcnow()
+        })
+        
+        # Process webhook in background
+        background_tasks.add_task(process_webhook_event, webhook_data)
+        
+        return {"status": "success", "message": "Webhook received"}
+        
+    except json.JSONDecodeError:
+        logger.error("Invalid JSON in webhook payload")
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+    except Exception as e:
+        logger.error(f"Error processing webhook: {str(e)}")
+        raise HTTPException(status_code=500, detail="Webhook processing failed")
+
+async def process_webhook_event(webhook_data: Dict[str, Any]):
+    """Process webhook event in background"""
+    try:
+        event_type = webhook_data.get("type")
+        event_data = webhook_data.get("data", {})
+        
+        if event_type == "payment.completed":
+            await handle_payment_completed(event_data)
+        elif event_type == "payment.failed":
+            await handle_payment_failed(event_data)
+        elif event_type == "payment.expired":
+            await handle_payment_expired(event_data)
+        
+        # Mark webhook as processed
+        await db.webhook_logs.update_one(
+            {"event_id": webhook_data.get("id")},
+            {"$set": {"processed": True, "processed_at": datetime.utcnow()}}
+        )
+        
+    except Exception as e:
+        logger.error(f"Error processing webhook event: {str(e)}")
+        # Mark webhook as failed
+        await db.webhook_logs.update_one(
+            {"event_id": webhook_data.get("id")},
+            {"$set": {"error_message": str(e), "processed_at": datetime.utcnow()}}
+        )
+
+async def handle_payment_completed(event_data: Dict[str, Any]):
+    """Handle completed payment webhook"""
+    try:
+        invoice_number = event_data.get("invoiceNumber")
+        transaction_id = event_data.get("transactionId")
+        
+        # Update payment record
+        payment_record = await db.payment_records.find_one({"invoice_number": invoice_number})
+        if payment_record:
+            await db.payment_records.update_one(
+                {"invoice_number": invoice_number},
+                {
+                    "$set": {
+                        "status": PaymentStatus.COMPLETED,
+                        "completed_at": datetime.utcnow(),
+                        "updated_at": datetime.utcnow()
+                    }
+                }
+            )
+            
+            # Activate subscription if this was a subscription payment
+            if payment_record.get("plan_name"):
+                await activate_user_subscription(
+                    payment_record["user_id"],
+                    payment_record["plan_name"],
+                    payment_record["id"]
+                )
+            
+            logger.info(f"Payment completed successfully: {invoice_number}")
+        
+    except Exception as e:
+        logger.error(f"Error handling payment completion: {str(e)}")
+
+async def handle_payment_failed(event_data: Dict[str, Any]):
+    """Handle failed payment webhook"""
+    try:
+        invoice_number = event_data.get("invoiceNumber")
+        failure_reason = event_data.get("failureReason", "Payment failed")
+        
+        # Update payment record
+        await db.payment_records.update_one(
+            {"invoice_number": invoice_number},
+            {
+                "$set": {
+                    "status": PaymentStatus.FAILED,
+                    "failed_at": datetime.utcnow(),
+                    "failure_reason": failure_reason,
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        logger.info(f"Payment failed: {invoice_number} - {failure_reason}")
+        
+    except Exception as e:
+        logger.error(f"Error handling payment failure: {str(e)}")
+
+async def handle_payment_expired(event_data: Dict[str, Any]):
+    """Handle expired payment webhook"""
+    try:
+        invoice_number = event_data.get("invoiceNumber")
+        
+        # Update payment record
+        await db.payment_records.update_one(
+            {"invoice_number": invoice_number},
+            {
+                "$set": {
+                    "status": PaymentStatus.EXPIRED,
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        logger.info(f"Payment expired: {invoice_number}")
+        
+    except Exception as e:
+        logger.error(f"Error handling payment expiration: {str(e)}")
+
+async def activate_user_subscription(user_id: str, plan_name: str, payment_record_id: str):
+    """Activate user subscription after successful payment"""
+    try:
+        # Calculate subscription period (30 days)
+        start_date = datetime.utcnow()
+        end_date = start_date + timedelta(days=30)
+        
+        # Create subscription record
+        subscription = UserSubscription(
+            user_id=user_id,
+            plan_name=SubscriptionPlan(plan_name),
+            status=SubscriptionStatus.ACTIVE,
+            payment_record_id=payment_record_id,
+            started_at=start_date,
+            expires_at=end_date
+        )
+        
+        # Insert subscription
+        await db.user_subscriptions.insert_one(subscription.dict())
+        
+        # Update user record
+        await db.users.update_one(
+            {"id": user_id},
+            {
+                "$set": {
+                    "current_plan": plan_name,
+                    "subscription_status": SubscriptionStatus.ACTIVE,
+                    "plan_expires_at": end_date,
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        # Update organization limits based on plan
+        user = await db.users.find_one({"id": user_id})
+        if user:
+            plan_limits = get_plan_limits(plan_name)
+            await db.organizations.update_one(
+                {"id": user["organization_id"]},
+                {
+                    "$set": {
+                        "plan": plan_name,
+                        "survey_limit": plan_limits["survey_limit"],
+                        "storage_limit": plan_limits["storage_limit"],
+                        "updated_at": datetime.utcnow()
+                    }
+                }
+            )
+        
+        logger.info(f"User subscription activated: {user_id} - {plan_name}")
+        
+    except Exception as e:
+        logger.error(f"Error activating user subscription: {str(e)}")
+
+def get_plan_limits(plan_name: str) -> Dict[str, int]:
+    """Get limits for each plan"""
+    limits = {
+        "Basic": {"survey_limit": 10, "storage_limit": 1},
+        "Professional": {"survey_limit": -1, "storage_limit": 10},  # -1 means unlimited
+        "Enterprise": {"survey_limit": -1, "storage_limit": -1}
+    }
+    return limits.get(plan_name, {"survey_limit": 10, "storage_limit": 1})
