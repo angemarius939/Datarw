@@ -603,7 +603,7 @@ class ProjectService:
             "kpi_trend_monthly": [
                 {
                     "month": f"{item['_id']['year']}-{item['_id']['month']:02d}",
-                    "achievement": round(item["avg_achievement"], 1)
+                    "achievement": round(item["avg_achievement"], 1) if item["avg_achievement"] is not None else 0
                 }
                 for item in kpi_trend
             ]
