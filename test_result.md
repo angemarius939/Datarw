@@ -107,15 +107,18 @@ user_problem_statement: "Fix project creation error - React runtime error 'Objec
 backend:
   - task: "Create Activity Modal Refactor & Backend Alignment"
     implemented: true
-    working: false
+    working: true
     file: "/app/frontend/src/components/CreateActivityModal.jsx, /app/backend/server.py, /app/backend/project_service.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
           agent: "testing"
           comment: "Enhanced activity creation: POST /api/activities works with milestones and outputs; but GET /api/activities returns validation errors for legacy records missing new fields; PUT /api/activities/{id}/progress and GET variance endpoints failing due to ObjectId/UUID mismatch."
+        - working: true
+          agent: "testing"
+          comment: "✅ DATETIME PARSING FIX SUCCESSFUL - ALL THREE ENDPOINTS NOW WORKING: Comprehensive re-testing of enhanced activity creation endpoints completed with 100% success rate (3/3 tests passed). CRITICAL FIXES VERIFIED: ✅ GET /api/activities - COMPLETELY FIXED: No longer throws validation errors for legacy activities, properly returns normalized fields with planned_start_date/planned_end_date defaults and last_updated_by fallback, all activities retrieved successfully, ✅ PUT /api/activities/{activity_id}/progress - COMPLETELY FIXED: UUID/ObjectId compatibility implemented successfully, both UUID id and Mongo _id lookups working, progress updates successful with progress_percentage, completion_variance, schedule_variance_days, risk_level, and status all updated correctly, ✅ GET /api/activities/{activity_id}/variance - DATETIME PARSING FIX SUCCESSFUL: Fixed NoneType comparison errors in variance calculations by adding proper null handling for budget_allocated, budget_utilized, target_quantity, achieved_quantity, and completion_variance fields. Variance analysis now working correctly with schedule_variance_days, budget_variance_percentage, output_variance_percentage, completion_variance, and risk_assessment calculations. All datetime operations and variance calculations functioning properly. The Create Activity Modal Refactor & Backend Alignment task is now production-ready and fully operational."
   - task: "Enhanced Project Dashboard Analytics"
     implemented: true
     working: true
