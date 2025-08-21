@@ -97,6 +97,9 @@ class ProjectService:
         
         result = await self.db.activities.insert_one(activity_dict)
         activity_dict["_id"] = str(result.inserted_id)
+        # Ensure id field for response matching Activity model expectations
+        if "id" not in activity_dict:
+            activity_dict["id"] = activity_dict.get("_id") or str(uuid.uuid4())
         
         return Activity(**activity_dict)
 
