@@ -97,11 +97,17 @@ const CreateProjectModal = ({ onProjectCreated }) => {
       const token = localStorage.getItem('access_token'); // Fixed: use 'access_token' not 'token'
       
       const projectData = {
-        ...project,
-        total_budget: parseFloat(project.total_budget),
-        target_beneficiaries: project.target_beneficiaries ? parseInt(project.target_beneficiaries) : null,
-        implementation_start: new Date(project.implementation_start).toISOString(),
-        implementation_end: new Date(project.implementation_end).toISOString()
+        name: project.name,
+        description: project.description,
+        project_manager_id: project.project_manager_id,
+        start_date: new Date(project.start_date).toISOString(),
+        end_date: new Date(project.end_date).toISOString(),
+        budget_total: parseFloat(project.budget_total),
+        beneficiaries_target: project.beneficiaries_target ? parseInt(project.beneficiaries_target) : 0,
+        location: project.location || null,
+        donor_organization: project.donor_organization || null,
+        implementing_partners: [],
+        tags: []
       };
 
       console.log('🚀 Creating project:', projectData);
