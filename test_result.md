@@ -247,6 +247,8 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: "CRITICAL PROJECT CREATION BUG IDENTIFIED: User reported React runtime error during project creation. Investigation revealed mismatched field names between frontend CreateProjectModal and backend ProjectCreate model, plus improper error handling that tries to render validation error objects as React children. Will fix field mapping and error handling to resolve 'Objects are not valid as a React child' error."
+  - agent: "testing"
+    message: "DASHBOARD PYDANTIC VALIDATION FIX TESTING COMPLETED: Comprehensive testing of GET /api/projects/dashboard endpoint confirms the fix for the user-reported Pydantic validation error is working correctly. Key findings: ✅ Dashboard endpoint returns HTTP 200 with valid JSON response structure, ✅ projects_by_status field contains only string keys (no None values causing validation errors), ✅ budget_by_category field contains only string keys (no None values causing validation errors), ✅ Response properly formatted as ProjectDashboardData model, ✅ Original error 'projects_by_status.None.[key] Input should be a valid string' has been resolved, ✅ Fix implementation verified in project_service.py where None values are converted to 'unknown'/'uncategorized' strings. The dashboard data endpoint is production-ready and the user-reported issue has been successfully resolved."
 
 backend:
   - task: "User Registration Endpoint"
