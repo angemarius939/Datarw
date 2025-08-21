@@ -1556,20 +1556,25 @@ class DataRWAPITester:
 
     def test_create_beneficiary(self):
         """Test creating a beneficiary"""
+        if not hasattr(self, 'project_id'):
+            self.log_result("Create Beneficiary", False, "No project ID available from previous test")
+            return False
+        
         try:
             from datetime import datetime, timedelta
             
             beneficiary_data = {
+                "project_id": self.project_id,  # Required field that was missing
                 "unique_id": f"BEN-{uuid.uuid4().hex[:8].upper()}",
-                "first_name": "Jean",
-                "last_name": "Uwimana",
-                "date_of_birth": (datetime.now() - timedelta(days=365*25)).isoformat(),
+                "first_name": "Jean Baptiste",
+                "last_name": "Nzeyimana",
+                "date_of_birth": (datetime.now() - timedelta(days=365*28)).isoformat(),  # 28 years old
                 "gender": "Male",
-                "location": "Kigali",
-                "contact_phone": "+250788123456",
-                "household_size": 4,
-                "education_level": "Secondary",
-                "employment_status": "Employed"
+                "location": "Nyagatare District, Eastern Province",
+                "contact_phone": "+250788456789",
+                "household_size": 6,
+                "education_level": "Secondary School",
+                "employment_status": "Farmer"
             }
             
             response = self.session.post(
