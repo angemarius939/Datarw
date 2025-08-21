@@ -772,7 +772,10 @@ class ProjectService:
         """Update activity progress with variance analysis"""
         
         # Get current activity
+        # Support both UUID-stored id and Mongo _id
         activity_doc = await self.db.activities.find_one({"_id": ObjectId(activity_id)})
+        if not activity_doc:
+            activity_doc = await self.db.activities.find_one({"id": activity_id})
         if not activity_doc:
             raise ValueError("Activity not found")
         
