@@ -612,6 +612,50 @@ class EnumeratorAssignment(BaseModel):
     enumerator_id: str
     survey_id: str
 
+# Payment service models
+class PaymentTransaction(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: str
+    user_id: Optional[str] = None
+    irembopay_invoice_number: str
+    transaction_id: str
+    amount: float
+    currency: str = "RWF"
+    plan: SubscriptionPlan
+    payment_status: PaymentStatus = PaymentStatus.PENDING
+    payment_reference: Optional[str] = None
+    payment_method: Optional[str] = None
+    irembopay_transaction_id: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class PaymentTransactionCreate(BaseModel):
+    organization_id: str
+    user_id: Optional[str] = None
+    irembopay_invoice_number: str
+    transaction_id: str
+    amount: float
+    currency: str = "RWF"
+    plan: SubscriptionPlan
+    metadata: Optional[Dict[str, Any]] = None
+
+class IremboPayInvoiceRequest(BaseModel):
+    organization_id: str
+    plan: SubscriptionPlan
+    user_id: Optional[str] = None
+    customer_name: Optional[str] = None
+    customer_email: Optional[str] = None
+    customer_phone: Optional[str] = None
+
+class IremboPayInvoiceResponse(BaseModel):
+    success: bool
+    invoice_number: str
+    payment_link_url: str
+    amount: float
+    currency: str
+    status: str
+
 class PartnerResponse(BaseModel):
     id: str
     name: str
