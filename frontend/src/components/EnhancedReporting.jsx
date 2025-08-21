@@ -95,7 +95,10 @@ const EnhancedReporting = () => {
       }
 
       if (reportsRes.status === 'fulfilled') {
-        setGeneratedReports(reportsRes.value.data || []);
+        const reportsData = reportsRes.value.data;
+        setGeneratedReports(Array.isArray(reportsData) ? reportsData : []);
+      } else {
+        setGeneratedReports([]);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
