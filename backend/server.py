@@ -759,7 +759,7 @@ async def create_budget_item(
 ):
     """Create a new budget item"""
     try:
-        budget_item = await project_service.create_budget_item(budget_data, current_user.organization_id)
+        budget_item = await project_service.create_budget_item(budget_data, current_user.organization_id, current_user.id)
         return budget_item
     except Exception as e:
         logger.error(f"Budget item creation error: {str(e)}")
