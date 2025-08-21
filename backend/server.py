@@ -20,6 +20,7 @@ from database import DatabaseService
 from payment_service import IremboPayService
 from ai_service import AIService
 from project_service import ProjectService
+from admin_service import AdminService
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
