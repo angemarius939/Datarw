@@ -544,10 +544,10 @@ const Dashboard = ({ onUpgrade }) => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-gray-900">Projects & Activities</h1>
-                <Button className="bg-gradient-to-r from-purple-600 to-pink-600">
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Project
-                </Button>
+                <CreateProjectModal onProjectCreated={() => {
+                  // Refresh data or handle project creation
+                  console.log('Project created successfully');
+                }} />
               </div>
               <div className="text-center py-12 text-gray-500">
                 <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
