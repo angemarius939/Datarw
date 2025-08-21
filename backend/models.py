@@ -44,6 +44,11 @@ class UserRole(str, Enum):
     PARTNER_STAFF = "Partner Staff"
     SYSTEM_ADMIN = "System Admin"
 
+class TokenData(BaseModel):
+    user_id: Optional[str] = None
+    organization_id: Optional[str] = None
+    role: Optional[UserRole] = None
+
 # Payment-related models
 class PaymentStatus(str, Enum):
     PENDING = "pending"
