@@ -215,9 +215,8 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
         const createdActivity = await response.json();
         
         toast({
-          title: "Success!",
-          description: "Activity created successfully.",
-          variant: "default",
+          title: 'Success!',
+          description: 'Activity created successfully.',
         });
         
         setOpen(false);
