@@ -65,8 +65,11 @@ class DatabaseService:
             role=user.role
         )
         
-        result = await self.db.users.insert_one(user_doc.dict(by_alias=True))
-        user_doc.id = result.inserted_id
+        # Prepare document with both id and _id for MongoDB compatibility
+        user_dict = user_doc.dict()
+        user_dict["_id"] = user_doc.id
+        
+        result = await self.db.users.insert_one(user_dict)
         return user_doc
 
     async def get_user(self, user_id: str) -> Optional[User]:
