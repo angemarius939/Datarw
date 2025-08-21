@@ -28,6 +28,7 @@ import SurveyBuilder from './SurveyBuilder';
 import UserManagement from './UserManagement';
 import ProjectDashboard from './ProjectDashboard';
 import AdminPanel from './AdminPanel';
+import EnhancedReporting from './EnhancedReporting';
 import CreateProjectModal from './CreateProjectModal';
 import CreateActivityModal from './CreateActivityModal';
 import CreateBeneficiaryModal from './CreateBeneficiaryModal';
