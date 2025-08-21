@@ -75,7 +75,7 @@ class SubscriptionStatus(str, Enum):
 class PaymentCustomer(BaseModel):
     email: EmailStr
     name: str = Field(..., min_length=2, max_length=100)
-    phone_number: str = Field(..., regex=r"^07[0-9]{8}$")
+    phone_number: str = Field(..., pattern=r"^07[0-9]{8}$")
 
 class PaymentItem(BaseModel):
     unit_amount: int = Field(..., gt=0)
