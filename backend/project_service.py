@@ -526,8 +526,8 @@ class ProjectService:
             "activity_status_breakdown": {
                 item["_id"] if item["_id"] else "unknown": {
                     "count": item["count"],
-                    "avg_progress": round(item["avg_progress"], 1),
-                    "budget_allocated": item["total_budget"]
+                    "avg_progress": round(item["avg_progress"], 1) if item["avg_progress"] is not None else 0,
+                    "budget_allocated": item["total_budget"] if item["total_budget"] is not None else 0
                 }
                 for item in activity_stats
             },
