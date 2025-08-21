@@ -10,8 +10,10 @@ from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
 
-# Use localhost for testing
-API_BASE_URL = "http://localhost:8001/api"
+# Load environment variables and use external URL
+load_dotenv('/app/frontend/.env')
+BACKEND_URL = os.getenv('REACT_APP_BACKEND_URL')
+API_BASE_URL = f"{BACKEND_URL}/api"
 
 print(f"Using API URL: {API_BASE_URL}")
 
