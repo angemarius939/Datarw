@@ -121,21 +121,17 @@ const CreateBeneficiaryModal = ({ onBeneficiaryCreated, trigger }) => {
         
         setOpen(false);
         setBeneficiary({
+          project_id: '',
           unique_id: '',
-          first_name: '',
-          last_name: '',
-          date_of_birth: '',
+          name: '',
           gender: '',
+          age: '',
           location: '',
-          contact_phone: '',
-          contact_email: '',
+          contact_info: '',
+          beneficiary_type: 'direct',
+          enrollment_date: new Date().toISOString().split('T')[0],
           household_size: '',
-          income_level: '',
-          education_level: '',
-          employment_status: '',
-          disability_status: '',
-          custom_fields: {},
-          geographical_coordinates: null
+          education_level: ''
         });
         
         if (onBeneficiaryCreated) {
