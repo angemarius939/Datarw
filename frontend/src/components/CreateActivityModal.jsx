@@ -182,13 +182,19 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
           name: '',
           description: '',
           assigned_to: '',
+          assigned_team: '',
           start_date: '',
           end_date: '',
+          planned_start_date: '',
+          planned_end_date: '',
           budget_allocated: '',
+          planned_output: '',
+          target_quantity: '',
+          status_notes: '',
+          risk_level: 'low',
           deliverables: [],
           dependencies: [],
-          results_framework_link: '',
-          notes: ''
+          milestones: []
         });
         
         if (onActivityCreated) {
