@@ -309,6 +309,27 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
     }));
   };
 
+  const addMilestone = () => {
+    setActivity(prev => ({
+      ...prev,
+      milestones: [...prev.milestones, { name: '', planned_date: '' }]
+    }));
+  };
+
+  const updateMilestone = (index, key, value) => {
+    setActivity(prev => ({
+      ...prev,
+      milestones: prev.milestones.map((m, i) => i === index ? { ...m, [key]: value } : m)
+    }));
+  };
+
+  const removeMilestone = (index) => {
+    setActivity(prev => ({
+      ...prev,
+      milestones: prev.milestones.filter((_, i) => i !== index)
+    }));
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
