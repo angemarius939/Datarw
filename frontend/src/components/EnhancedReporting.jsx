@@ -88,7 +88,10 @@ const EnhancedReporting = () => {
       }
 
       if (templatesRes.status === 'fulfilled') {
-        setTemplates(templatesRes.value.data || []);
+        const templatesData = templatesRes.value.data;
+        setTemplates(Array.isArray(templatesData) ? templatesData : []);
+      } else {
+        setTemplates([]);
       }
 
       if (reportsRes.status === 'fulfilled') {
