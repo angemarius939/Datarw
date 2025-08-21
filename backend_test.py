@@ -3162,7 +3162,13 @@ class DataRWAPITester:
 def main():
     """Main test execution"""
     tester = DataRWAPITester()
-    passed, failed = tester.run_all_tests()
+    
+    # Run focused activity creation tests as requested
+    print("🎯 RUNNING FOCUSED ACTIVITY CREATION TESTS")
+    print("Testing POST /api/activities with corrected field mapping")
+    print()
+    
+    passed, failed = tester.run_activity_creation_tests()
     
     # Exit with appropriate code
     exit(0 if failed == 0 else 1)
