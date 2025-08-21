@@ -892,7 +892,7 @@ class ProjectService:
         if planned_end:
             if activity_doc.get("status") == "completed":
                 # Use actual completion date if available
-                actual_end = activity_doc.get("updated_at", current_date)
+                actual_end = to_dt(activity_doc.get("updated_at")) or current_date
                 schedule_variance_days = (actual_end - planned_end).days
             else:
                 # Compare current date to planned end
