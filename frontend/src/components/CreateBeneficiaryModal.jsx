@@ -254,12 +254,15 @@ const CreateBeneficiaryModal = ({ onBeneficiaryCreated, trigger }) => {
                 value={beneficiary.name}
                 onChange={(e) => setBeneficiary(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Enter full name..."
-                className="mt-1"
+                className={`mt-1 ${errors.name ? 'border-red-500' : ''}`}
               />
+              {errors.name && (
+                <div className="text-xs text-red-600 mt-1">{errors.name}</div>
+              )}
 
               <Label htmlFor="project">Project *</Label>
               <Select value={beneficiary.project_id} onValueChange={(value) => setBeneficiary(prev => ({ ...prev, project_id: value }))}>
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className={`mt-1 ${errors.project_id ? 'border-red-500' : ''}`}>
                   <SelectValue placeholder="Select project" />
                 </SelectTrigger>
                 <SelectContent>
@@ -270,6 +273,9 @@ const CreateBeneficiaryModal = ({ onBeneficiaryCreated, trigger }) => {
                   ))}
                 </SelectContent>
               </Select>
+              {errors.project_id && (
+                <div className="text-xs text-red-600 mt-1">{errors.project_id}</div>
+              )}
             </div>
           </div>
 
