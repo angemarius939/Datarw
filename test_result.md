@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Fix registration and login authentication issues - registration showing fails, login has problems, account creation failures. Make authentication stable so users can access dashboard and continue working on the platform."
+user_problem_statement: "Fix project creation error - React runtime error 'Objects are not valid as a React child' occurs when creating new projects, caused by frontend sending mismatched field names to backend and improperly rendering Pydantic validation errors."
 
 backend:
   - task: "User Registration API Endpoint"
