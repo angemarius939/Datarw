@@ -14,7 +14,7 @@ def test_auth_and_dashboard():
     try:
         # Login
         print("🔐 Testing login...")
-        login_response = requests.post(f"{base_url}/auth/login", data=login_data)
+        login_response = requests.post(f"{base_url}/auth/login", json=login_data)
         print(f"Login response status: {login_response.status_code}")
         print(f"Login response: {login_response.text}")
         
