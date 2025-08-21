@@ -16,6 +16,7 @@ const CreateBeneficiaryModal = ({ onBeneficiaryCreated, trigger }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [projects, setProjects] = useState([]);
   const [beneficiary, setBeneficiary] = useState({
     project_id: '',
     unique_id: '',
