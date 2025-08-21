@@ -1400,7 +1400,7 @@ class DataRWAPITester:
                 data = response.json()
                 # Handle both 'id' and '_id' fields
                 budget_id = data.get("id") or data.get("_id")
-                if budget_id and data.get("category") == budget_data["category"]:
+                if budget_id and data.get("item_name") == budget_data["item_name"]:
                     self.budget_item_id = budget_id
                     self.log_result("Create Budget Item", True, "Budget item created successfully")
                     return True
