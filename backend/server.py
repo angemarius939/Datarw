@@ -42,6 +42,7 @@ payment_service = IremboPayService(db)
 ai_service = AIService(db)
 project_service = ProjectService(db)
 admin_service = AdminService(db)
+reporting_service = AIReportingService(db)
 
 # Create the main app without a prefix
 app = FastAPI(title="DataRW API", description="Survey and Data Management Platform")
