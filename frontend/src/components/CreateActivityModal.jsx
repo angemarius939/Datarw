@@ -558,6 +558,49 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
             </div>
           </div>
 
+          {/* Milestones */}
+          <div>
+            <Label>Milestones</Label>
+            <div className="space-y-2 mt-2">
+              {activity.milestones.map((milestone, index) => (
+                <div key={index} className="grid grid-cols-2 gap-2">
+                  <Input
+                    value={milestone.name}
+                    onChange={(e) => updateMilestone(index, 'name', e.target.value)}
+                    placeholder={`Milestone ${index + 1} name`}
+                  />
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="date"
+                      value={milestone.planned_date}
+                      onChange={(e) => updateMilestone(index, 'planned_date', e.target.value)}
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => removeMilestone(index)}
+                      className="text-red-600"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={addMilestone}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Milestone
+              </Button>
+            </div>
+            {errors.milestones && (
+              <div className="text-xs text-red-600 mt-1">{errors.milestones}</div>
+            )}
+          </div>
+
           {/* Additional Information */}
           <div>
             <Label htmlFor="notes">Notes</Label>
