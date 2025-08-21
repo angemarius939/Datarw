@@ -143,9 +143,16 @@ const CreateKPIModal = ({ onKPICreated, trigger }) => {
       const token = localStorage.getItem('access_token');
       
       const kpiData = {
-        ...kpi,
+        project_id: kpi.project_id,
+        name: kpi.name,
+        description: kpi.description,
+        type: kpi.type,
+        measurement_unit: kpi.measurement_unit || null,
         baseline_value: kpi.baseline_value ? parseFloat(kpi.baseline_value) : null,
         target_value: kpi.target_value ? parseFloat(kpi.target_value) : null,
+        data_source: kpi.data_source || null,
+        frequency: kpi.frequency,
+        responsible_person: kpi.responsible_person
       };
 
       console.log('🚀 Creating KPI:', kpiData);
