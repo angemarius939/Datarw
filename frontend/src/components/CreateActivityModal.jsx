@@ -603,11 +603,11 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
 
           {/* Additional Information */}
           <div>
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="status_notes">Status Notes</Label>
             <Textarea
-              id="notes"
-              value={activity.notes}
-              onChange={(e) => setActivity(prev => ({ ...prev, notes: e.target.value }))}
+              id="status_notes"
+              value={activity.status_notes}
+              onChange={(e) => setActivity(prev => ({ ...prev, status_notes: e.target.value }))}
               placeholder="Additional notes or comments..."
               className="mt-1"
               rows={2}
