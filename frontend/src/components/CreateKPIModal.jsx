@@ -414,7 +414,7 @@ const CreateKPIModal = ({ onKPICreated, trigger }) => {
                 <User className="h-4 w-4 mr-1" />
                 Responsible Person
               </Label>
-              <Select value={kpi.responsible_user_id} onValueChange={(value) => setKPI(prev => ({ ...prev, responsible_user_id: value }))}>
+              <Select value={kpi.responsible_person} onValueChange={(value) => setKPI(prev => ({ ...prev, responsible_person: value }))}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select responsible person" />
                 </SelectTrigger>
