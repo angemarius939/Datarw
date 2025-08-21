@@ -149,7 +149,7 @@ class EnhancedAnalyticsWithDataTest:
         try:
             budget_data = {
                 "project_id": self.project_id,
-                "category": "training",
+                "category": "supplies",  # Use valid enum value
                 "item_name": "Digital Literacy Training Materials",
                 "description": "Training manuals, computers, and educational resources",
                 "budgeted_amount": 800000.0,
