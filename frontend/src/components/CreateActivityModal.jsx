@@ -351,7 +351,7 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4 py-4">
+        <div className="space-y-5 py-2">
           {/* Project Selection */}
           <div>
             <Label htmlFor="project">Project *</Label>
