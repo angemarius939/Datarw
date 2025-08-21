@@ -20,9 +20,9 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
   const [errors, setErrors] = useState({});
   const [activity, setActivity] = useState({
     project_id: '',
-    title: '',
+    name: '',
     description: '',
-    responsible_user_id: '',
+    assigned_to: '',
     start_date: '',
     end_date: '',
     budget_allocated: '',
