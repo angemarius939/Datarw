@@ -340,7 +340,7 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <Plus className="h-5 w-5 mr-2 text-green-600" />
