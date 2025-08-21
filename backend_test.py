@@ -3044,7 +3044,9 @@ class DataRWAPITester:
             self.test_get_projects,
             self.test_get_specific_project,
             self.test_update_project,
-            self.test_create_activity,
+            self.test_create_activity_corrected_fields,  # NEW: Test corrected field mapping
+            self.test_create_activity_validation_errors,  # NEW: Test validation errors
+            self.test_create_activity_old_field_names,    # NEW: Test old field names rejection
             self.test_get_activities,
             self.test_update_activity,
             self.test_create_budget_item,
