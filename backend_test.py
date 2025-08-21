@@ -1382,17 +1382,13 @@ class DataRWAPITester:
             return False
         
         try:
-            from datetime import datetime, timedelta
-            
             budget_data = {
                 "project_id": self.project_id,
-                "category": "training",
-                "description": "Training materials and workshops",
-                "budgeted_amount": 10000.0,
-                "currency": "RWF",
-                "period_start": datetime.now().isoformat(),
-                "period_end": (datetime.now() + timedelta(days=90)).isoformat(),
-                "responsible_user_id": self.user_data["id"]
+                "category": "supplies",  # Use valid FinancialCategory enum value
+                "item_name": "Training Materials and Workshop Supplies",  # Required field
+                "description": "Educational materials, handouts, and workshop supplies for digital literacy training",
+                "budgeted_amount": 800000.0,  # Realistic amount in RWF
+                "budget_period": "Q1 2024"  # Required field
             }
             
             response = self.session.post(
