@@ -528,7 +528,7 @@ frontend:
 
   - task: "Enhanced Text Handling for Survey Questions and Options"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/components/SurveyBuilder.jsx"
     stuck_count: 0
     priority: "high"
