@@ -1428,6 +1428,494 @@ class DataRWAPITester:
         except Exception as e:
             self.log_result("Delete Project", False, f"Request error: {str(e)}")
             return False
+
+    # Admin Panel Tests
+    def test_admin_create_user_advanced(self):
+        """Test advanced user creation with different roles and permissions"""
+        try:
+            # Test creating a Director user
+            user_data = {
+                "name": "Dr. Marie Uwimana",
+                "email": f"marie.uwimana.{uuid.uuid4().hex[:8]}@datarw.com",
+                "role": "Director",
+                "department": "Operations",
+                "position": "Regional Director",
+                "access_level": "elevated",
+                "permissions": {
+                    "view_dashboard": True,
+                    "create_projects": True,
+                    "manage_partners": True,
+                    "view_financial_data": True
+                },
+                "send_credentials_email": False,
+                "temporary_password": True
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/admin/users/create-advanced",
+                json=user_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("success") and "data" in data):
+                    user_result = data["data"]
+                    if ("user" in user_result and 
+                        "username" in user_result and 
+                        "password" in user_result):
+                        
+                        created_user = user_result["user"]
+                        if (created_user.get("name") == user_data["name"] and
+                            created_user.get("role") == user_data["role"]):
+                            self.admin_user_id = created_user.get("id") or created_user.get("_id")
+                            self.log_result("Admin Create User Advanced", True, 
+                                          f"Director user created successfully with username: {user_result['username']}")
+                            return True
+                        else:
+                            self.log_result("Admin Create User Advanced", False, "User data mismatch", data)
+                            return False
+                    else:
+                        self.log_result("Admin Create User Advanced", False, "Missing required fields in response", data)
+                        return False
+                else:
+                    self.log_result("Admin Create User Advanced", False, "Missing success or data fields", data)
+                    return False
+            else:
+                self.log_result("Admin Create User Advanced", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Admin Create User Advanced", False, f"Request error: {str(e)}")
+            return False
+
+    def test_admin_bulk_create_users(self):
+        """Test bulk user creation with different roles"""
+        try:
+            users_data = [
+                {
+                    "name": "Jean Baptiste Nzeyimana",
+                    "email": f"jean.nzeyimana.{uuid.uuid4().hex[:8]}@datarw.com",
+                    "role": "Officer",
+                    "department": "Field Operations",
+                    "position": "Field Officer",
+                    "access_level": "standard",
+                    "send_credentials_email": False,
+                    "temporary_password": True
+                },
+                {
+                    "name": "Grace Mukamana",
+                    "email": f"grace.mukamana.{uuid.uuid4().hex[:8]}@datarw.com",
+                    "role": "Field Staff",
+                    "department": "Community Outreach",
+                    "position": "Community Mobilizer",
+                    "access_level": "standard",
+                    "send_credentials_email": False,
+                    "temporary_password": True
+                },
+                {
+                    "name": "Emmanuel Habimana",
+                    "email": f"emmanuel.habimana.{uuid.uuid4().hex[:8]}@datarw.com",
+                    "role": "Partner Staff",
+                    "department": "External Relations",
+                    "position": "Partner Coordinator",
+                    "access_level": "restricted",
+                    "send_credentials_email": False,
+                    "temporary_password": True
+                }
+            ]
+            
+            response = self.session.post(
+                f"{self.base_url}/admin/users/bulk-create",
+                json=users_data,
+                params={"send_emails": False}
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("success") and "data" in data):
+                    result = data["data"]
+                    if (result.get("created_count") == 3 and 
+                        result.get("failed_count") == 0 and
+                        len(result.get("created_users", [])) == 3):
+                        
+                        self.log_result("Admin Bulk Create Users", True, 
+                                      f"Successfully created {result['created_count']} users in bulk")
+                        return True
+                    else:
+                        self.log_result("Admin Bulk Create Users", False, 
+                                      f"Expected 3 users created, got {result.get('created_count', 0)}", data)
+                        return False
+                else:
+                    self.log_result("Admin Bulk Create Users", False, "Missing success or data fields", data)
+                    return False
+            else:
+                self.log_result("Admin Bulk Create Users", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Admin Bulk Create Users", False, f"Request error: {str(e)}")
+            return False
+
+    def test_admin_create_partner_organization(self):
+        """Test creating a partner organization"""
+        try:
+            from datetime import datetime, timedelta
+            
+            partner_data = {
+                "name": "Rwanda Youth Development Foundation",
+                "description": "A local NGO focused on youth empowerment and skills development programs",
+                "contact_person": "Alice Uwimana",
+                "contact_email": f"alice.uwimana.{uuid.uuid4().hex[:8]}@rydf.org.rw",
+                "contact_phone": "+250788456789",
+                "address": "KG 15 Ave, Kigali, Rwanda",
+                "organization_type": "NGO",
+                "partnership_start_date": datetime.now().isoformat(),
+                "partnership_end_date": (datetime.now() + timedelta(days=1095)).isoformat(),  # 3 years
+                "website": "https://www.rydf.org.rw",
+                "capabilities": [
+                    "Youth Training Programs",
+                    "Community Mobilization",
+                    "Digital Literacy Training",
+                    "Entrepreneurship Support"
+                ]
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/admin/partners",
+                json=partner_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                # Handle both 'id' and '_id' fields
+                partner_id = data.get("id") or data.get("_id")
+                if (partner_id and 
+                    data.get("name") == partner_data["name"] and
+                    data.get("organization_type") == partner_data["organization_type"]):
+                    
+                    self.partner_id = partner_id
+                    self.log_result("Admin Create Partner Organization", True, 
+                                  f"Partner organization '{partner_data['name']}' created successfully")
+                    return True
+                else:
+                    self.log_result("Admin Create Partner Organization", False, "Partner data mismatch", data)
+                    return False
+            else:
+                self.log_result("Admin Create Partner Organization", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Admin Create Partner Organization", False, f"Request error: {str(e)}")
+            return False
+
+    def test_admin_get_partner_organizations(self):
+        """Test getting all partner organizations"""
+        try:
+            response = self.session.get(f"{self.base_url}/admin/partners")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    self.log_result("Admin Get Partner Organizations", True, 
+                                  f"Retrieved {len(data)} partner organizations")
+                    return True
+                else:
+                    self.log_result("Admin Get Partner Organizations", False, "Response is not a list", data)
+                    return False
+            else:
+                self.log_result("Admin Get Partner Organizations", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Admin Get Partner Organizations", False, f"Request error: {str(e)}")
+            return False
+
+    def test_admin_update_partner_organization(self):
+        """Test updating a partner organization"""
+        if not hasattr(self, 'partner_id'):
+            self.log_result("Admin Update Partner Organization", False, "No partner ID available from previous test")
+            return False
+        
+        try:
+            update_data = {
+                "status": "active",
+                "performance_rating": 4.5,
+                "capabilities": [
+                    "Youth Training Programs",
+                    "Community Mobilization", 
+                    "Digital Literacy Training",
+                    "Entrepreneurship Support",
+                    "Women Empowerment Programs"  # Added new capability
+                ]
+            }
+            
+            response = self.session.put(
+                f"{self.base_url}/admin/partners/{self.partner_id}",
+                json=update_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("status") == update_data["status"] and
+                    data.get("performance_rating") == update_data["performance_rating"]):
+                    
+                    self.log_result("Admin Update Partner Organization", True, 
+                                  f"Partner organization updated with rating {update_data['performance_rating']}")
+                    return True
+                else:
+                    self.log_result("Admin Update Partner Organization", False, "Partner data not updated", data)
+                    return False
+            else:
+                self.log_result("Admin Update Partner Organization", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Admin Update Partner Organization", False, f"Request error: {str(e)}")
+            return False
+
+    def test_admin_create_partner_performance(self):
+        """Test creating partner performance record"""
+        if not hasattr(self, 'partner_id'):
+            self.log_result("Admin Create Partner Performance", False, "No partner ID available from previous test")
+            return False
+        
+        if not hasattr(self, 'project_id'):
+            # Create a project for performance tracking
+            try:
+                from datetime import datetime, timedelta
+                
+                project_data = {
+                    "title": f"Youth Skills Development Project {uuid.uuid4().hex[:8]}",
+                    "description": "Digital literacy and entrepreneurship training for youth",
+                    "sector": "Education",
+                    "donor": "USAID",
+                    "implementation_start": (datetime.now() + timedelta(days=30)).isoformat(),
+                    "implementation_end": (datetime.now() + timedelta(days=365)).isoformat(),
+                    "total_budget": 150000.0,
+                    "budget_currency": "RWF",
+                    "location": "Kigali, Rwanda",
+                    "target_beneficiaries": 500,
+                    "team_members": []
+                }
+                
+                project_response = self.session.post(
+                    f"{self.base_url}/projects",
+                    json=project_data
+                )
+                
+                if project_response.status_code == 200:
+                    project_result = project_response.json()
+                    self.project_id = project_result.get("id") or project_result.get("_id")
+                else:
+                    self.log_result("Admin Create Partner Performance", False, "Failed to create project for performance test")
+                    return False
+            except Exception as e:
+                self.log_result("Admin Create Partner Performance", False, f"Error creating project: {str(e)}")
+                return False
+        
+        try:
+            from datetime import datetime, timedelta
+            
+            performance_data = {
+                "partner_organization_id": self.partner_id,
+                "project_id": self.project_id,
+                "period_start": (datetime.now() - timedelta(days=90)).isoformat(),
+                "period_end": datetime.now().isoformat(),
+                "budget_allocated": 50000.0,
+                "budget_utilized": 45000.0,
+                "activities_completed": 8,
+                "activities_planned": 10,
+                "beneficiaries_reached": 450,
+                "kpi_achievements": {
+                    "youth_trained": 85.0,
+                    "completion_rate": 90.0,
+                    "employment_rate": 75.0
+                },
+                "challenges": "Limited internet connectivity in rural areas affected some digital training sessions",
+                "recommendations": "Invest in mobile internet solutions and offline training materials"
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/admin/partners/performance",
+                json=performance_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                # Handle both 'id' and '_id' fields
+                performance_id = data.get("id") or data.get("_id")
+                if (performance_id and 
+                    data.get("partner_organization_id") == self.partner_id and
+                    data.get("beneficiaries_reached") == performance_data["beneficiaries_reached"]):
+                    
+                    self.performance_id = performance_id
+                    performance_score = data.get("performance_score", 0)
+                    self.log_result("Admin Create Partner Performance", True, 
+                                  f"Partner performance record created with score: {performance_score:.1f}")
+                    return True
+                else:
+                    self.log_result("Admin Create Partner Performance", False, "Performance data mismatch", data)
+                    return False
+            else:
+                self.log_result("Admin Create Partner Performance", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Admin Create Partner Performance", False, f"Request error: {str(e)}")
+            return False
+
+    def test_admin_get_partner_performance_summary(self):
+        """Test getting partner performance summary"""
+        try:
+            response = self.session.get(f"{self.base_url}/admin/partners/performance/summary")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("success") and "data" in data):
+                    summary_data = data["data"]
+                    if ("partners" in summary_data and 
+                        "summary" in summary_data):
+                        
+                        summary = summary_data["summary"]
+                        required_fields = ["total_partners", "avg_performance", "total_budget", "total_beneficiaries"]
+                        
+                        if all(field in summary for field in required_fields):
+                            self.log_result("Admin Get Partner Performance Summary", True, 
+                                          f"Performance summary retrieved: {summary['total_partners']} partners, "
+                                          f"avg performance: {summary['avg_performance']:.1f}")
+                            return True
+                        else:
+                            missing_fields = [field for field in required_fields if field not in summary]
+                            self.log_result("Admin Get Partner Performance Summary", False, 
+                                          f"Missing fields: {missing_fields}", data)
+                            return False
+                    else:
+                        self.log_result("Admin Get Partner Performance Summary", False, 
+                                      "Missing partners or summary in response", data)
+                        return False
+                else:
+                    self.log_result("Admin Get Partner Performance Summary", False, "Missing success or data fields", data)
+                    return False
+            else:
+                self.log_result("Admin Get Partner Performance Summary", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Admin Get Partner Performance Summary", False, f"Request error: {str(e)}")
+            return False
+
+    def test_admin_update_organization_branding(self):
+        """Test updating organization branding settings"""
+        try:
+            branding_data = {
+                "primary_color": "#1E40AF",  # Blue
+                "secondary_color": "#059669",  # Green
+                "accent_color": "#7C3AED",  # Purple
+                "background_color": "#F9FAFB",  # Light gray
+                "text_color": "#111827",  # Dark gray
+                "white_label_enabled": True
+            }
+            
+            response = self.session.put(
+                f"{self.base_url}/admin/branding",
+                json=branding_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("success") and "data" in data):
+                    branding_result = data["data"]
+                    if (branding_result.get("primary_color") == branding_data["primary_color"] and
+                        branding_result.get("white_label_enabled") == branding_data["white_label_enabled"]):
+                        
+                        self.log_result("Admin Update Organization Branding", True, 
+                                      f"Organization branding updated with primary color: {branding_data['primary_color']}")
+                        return True
+                    else:
+                        self.log_result("Admin Update Organization Branding", False, "Branding data mismatch", data)
+                        return False
+                else:
+                    self.log_result("Admin Update Organization Branding", False, "Missing success or data fields", data)
+                    return False
+            else:
+                self.log_result("Admin Update Organization Branding", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Admin Update Organization Branding", False, f"Request error: {str(e)}")
+            return False
+
+    def test_admin_get_organization_branding(self):
+        """Test getting organization branding settings"""
+        try:
+            response = self.session.get(f"{self.base_url}/admin/branding")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("success") and "data" in data):
+                    branding_data = data["data"]
+                    if branding_data:  # Branding exists
+                        required_fields = ["primary_color", "secondary_color", "accent_color", 
+                                         "background_color", "text_color", "white_label_enabled"]
+                        
+                        if all(field in branding_data for field in required_fields):
+                            self.log_result("Admin Get Organization Branding", True, 
+                                          f"Branding settings retrieved with primary color: {branding_data['primary_color']}")
+                            return True
+                        else:
+                            missing_fields = [field for field in required_fields if field not in branding_data]
+                            self.log_result("Admin Get Organization Branding", False, 
+                                          f"Missing fields: {missing_fields}", data)
+                            return False
+                    else:
+                        self.log_result("Admin Get Organization Branding", True, "No branding settings found (expected for new organization)")
+                        return True
+                else:
+                    self.log_result("Admin Get Organization Branding", False, "Missing success or data fields", data)
+                    return False
+            else:
+                self.log_result("Admin Get Organization Branding", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Admin Get Organization Branding", False, f"Request error: {str(e)}")
+            return False
+
+    def test_admin_get_email_logs(self):
+        """Test getting email logs from mock email system"""
+        try:
+            response = self.session.get(
+                f"{self.base_url}/admin/email-logs",
+                params={"limit": 20}
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("success") and "data" in data):
+                    email_logs = data["data"]
+                    if isinstance(email_logs, list):
+                        # Check if we have any logs (might be empty for new organization)
+                        if len(email_logs) > 0:
+                            # Verify log structure
+                            first_log = email_logs[0]
+                            required_fields = ["recipient_email", "template_used", "subject", 
+                                             "status", "sent_at", "triggered_by"]
+                            
+                            if all(field in first_log for field in required_fields):
+                                self.log_result("Admin Get Email Logs", True, 
+                                              f"Retrieved {len(email_logs)} email logs successfully")
+                                return True
+                            else:
+                                missing_fields = [field for field in required_fields if field not in first_log]
+                                self.log_result("Admin Get Email Logs", False, 
+                                              f"Missing fields in log entry: {missing_fields}", data)
+                                return False
+                        else:
+                            self.log_result("Admin Get Email Logs", True, "No email logs found (expected for new organization)")
+                            return True
+                    else:
+                        self.log_result("Admin Get Email Logs", False, "Email logs data is not a list", data)
+                        return False
+                else:
+                    self.log_result("Admin Get Email Logs", False, "Missing success or data fields", data)
+                    return False
+            else:
+                self.log_result("Admin Get Email Logs", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Admin Get Email Logs", False, f"Request error: {str(e)}")
+            return False
     
     def run_all_tests(self):
         """Run all tests in sequence"""
