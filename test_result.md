@@ -240,8 +240,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Backend Authentication Endpoints"
-    - "Frontend Authentication Flow"
+    - "Project Creation Modal Fix"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
