@@ -18,6 +18,8 @@ import {
   Trash2,
   Download,
   CreditCard,
+  Calendar,
+  DollarSign,
   Loader2
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
