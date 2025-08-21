@@ -103,4 +103,61 @@ export const aiAPI = {
   getSurveyContext: (organizationId) => api.get(`/surveys/context/${organizationId}`),
 };
 
+// Project Management API
+export const projectsAPI = {
+  getDashboard: () => api.get('/projects/dashboard'),
+  getProjects: (status) => api.get('/projects', status ? { params: { status } } : {}),
+  createProject: (projectData) => api.post('/projects', projectData),
+  getProject: (projectId) => api.get(`/projects/${projectId}`),
+  updateProject: (projectId, data) => api.put(`/projects/${projectId}`, data),
+  deleteProject: (projectId) => api.delete(`/projects/${projectId}`),
+  
+  // Activities
+  getActivities: (projectId) => api.get('/activities', projectId ? { params: { project_id: projectId } } : {}),
+  createActivity: (activityData) => api.post('/activities', activityData),
+  updateActivity: (activityId, data) => api.put(`/activities/${activityId}`, data),
+  
+  // Budget
+  getBudgetItems: (projectId) => api.get('/budget', projectId ? { params: { project_id: projectId } } : {}),
+  createBudgetItem: (budgetData) => api.post('/budget', budgetData),
+  getBudgetSummary: (projectId) => api.get('/budget/summary', projectId ? { params: { project_id: projectId } } : {}),
+  
+  // KPIs
+  getKPIs: (projectId) => api.get('/kpis', projectId ? { params: { project_id: projectId } } : {}),
+  createKPI: (kpiData) => api.post('/kpis', kpiData),
+  updateKPIValue: (indicatorId, currentValue) => api.put(`/kpis/${indicatorId}/value`, { current_value: currentValue }),
+  
+  // Beneficiaries
+  getBeneficiaries: (projectId) => api.get('/beneficiaries', projectId ? { params: { project_id: projectId } } : {}),
+  createBeneficiary: (beneficiaryData) => api.post('/beneficiaries', beneficiaryData),
+  getBeneficiaryDemographics: (projectId) => api.get('/beneficiaries/demographics', projectId ? { params: { project_id: projectId } } : {}),
+};
+
+// Admin Panel API
+export const adminAPI = {
+  // Advanced User Management
+  createUserAdvanced: (userData) => api.post('/admin/users/create-advanced', userData),
+  bulkCreateUsers: (usersData, sendEmails = true) => api.post('/admin/users/bulk-create', usersData, {
+    params: { send_emails: sendEmails }
+  }),
+  
+  // Organization Branding
+  getBranding: () => api.get('/admin/branding'),
+  updateBranding: (brandingData) => api.put('/admin/branding', brandingData),
+  
+  // Email System
+  getEmailLogs: (limit = 50) => api.get('/admin/email-logs', { params: { limit } }),
+};
+
+// Partners API
+export const partnersAPI = {
+  getPartners: (status) => api.get('/admin/partners', status ? { params: { status } } : {}),
+  createPartner: (partnerData) => api.post('/admin/partners', partnerData),
+  updatePartner: (partnerId, data) => api.put(`/admin/partners/${partnerId}`, data),
+  
+  // Performance Tracking
+  createPerformance: (performanceData) => api.post('/admin/partners/performance', performanceData),
+  getPerformanceSummary: (partnerId) => api.get('/admin/partners/performance/summary', partnerId ? { params: { partner_id: partnerId } } : {}),
+};
+
 export default api;
