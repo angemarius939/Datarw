@@ -12,8 +12,10 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv('/app/frontend/.env')
-BACKEND_URL = os.getenv('REACT_APP_BACKEND_URL')
+BACKEND_URL = os.getenv('REACT_APP_BACKEND_URL', 'http://localhost:8001')
 API_BASE_URL = f"{BACKEND_URL}/api"
+
+print(f"Using API URL: {API_BASE_URL}")
 
 def test_activity_endpoints():
     """Test the specific activity endpoints"""
