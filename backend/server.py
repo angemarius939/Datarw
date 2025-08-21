@@ -1568,3 +1568,261 @@ def get_plan_limits(plan_name: str) -> Dict[str, int]:
         "Enterprise": {"survey_limit": -1, "storage_limit": -1}
     }
     return limits.get(plan_name, {"survey_limit": 10, "storage_limit": 1})
+
+# AI-Enhanced Automated Reporting Endpoints
+@app.post("/api/reports/generate")
+async def generate_project_report(
+    project_id: str,
+    report_type: str,
+    period_start: str,
+    period_end: str,
+    include_images: bool = True,
+    ai_narrative: bool = True,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Generate comprehensive project report with AI narrative and visualizations"""
+    try:
+        # Get current user
+        current_user = await get_current_user(credentials)
+        
+        # Parse dates
+        start_date = datetime.fromisoformat(period_start.replace('Z', '+00:00'))
+        end_date = datetime.fromisoformat(period_end.replace('Z', '+00:00'))
+        
+        # Generate report
+        result = await reporting_service.generate_project_report(
+            project_id=project_id,
+            report_type=report_type,
+            period_start=start_date,
+            period_end=end_date,
+            include_images=include_images,
+            ai_narrative=ai_narrative
+        )
+        
+        if result["success"]:
+            return {
+                "success": True,
+                "message": "Report generated successfully",
+                "data": {
+                    "report_id": result["report_id"],
+                    "pdf_path": result["pdf_path"],
+                    "narrative_preview": result["narrative"][:500] + "..." if len(result["narrative"]) > 500 else result["narrative"],
+                    "charts_count": len(result["charts"]),
+                    "generated_at": datetime.utcnow().isoformat()
+                }
+            }
+        else:
+            raise HTTPException(status_code=500, detail=result["error"])
+            
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid date format: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error generating report: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate report: {str(e)}")
+
+@app.get("/api/reports/templates")
+async def get_report_templates(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get available report templates"""
+    try:
+        # Get current user
+        current_user = await get_current_user(credentials)
+        
+        templates = await reporting_service.get_report_templates()
+        return {
+            "success": True,
+            "data": templates
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting report templates: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get report templates: {str(e)}")
+
+@app.get("/api/reports/generated")
+async def get_generated_reports(
+    project_id: Optional[str] = None,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get list of generated reports"""
+    try:
+        # Get current user
+        current_user = await get_current_user(credentials)
+        
+        reports = await reporting_service.get_generated_reports(project_id)
+        return {
+            "success": True,
+            "data": reports,
+            "total": len(reports)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting generated reports: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get generated reports: {str(e)}")
+
+@app.get("/api/reports/download/{report_id}")
+async def download_report(
+    report_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Download generated report PDF"""
+    try:
+        # Get current user
+        current_user = await get_current_user(credentials)
+        
+        # Find report
+        report = await db.generated_reports.find_one({"id": report_id})
+        if not report:
+            raise HTTPException(status_code=404, detail="Report not found")
+        
+        from fastapi.responses import FileResponse
+        pdf_path = report["pdf_path"]
+        
+        # Check if file exists
+        from pathlib import Path
+        if not Path(pdf_path).exists():
+            raise HTTPException(status_code=404, detail="Report file not found")
+        
+        return FileResponse(
+            pdf_path,
+            media_type="application/pdf",
+            filename=f"{report['report_type']}_{report['project_id']}_{report_id}.pdf"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error downloading report: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to download report: {str(e)}")
+
+@app.post("/api/reports/upload-images")
+async def upload_report_images(
+    project_id: str,
+    files: List[UploadFile] = File(...),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Upload images for report inclusion"""
+    try:
+        # Get current user
+        current_user = await get_current_user(credentials)
+        
+        uploaded_files = []
+        
+        # Create project images directory
+        from pathlib import Path
+        images_dir = Path("/app/generated_reports") / f"images_{project_id}"
+        images_dir.mkdir(exist_ok=True, parents=True)
+        
+        for file in files:
+            # Validate file type
+            if not file.content_type.startswith('image/'):
+                continue
+            
+            # Generate unique filename
+            import uuid
+            file_extension = Path(file.filename).suffix
+            unique_filename = f"{uuid.uuid4()}{file_extension}"
+            file_path = images_dir / unique_filename
+            
+            # Save file
+            content = await file.read()
+            with open(file_path, "wb") as f:
+                f.write(content)
+            
+            # Store file info
+            file_info = {
+                "original_name": file.filename,
+                "saved_name": unique_filename,
+                "path": str(file_path),
+                "size": len(content),
+                "content_type": file.content_type,
+                "uploaded_at": datetime.utcnow()
+            }
+            
+            uploaded_files.append(file_info)
+            
+            # Save to database
+            await db.report_images.insert_one({
+                "project_id": project_id,
+                "user_id": current_user["id"],
+                **file_info
+            })
+        
+        return {
+            "success": True,
+            "message": f"Uploaded {len(uploaded_files)} images successfully",
+            "data": uploaded_files
+        }
+        
+    except Exception as e:
+        logger.error(f"Error uploading images: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to upload images: {str(e)}")
+
+@app.get("/api/reports/project-images/{project_id}")
+async def get_project_images(
+    project_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get uploaded images for a project"""
+    try:
+        # Get current user
+        current_user = await get_current_user(credentials)
+        
+        images = []
+        async for image in db.report_images.find({"project_id": project_id}):
+            images.append({
+                "id": str(image["_id"]),
+                "original_name": image["original_name"],
+                "saved_name": image["saved_name"],
+                "size": image["size"],
+                "uploaded_at": image["uploaded_at"]
+            })
+        
+        return {
+            "success": True,
+            "data": images
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting project images: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get project images: {str(e)}")
+
+# Install required reporting dependencies endpoint
+@app.post("/api/reports/install-dependencies")
+async def install_reporting_dependencies(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Install required reporting dependencies (matplotlib, seaborn, reportlab)"""
+    try:
+        # Get current user (admin only)
+        current_user = await get_current_user(credentials)
+        if current_user["role"] not in ["Admin", "System Admin"]:
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        import subprocess
+        import sys
+        
+        # Install dependencies
+        packages = ["matplotlib", "seaborn", "reportlab"]
+        
+        for package in packages:
+            try:
+                result = subprocess.run(
+                    [sys.executable, "-m", "pip", "install", package],
+                    capture_output=True,
+                    text=True
+                )
+                logger.info(f"Installing {package}: {result.returncode}")
+            except Exception as e:
+                logger.warning(f"Could not install {package}: {str(e)}")
+        
+        return {
+            "success": True,
+            "message": "Reporting dependencies installation initiated. Please restart the backend service."
+        }
+        
+    except Exception as e:
+        logger.error(f"Error installing dependencies: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to install dependencies: {str(e)}")
+
+@app.get("/")
+async def root():
+    return {"message": "DataRW API Server", "version": "1.0.0", "docs": "/docs"}
