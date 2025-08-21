@@ -342,6 +342,25 @@ const Dashboard = ({ onUpgrade }) => {
               <BarChart3 className="h-4 w-4 mr-3" />
               Automated Reporting
             </Button>
+
+            {/* Admin Panel Section - Only for Admin/Director users */}
+            {user && ['Admin', 'Director', 'System Admin'].includes(user.role) && (
+              <>
+                <div className="pt-4 border-t mt-4">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                    Administration
+                  </h3>
+                </div>
+                <Button
+                  variant={activeTab === 'admin-panel' ? 'default' : 'ghost'}
+                  onClick={() => setActiveTab('admin-panel')}
+                  className="w-full justify-start"
+                >
+                  <Settings className="h-4 w-4 mr-3" />
+                  Admin Panel
+                </Button>
+              </>
+            )}
           </nav>
         </aside>
 
