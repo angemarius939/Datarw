@@ -164,7 +164,20 @@ const CreateProjectModal = ({ onProjectCreated }) => {
         let errorMessage = 'Failed to create project';
         try {
           const errorData = JSON.parse(errorText);
-          errorMessage = errorData.detail || errorMessage;
+          
+          // Handle FastAPI validation errors
+          if (errorData.detail && Array.isArray(errorData.detail)) {
+            // Extract validation error messages
+            const validationErrors = errorData.detail.map(err => {
+              const field = err.loc ? err.loc[err.loc.length - 1] : 'field';
+              return `${field}: ${err.msg}`;
+            }).join(', ');
+            errorMessage = `Validation errors: ${validationErrors}`;
+          } else if (typeof errorData.detail === 'string') {
+            errorMessage = errorData.detail;
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          }
         } catch (e) {
           errorMessage = `Server error: ${response.status}`;
         }
