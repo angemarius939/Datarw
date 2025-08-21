@@ -5,10 +5,22 @@ import json
 base_url = "https://data-collector-15.preview.emergentagent.com/api"
 
 def test_auth_and_dashboard():
-    # First, let's try to login
+    # First, let's register a new user
+    register_data = {
+        "name": "Test Admin",
+        "email": "test@datarw.com",
+        "password": "password123"
+    }
+    
+    print("📝 Registering new user...")
+    register_response = requests.post(f"{base_url}/auth/register", json=register_data)
+    print(f"Register response status: {register_response.status_code}")
+    print(f"Register response: {register_response.text}")
+    
+    # Then try to login
     login_data = {
-        "email": "admin@datarw.com",  # or the correct email
-        "password": "password123"  # or the correct password
+        "email": "test@datarw.com",
+        "password": "password123"
     }
     
     try:
