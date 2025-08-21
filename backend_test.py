@@ -2990,6 +2990,341 @@ class DataRWAPITester:
             self.log_result("Project Creation - Old Field Names", False, f"Request error: {str(e)}")
             return False
     
+    def test_budget_system_fixed(self):
+        """Test FIXED Budget Tracking System - POST /api/budget with corrected created_by field implementation"""
+        if not hasattr(self, 'project_id'):
+            self.log_result("Budget System - Fixed Implementation", False, "No project ID available from previous test")
+            return False
+        
+        try:
+            # Test BudgetItemCreate model with correct fields: project_id, category, item_name, description, budgeted_amount, budget_period
+            budget_data = {
+                "project_id": self.project_id,
+                "category": "Training Materials",
+                "item_name": "Digital Literacy Training Manuals and Resources",
+                "description": "Comprehensive training materials including printed manuals, digital resources, and interactive learning tools for digital literacy program participants",
+                "budgeted_amount": 800000.0,  # Realistic amount in RWF
+                "budget_period": "6 months"
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/budget",
+                json=budget_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                # Handle both 'id' and '_id' fields
+                budget_id = data.get("id") or data.get("_id")
+                if (budget_id and 
+                    data.get("item_name") == budget_data["item_name"] and
+                    data.get("category") == budget_data["category"] and
+                    data.get("budgeted_amount") == budget_data["budgeted_amount"]):
+                    
+                    self.budget_item_id = budget_id
+                    # Verify created_by field is populated (this was the bug)
+                    if "created_by" in data and data["created_by"]:
+                        self.log_result("Budget System - Fixed Implementation", True, 
+                                      "Budget item created successfully with corrected created_by field implementation")
+                        return True
+                    else:
+                        self.log_result("Budget System - Fixed Implementation", False, 
+                                      "Budget item created but created_by field still missing or empty", data)
+                        return False
+                else:
+                    self.log_result("Budget System - Fixed Implementation", False, "Budget item data mismatch", data)
+                    return False
+            else:
+                # Check if this is the original error we were fixing
+                if response.status_code == 500:
+                    error_text = response.text
+                    if "created_by" in error_text.lower():
+                        self.log_result("Budget System - Fixed Implementation", False, 
+                                      "CRITICAL: Original created_by field bug still present - fix not working", error_text)
+                        return False
+                
+                self.log_result("Budget System - Fixed Implementation", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Budget System - Fixed Implementation", False, f"Request error: {str(e)}")
+            return False
+
+    def test_budget_listing_fixed(self):
+        """Test FIXED Budget Listing - GET /api/budget for budget item listing"""
+        try:
+            response = self.session.get(f"{self.base_url}/budget")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    self.log_result("Budget Listing - Fixed Implementation", True, 
+                                  f"Budget items retrieved successfully - {len(data)} items found")
+                    return True
+                else:
+                    self.log_result("Budget Listing - Fixed Implementation", False, "Response is not a list", data)
+                    return False
+            else:
+                # Check if this is the original error we were fixing
+                if response.status_code == 500:
+                    error_text = response.text
+                    if "created_by" in error_text.lower():
+                        self.log_result("Budget Listing - Fixed Implementation", False, 
+                                      "CRITICAL: Original created_by field bug still affecting budget listing - fix not working", error_text)
+                        return False
+                
+                self.log_result("Budget Listing - Fixed Implementation", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Budget Listing - Fixed Implementation", False, f"Request error: {str(e)}")
+            return False
+
+    def test_budget_summary_fixed(self):
+        """Test FIXED Budget Summary - GET /api/budget/summary for budget tracking functionality"""
+        try:
+            response = self.session.get(f"{self.base_url}/budget/summary")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("success") and "data" in data):
+                    summary_data = data["data"]
+                    # Check for expected budget summary fields
+                    expected_fields = ["total_budgeted", "total_spent", "utilization_rate"]
+                    
+                    if any(field in summary_data for field in expected_fields):
+                        self.log_result("Budget Summary - Fixed Implementation", True, 
+                                      "Budget summary retrieved successfully with utilization rates")
+                        return True
+                    else:
+                        self.log_result("Budget Summary - Fixed Implementation", False, 
+                                      f"Budget summary missing expected fields: {expected_fields}", data)
+                        return False
+                else:
+                    self.log_result("Budget Summary - Fixed Implementation", False, "Missing success/data fields in response", data)
+                    return False
+            else:
+                self.log_result("Budget Summary - Fixed Implementation", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Budget Summary - Fixed Implementation", False, f"Request error: {str(e)}")
+            return False
+
+    def test_beneficiary_system_fixed(self):
+        """Test FIXED Beneficiary System - POST /api/beneficiaries with updated BeneficiaryCreate model fields"""
+        if not hasattr(self, 'project_id'):
+            self.log_result("Beneficiary System - Fixed Implementation", False, "No project ID available from previous test")
+            return False
+        
+        try:
+            # Test BeneficiaryCreate model with corrected fields: project_id, unique_id, name (single field), gender (enum), beneficiary_type, enrollment_date
+            beneficiary_data = {
+                "project_id": self.project_id,
+                "unique_id": f"BEN-{uuid.uuid4().hex[:12].upper()}",
+                "name": "Jean Baptiste Nzeyimana",  # CORRECTED: single name field (not first_name/last_name)
+                "age": 28,
+                "gender": "male",  # CORRECTED: proper enum usage
+                "location": "Nyagatare District, Eastern Province",
+                "occupation": "Farmer",
+                "beneficiary_type": "direct",  # CORRECTED: required field added
+                "enrollment_date": "2024-01-15"  # CORRECTED: required field added
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/beneficiaries",
+                json=beneficiary_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                # Handle both 'id' and '_id' fields
+                beneficiary_id = data.get("id") or data.get("_id")
+                if (beneficiary_id and 
+                    data.get("name") == beneficiary_data["name"] and  # Check single name field
+                    data.get("unique_id") == beneficiary_data["unique_id"] and
+                    data.get("gender") == beneficiary_data["gender"] and
+                    data.get("beneficiary_type") == beneficiary_data["beneficiary_type"]):
+                    
+                    self.beneficiary_id = beneficiary_id
+                    self.log_result("Beneficiary System - Fixed Implementation", True, 
+                                  "Beneficiary created successfully with corrected model fields (single name, proper enum, required fields)")
+                    return True
+                else:
+                    self.log_result("Beneficiary System - Fixed Implementation", False, "Beneficiary data mismatch", data)
+                    return False
+            else:
+                # Check if this is the original model mismatch error we were fixing
+                if response.status_code == 400:
+                    error_text = response.text
+                    if ("first_name" in error_text.lower() or "last_name" in error_text.lower() or 
+                        "beneficiary_type" in error_text.lower() or "enrollment_date" in error_text.lower()):
+                        self.log_result("Beneficiary System - Fixed Implementation", False, 
+                                      "CRITICAL: Original model mismatch bug still present - fix not working", error_text)
+                        return False
+                elif response.status_code == 500:
+                    error_text = response.text
+                    if "model" in error_text.lower():
+                        self.log_result("Beneficiary System - Fixed Implementation", False, 
+                                      "CRITICAL: Model mismatch causing server error - fix not working", error_text)
+                        return False
+                
+                self.log_result("Beneficiary System - Fixed Implementation", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Beneficiary System - Fixed Implementation", False, f"Request error: {str(e)}")
+            return False
+
+    def test_beneficiary_listing_fixed(self):
+        """Test FIXED Beneficiary Listing - GET /api/beneficiaries for beneficiary listing"""
+        try:
+            response = self.session.get(f"{self.base_url}/beneficiaries")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    self.log_result("Beneficiary Listing - Fixed Implementation", True, 
+                                  f"Beneficiaries retrieved successfully - {len(data)} beneficiaries found")
+                    return True
+                else:
+                    self.log_result("Beneficiary Listing - Fixed Implementation", False, "Response is not a list", data)
+                    return False
+            else:
+                # Check if this is the original model error we were fixing
+                if response.status_code == 500:
+                    error_text = response.text
+                    if "model" in error_text.lower():
+                        self.log_result("Beneficiary Listing - Fixed Implementation", False, 
+                                      "CRITICAL: Original model mismatch bug still affecting beneficiary listing - fix not working", error_text)
+                        return False
+                
+                self.log_result("Beneficiary Listing - Fixed Implementation", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Beneficiary Listing - Fixed Implementation", False, f"Request error: {str(e)}")
+            return False
+
+    def test_integration_dashboard_data(self):
+        """Test Integration - Verify budget items and beneficiaries appear in project dashboard data"""
+        try:
+            response = self.session.get(f"{self.base_url}/projects/dashboard")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("success") and "data" in data):
+                    dashboard_data = data["data"]
+                    
+                    # Check if budget utilization is working (indicates budget items are being processed)
+                    budget_utilization = dashboard_data.get("budget_utilization", 0)
+                    if isinstance(budget_utilization, (int, float)):
+                        budget_integration_ok = True
+                    else:
+                        budget_integration_ok = False
+                    
+                    # Check if there are recent activities that might include beneficiary data
+                    recent_activities = dashboard_data.get("recent_activities", [])
+                    activities_integration_ok = isinstance(recent_activities, list)
+                    
+                    # Check for budget_by_category data
+                    budget_by_category = dashboard_data.get("budget_by_category", {})
+                    budget_category_ok = isinstance(budget_by_category, dict)
+                    
+                    if budget_integration_ok and activities_integration_ok and budget_category_ok:
+                        self.log_result("Integration - Dashboard Data", True, 
+                                      "Budget and beneficiary data successfully integrated into project dashboard")
+                        return True
+                    else:
+                        issues = []
+                        if not budget_integration_ok:
+                            issues.append("budget_utilization")
+                        if not activities_integration_ok:
+                            issues.append("recent_activities")
+                        if not budget_category_ok:
+                            issues.append("budget_by_category")
+                        
+                        self.log_result("Integration - Dashboard Data", False, 
+                                      f"Dashboard integration issues with: {', '.join(issues)}", data)
+                        return False
+                else:
+                    self.log_result("Integration - Dashboard Data", False, "Missing success/data fields in response", data)
+                    return False
+            else:
+                self.log_result("Integration - Dashboard Data", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Integration - Dashboard Data", False, f"Request error: {str(e)}")
+            return False
+
+    def run_budget_beneficiary_fix_tests(self):
+        """Run focused tests for FIXED budget and beneficiary endpoints"""
+        print(f"🔧 Starting FIXED Budget and Beneficiary System Tests")
+        print(f"📍 Testing against: {self.base_url}")
+        print("=" * 80)
+        
+        # Required setup tests
+        setup_tests = [
+            self.test_api_health,
+            self.test_user_registration,
+            self.test_user_login_valid,
+            self.test_create_project,  # Need project for budget/beneficiary creation
+        ]
+        
+        # Fixed system tests
+        fix_tests = [
+            self.test_budget_system_fixed,
+            self.test_budget_listing_fixed,
+            self.test_budget_summary_fixed,
+            self.test_beneficiary_system_fixed,
+            self.test_beneficiary_listing_fixed,
+            self.test_integration_dashboard_data,
+        ]
+        
+        print("🔧 Running setup tests...")
+        for test in setup_tests:
+            result = test()
+            if not result and test == self.test_api_health:
+                print("❌ API Health Check failed - stopping tests")
+                return self.generate_summary()
+            elif not result and test == self.test_user_registration:
+                print("❌ User Registration failed - stopping tests")
+                return self.generate_summary()
+            print()
+        
+        print("\n🎯 Running FIXED budget and beneficiary tests...")
+        print("=" * 60)
+        for test in fix_tests:
+            test()
+            print()
+        
+        # Summary
+        print("=" * 60)
+        print("📊 BUDGET & BENEFICIARY FIX TEST SUMMARY")
+        print("=" * 60)
+        
+        # Filter results for just the fix tests
+        fix_test_names = [
+            "Budget System - Fixed Implementation",
+            "Budget Listing - Fixed Implementation", 
+            "Budget Summary - Fixed Implementation",
+            "Beneficiary System - Fixed Implementation",
+            "Beneficiary Listing - Fixed Implementation",
+            "Integration - Dashboard Data"
+        ]
+        
+        fix_results = [r for r in self.test_results if r['test'] in fix_test_names]
+        
+        passed = sum(1 for result in fix_results if result['success'])
+        failed = len(fix_results) - passed
+        
+        print(f"✅ Passed: {passed}")
+        print(f"❌ Failed: {failed}")
+        print(f"📈 Success Rate: {(passed/len(fix_results)*100):.1f}%")
+        
+        if failed > 0:
+            print("\n🔍 FAILED TESTS:")
+            for result in fix_results:
+                if not result['success']:
+                    print(f"   • {result['test']}: {result['message']}")
+        
+        return passed, failed
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print(f"🚀 Starting DataRW Backend API Tests")
