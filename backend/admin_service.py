@@ -345,9 +345,9 @@ class AdminService:
             "partners": results,
             "summary": {
                 "total_partners": len(results),
-                "avg_performance": sum(p.get("avg_performance", 0) for p in results) / len(results) if results else 0,
-                "total_budget": sum(p.get("total_budget_allocated", 0) for p in results),
-                "total_beneficiaries": sum(p.get("total_beneficiaries", 0) for p in results)
+                "avg_performance": sum(p.get("avg_performance", 0) or 0 for p in results) / len(results) if results else 0,
+                "total_budget": sum(p.get("total_budget_allocated", 0) or 0 for p in results),
+                "total_beneficiaries": sum(p.get("total_beneficiaries", 0) or 0 for p in results)
             }
         }
 
