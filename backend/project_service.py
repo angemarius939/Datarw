@@ -339,16 +339,23 @@ class ProjectService:
             "status": ProjectStatus.COMPLETED
         })
         
-        # Overdue activities
-        overdue_activities = await self.db.activities.count_documents({
-            "organization_id": organization_id,
-            "end_date": {"$lt": datetime.utcnow()},
-            "status": {"$ne": ActivityStatus.COMPLETED}
-        })
+        # Budget calculations
+        total_budget = 0
+        budget_utilized = 0
+        projects_cursor = self.db.projects.find({"organization_id": organization_id})
+        async for project in projects_cursor:
+            total_budget += project.get("budget_total", 0)
+            budget_utilized += project.get("budget_utilized", 0)
         
-        # Budget utilization
-        budget_summary = await self.get_budget_summary(organization_id)
-        budget_utilization = budget_summary["utilization_rate"]
+        utilization_rate = (budget_utilized / total_budget * 100) if total_budget > 0 else 0
+        
+        # Beneficiary calculations
+        total_beneficiaries = 0
+        beneficiaries_reached = 0
+        beneficiaries_cursor = self.db.beneficiaries.find({"organization_id": organization_id})
+        async for _ in beneficiaries_cursor:
+            total_beneficiaries += 1
+            beneficiaries_reached += 1  # Assume all registered beneficiaries are reached
         
         # KPI performance - average achievement rate
         kpi_pipeline = [
@@ -369,7 +376,31 @@ class ProjectService:
         ]
         
         kpi_result = await self.db.kpi_indicators.aggregate(kpi_pipeline).to_list(1)
-        avg_kpi_performance = kpi_result[0]["avg_achievement"] if kpi_result else 0
+        kpi_achievement_rate = kpi_result[0]["avg_achievement"] if kpi_result else 0
+        
+        # Budget by category
+        budget_pipeline = [
+            {"$match": {"organization_id": organization_id}},
+            {"$group": {
+                "_id": "$category",
+                "total": {"$sum": "$budgeted_amount"}
+            }}
+        ]
+        
+        budget_category_result = await self.db.budget_entries.aggregate(budget_pipeline).to_list(100)
+        budget_by_category = {item["_id"]: item["total"] for item in budget_category_result}
+        
+        # Projects by status
+        status_pipeline = [
+            {"$match": {"organization_id": organization_id}},
+            {"$group": {
+                "_id": "$status",
+                "count": {"$sum": 1}
+            }}
+        ]
+        
+        status_result = await self.db.projects.aggregate(status_pipeline).to_list(100)
+        projects_by_status = {item["_id"]: item["count"] for item in status_result}
         
         # Recent activities
         recent_activities_cursor = self.db.activities.find(
@@ -379,20 +410,24 @@ class ProjectService:
         recent_activities = []
         async for activity in recent_activities_cursor:
             recent_activities.append({
-                "id": str(activity["_id"]),
-                "title": activity["title"],
-                "status": activity["status"],
+                "id": str(activity.get("_id", activity.get("id", ""))),
+                "name": activity.get("name", "Unknown Activity"),
+                "status": activity.get("status", "unknown"),
                 "progress": activity.get("progress_percentage", 0),
-                "updated_at": activity["updated_at"]
+                "updated_at": activity.get("updated_at", datetime.utcnow()).isoformat()
             })
         
         return ProjectDashboardData(
             total_projects=total_projects,
             active_projects=active_projects,
             completed_projects=completed_projects,
-            overdue_activities=overdue_activities,
-            budget_utilization=budget_utilization,
-            kpi_performance={"average_achievement": avg_kpi_performance},
+            total_budget=total_budget,
+            budget_utilized=budget_utilized,
+            utilization_rate=utilization_rate,
+            total_beneficiaries=total_beneficiaries,
+            beneficiaries_reached=beneficiaries_reached,
+            kpi_achievement_rate=kpi_achievement_rate,
             recent_activities=recent_activities,
-            project_performance_summary=[]  # TODO: Implement detailed project performance
+            budget_by_category=budget_by_category,
+            projects_by_status=projects_by_status
         )
