@@ -240,7 +240,7 @@ const ProjectDashboard = () => {
               {dashboardData.recent_activities.map((activity, index) => (
                 <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                   <div className="flex-1">
-                    <h4 className="font-medium text-gray-900">{activity.title}</h4>
+                    <h4 className="font-medium text-gray-900">{activity.name}</h4>
                     <div className="flex items-center space-x-4 mt-1">
                       <Badge className={getStatusColor(activity.status)}>
                         {activity.status.replace('_', ' ')}
