@@ -41,8 +41,8 @@ const CreateProjectModal = ({ onProjectCreated }) => {
   const validateProject = () => {
     const newErrors = {};
     
-    if (!project.title.trim()) {
-      newErrors.title = 'Project title is required';
+    if (!project.name.trim()) {
+      newErrors.name = 'Project name is required';
     }
     
     if (!project.description.trim()) {
@@ -53,26 +53,30 @@ const CreateProjectModal = ({ onProjectCreated }) => {
       newErrors.sector = 'Sector is required';
     }
     
-    if (!project.donor.trim()) {
-      newErrors.donor = 'Donor is required';
+    if (!project.donor_organization.trim()) {
+      newErrors.donor_organization = 'Donor is required';
     }
     
-    if (!project.implementation_start) {
-      newErrors.implementation_start = 'Start date is required';
+    if (!project.start_date) {
+      newErrors.start_date = 'Start date is required';
     }
     
-    if (!project.implementation_end) {
-      newErrors.implementation_end = 'End date is required';
+    if (!project.end_date) {
+      newErrors.end_date = 'End date is required';
     }
     
-    if (!project.total_budget || parseFloat(project.total_budget) <= 0) {
-      newErrors.total_budget = 'Valid budget amount is required';
+    if (!project.budget_total || parseFloat(project.budget_total) <= 0) {
+      newErrors.budget_total = 'Valid budget amount is required';
+    }
+    
+    if (!project.project_manager_id) {
+      newErrors.project_manager_id = 'Project manager is required';
     }
     
     // Validate date range
-    if (project.implementation_start && project.implementation_end) {
-      if (new Date(project.implementation_start) >= new Date(project.implementation_end)) {
-        newErrors.implementation_end = 'End date must be after start date';
+    if (project.start_date && project.end_date) {
+      if (new Date(project.start_date) >= new Date(project.end_date)) {
+        newErrors.end_date = 'End date must be after start date';
       }
     }
     
