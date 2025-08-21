@@ -21,7 +21,6 @@ import CreateProjectModal from './CreateProjectModal';
 import CreateActivityModal from './CreateActivityModal';
 import CreateBeneficiaryModal from './CreateBeneficiaryModal';
 import CreateKPIModal from './CreateKPIModal';
-import CreateProjectModal from './CreateProjectModal';
 
 const ProjectDashboard = () => {
   const { user, organization } = useAuth();
