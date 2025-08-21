@@ -384,8 +384,8 @@ const CreateKPIModal = ({ onKPICreated, trigger }) => {
                 <Label htmlFor="unit">Unit of Measurement</Label>
                 <Input
                   id="unit"
-                  value={kpi.unit_of_measurement}
-                  onChange={(e) => setKPI(prev => ({ ...prev, unit_of_measurement: e.target.value }))}
+                  value={kpi.measurement_unit}
+                  onChange={(e) => setKPI(prev => ({ ...prev, measurement_unit: e.target.value }))}
                   placeholder="e.g., people, %, hours"
                   className="mt-1"
                 />
