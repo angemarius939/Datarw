@@ -165,9 +165,9 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
         setOpen(false);
         setActivity({
           project_id: '',
-          title: '',
+          name: '',
           description: '',
-          responsible_user_id: '',
+          assigned_to: '',
           start_date: '',
           end_date: '',
           budget_allocated: '',
