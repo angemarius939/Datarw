@@ -36,7 +36,7 @@ const ProjectDashboard = () => {
       
       // Get backend URL from environment
       const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token'); // Fixed: use 'access_token' not 'token'
       
       console.log('🔍 Dashboard Debug Info:', {
         backendUrl,
