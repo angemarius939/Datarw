@@ -322,9 +322,9 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
               <User className="h-4 w-4 mr-1" />
               Responsible Person *
             </Label>
-            <Select value={activity.responsible_user_id} onValueChange={(value) => setActivity(prev => ({ ...prev, responsible_user_id: value }))}>
-              <SelectTrigger className={`mt-1 ${errors.responsible_user_id ? 'border-red-500' : ''}`}>
-                <SelectValue placeholder="Select responsible person" />
+            <Select value={activity.assigned_to} onValueChange={(value) => setActivity(prev => ({ ...prev, assigned_to: value }))}>
+              <SelectTrigger className={`mt-1 ${errors.assigned_to ? 'border-red-500' : ''}`}>
+                <SelectValue placeholder="Select assigned person" />
               </SelectTrigger>
               <SelectContent>
                 {users.map(user => (
