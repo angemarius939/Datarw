@@ -103,6 +103,46 @@ export const aiAPI = {
   getSurveyContext: (organizationId) => api.get(`/surveys/context/${organizationId}`),
 };
 
+// Payment Processing API
+export const paymentsAPI = {
+  // Create invoice for payment
+  createInvoice: (invoiceData) => api.post('/payments/create-invoice', invoiceData),
+  
+  // Initiate mobile money payment
+  initiatePayment: (paymentData) => api.post('/payments/initiate', paymentData),
+  
+  // Create subscription payment
+  createSubscriptionPayment: (subscriptionData) => api.post('/payments/subscription', subscriptionData),
+  
+  // Get payment status
+  getPaymentStatus: (invoiceNumber) => api.get(`/payments/status/${invoiceNumber}`),
+  
+  // Get payment history
+  getPaymentHistory: (limit = 10, offset = 0) => api.get(`/payments/history?limit=${limit}&offset=${offset}`),
+  
+  // Get pricing plans
+  getPricingPlans: () => api.get('/payments/plans'),
+  
+  // Quick subscription payment for plans
+  subscribeToBasic: (userData) => paymentsAPI.createSubscriptionPayment({
+    ...userData,
+    plan_name: 'Basic',
+    payment_method: userData.payment_method || 'MTN'
+  }),
+  
+  subscribeToProfessional: (userData) => paymentsAPI.createSubscriptionPayment({
+    ...userData,
+    plan_name: 'Professional', 
+    payment_method: userData.payment_method || 'MTN'
+  }),
+  
+  subscribeToEnterprise: (userData) => paymentsAPI.createSubscriptionPayment({
+    ...userData,
+    plan_name: 'Enterprise',
+    payment_method: userData.payment_method || 'MTN'
+  })
+};
+
 // Project Management API
 export const projectsAPI = {
   getDashboard: () => api.get('/projects/dashboard'),
