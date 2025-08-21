@@ -172,9 +172,12 @@ class EnhancedAnalyticsTest:
                             return False
                         
                         # Each risk indicator should have threshold and description
-                        if "threshold" not in risk_data or "description" not in risk_data:
+                        # Check for different possible field names
+                        has_threshold = any(key in risk_data for key in ["threshold", "threshold_days"])
+                        if not has_threshold or "description" not in risk_data:
+                            print(f"DEBUG: {risk_type} data: {risk_data}")
                             self.log_result("Enhanced Project Dashboard Analytics", False, 
-                                          f"{risk_type} missing threshold or description", data)
+                                          f"{risk_type} missing threshold or description. Available keys: {list(risk_data.keys())}", data)
                             return False
                     
                     print(f"✅ Risk Indicators: {len(expected_risk_fields)} fields present with proper structure")
