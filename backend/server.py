@@ -888,6 +888,173 @@ async def get_organization_users(
         logger.error(f"Get organization users error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get users: {str(e)}")
 
+# Advanced Admin Panel Endpoints
+@api_router.post("/admin/users/create-advanced")
+async def create_user_advanced(
+    user_data: UserCreateAdvanced,
+    current_user: User = Depends(require_admin())
+):
+    """Create user with advanced features (Admin/Director only)"""
+    try:
+        result = await admin_service.create_user_advanced(
+            user_data, 
+            current_user.organization_id, 
+            current_user.id
+        )
+        return {"success": True, "data": result}
+    except Exception as e:
+        logger.error(f"Advanced user creation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create user: {str(e)}")
+
+@api_router.post("/admin/users/bulk-create")
+async def bulk_create_users(
+    users_data: List[UserCreateAdvanced],
+    send_emails: bool = True,
+    current_user: User = Depends(require_admin())
+):
+    """Create multiple users with batch processing"""
+    try:
+        result = await admin_service.bulk_create_users(
+            users_data,
+            current_user.organization_id,
+            current_user.id,
+            send_emails
+        )
+        return {"success": True, "data": result}
+    except Exception as e:
+        logger.error(f"Bulk user creation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create users: {str(e)}")
+
+# Partner Organization Management
+@api_router.post("/admin/partners", response_model=PartnerOrganization)
+async def create_partner_organization(
+    partner_data: PartnerOrganizationCreate,
+    current_user: User = Depends(require_admin())
+):
+    """Create a new partner organization"""
+    try:
+        partner = await admin_service.create_partner_organization(
+            partner_data, 
+            current_user.organization_id
+        )
+        return partner
+    except Exception as e:
+        logger.error(f"Partner creation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create partner: {str(e)}")
+
+@api_router.get("/admin/partners", response_model=List[PartnerOrganization])
+async def get_partner_organizations(
+    status: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get all partner organizations"""
+    try:
+        partners = await admin_service.get_partner_organizations(
+            current_user.organization_id, 
+            status
+        )
+        return partners
+    except Exception as e:
+        logger.error(f"Get partners error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get partners: {str(e)}")
+
+@api_router.put("/admin/partners/{partner_id}", response_model=PartnerOrganization)
+async def update_partner_organization(
+    partner_id: str,
+    updates: PartnerOrganizationUpdate,
+    current_user: User = Depends(require_admin())
+):
+    """Update a partner organization"""
+    try:
+        partner = await admin_service.update_partner_organization(partner_id, updates)
+        if not partner:
+            raise HTTPException(status_code=404, detail="Partner organization not found")
+        return partner
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Update partner error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update partner: {str(e)}")
+
+# Partner Performance Tracking
+@api_router.post("/admin/partners/performance", response_model=PartnerPerformance)
+async def create_partner_performance(
+    performance_data: PartnerPerformanceCreate,
+    current_user: User = Depends(require_editor())
+):
+    """Create partner performance record"""
+    try:
+        performance = await admin_service.create_partner_performance(
+            performance_data, 
+            current_user.id
+        )
+        return performance
+    except Exception as e:
+        logger.error(f"Partner performance creation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create performance record: {str(e)}")
+
+@api_router.get("/admin/partners/performance/summary")
+async def get_partner_performance_summary(
+    partner_id: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get partner performance summary"""
+    try:
+        summary = await admin_service.get_partner_performance_summary(
+            current_user.organization_id, 
+            partner_id
+        )
+        return {"success": True, "data": summary}
+    except Exception as e:
+        logger.error(f"Partner performance summary error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get performance summary: {str(e)}")
+
+# Organization Branding
+@api_router.put("/admin/branding")
+async def update_organization_branding(
+    branding_data: OrganizationBrandingCreate,
+    current_user: User = Depends(require_admin())
+):
+    """Update organization branding settings"""
+    try:
+        branding = await admin_service.update_organization_branding(
+            current_user.organization_id, 
+            branding_data
+        )
+        return {"success": True, "data": branding.model_dump()}
+    except Exception as e:
+        logger.error(f"Branding update error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update branding: {str(e)}")
+
+@api_router.get("/admin/branding")
+async def get_organization_branding(
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get organization branding settings"""
+    try:
+        branding = await admin_service.get_organization_branding(current_user.organization_id)
+        if branding:
+            return {"success": True, "data": branding.model_dump()}
+        else:
+            return {"success": True, "data": None}
+    except Exception as e:
+        logger.error(f"Get branding error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get branding: {str(e)}")
+
+# Email Logs (Mock Email System)
+@api_router.get("/admin/email-logs")
+async def get_email_logs(
+    limit: int = 50,
+    current_user: User = Depends(require_admin())
+):
+    """Get email logs for organization"""
+    try:
+        logs = await admin_service.get_email_logs(current_user.organization_id, limit)
+        return {"success": True, "data": logs}
+    except Exception as e:
+        logger.error(f"Get email logs error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get email logs: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
