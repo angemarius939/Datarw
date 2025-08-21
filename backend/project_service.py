@@ -913,7 +913,7 @@ class ProjectService:
             output_variance_percentage = ((achieved_quantity - target_quantity) / target_quantity) * 100
         
         # Completion variance (actual vs expected progress)
-        completion_variance = activity_doc.get("completion_variance", 0)
+        completion_variance = activity_doc.get("completion_variance", 0) or 0
         
         # Risk assessment
         risk_level = "low"
