@@ -2,7 +2,7 @@ import axios from 'axios';
 import {Alert} from 'react-native';
 
 // Configure based on your backend URL
-const BASE_URL = 'https://data-collector-15.preview.emergentagent.com/api';
+const BASE_URL = 'https://monitoring-eval-app.preview.emergentagent.com/api';
 
 class ApiServiceClass {
   constructor() {

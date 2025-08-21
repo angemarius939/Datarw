@@ -1,65 +1,82 @@
 <analysis>
-The AI engineer successfully built the DataRW platform, starting with a React frontend using mock data to quickly demonstrate features like a landing page, dashboard, survey builder, and user management. Upon user approval, backend development commenced, integrating FastAPI and MongoDB for data persistence, authentication, and initial Stripe payment integration (later replaced by IremboPay). Key technical issues, such as import errors and bcrypt attribute errors, were identified and resolved through iterative testing. A significant focus was placed on refining the frontend's interaction with the backend, removing mock data, and improving error handling. The AI also addressed branding updates and, critically, developed a React Native mobile application with offline capabilities, resolving a critical download functionality bug. The current focus is on validating the end-to-end survey creation flow on the frontend after extensive backend and  component updates.
+The previous AI engineer successfully brought the DataRW application from its MVP stage, initially focusing on a React frontend with mock data, then integrating a FastAPI backend and MongoDB. A significant part of the work involved transitioning from mock data to real API integration, including authentication and replacing Stripe with IremboPay. The trajectory highlights iterative bug fixing, such as resolving  import errors and  issues. Subsequently, the AI engineer implemented advanced features like AI-powered survey generation, enhanced text handling for survey questions, and a fully-fledged project management module. Key challenges addressed were authentication flow between frontend and backend, ensuring correct token handling, and transforming static UI elements into functional components with associated modals and backend APIs. The work involved extensive file modifications across frontend components, backend models, services, and API endpoints, demonstrating a strong grasp of full-stack development.
 </analysis>
 
 <product_requirements>
-The DataRW web application is designed to collect, analyze, and manage data for surveys, monitoring, evaluation, and research. It caters to organizations, allowing them to pay online for access to a platform that provides tools for setting up survey questionnaires and forms, data management, KPI tracking, dashboards, and data export. Each organization will have isolated data and an admin panel to manage user access levels (Admin, Editor, Viewer) within their own tenant. The payment model is based on data storage and the number of surveys or information management entities created. A public-facing landing page is also required.
+The DataRW web application is designed as a comprehensive platform for data collection, analysis, and management in surveys, monitoring, evaluation, and research, primarily for organizations. It supports online payments, provides tools for survey creation, data management, KPI tracking, dashboards, and data export, ensuring isolated data per organization with role-based user management (Admin, Editor, Viewer). The payment model is based on data storage and entity creation. A public landing page showcases features and pricing.
 
-**Current Implementation Details:**
-*   **Frontend:** Built with React, featuring a modern/minimal, corporate, and colorful design with micro-animations. Includes a responsive landing page with pricing tiers (Basic: 100K FRW, Professional: 300K FRW, Enterprise: Custom), a multi-tab dashboard (overview, surveys, survey builder, data management, user management), and an interactive survey builder supporting various question types (multiple choice, text, rating, file upload, calculations, skip logic). User management includes role-based access control.
-*   **Backend:** Developed with FastAPI, using MongoDB for data storage. It includes essential CRUD endpoints, user authentication (registration, login), and enumerator management for survey assignments.
-*   **Payment Gateway:** Initially planned with Stripe, it has been replaced with IremboPay based on user's specific request and provided documentation. The system is designed to handle custom amounts or fixed price products, create payment transactions, and poll for status updates. IremboPay API keys are pending.
-*   **Mobile Application:** A React Native Android mobile application has been developed, designed to work both online and offline, with data synchronization capabilities. It supports enumerator login, survey assignment (per ID), and data collection. Download links are integrated into the landing page.
-*   **Branding:** The application features DataRW branding, with the footer dynamically updating the current year and attributing the work to Research Analytics and AI Solutions Ltd.
+The application currently features a React frontend with a modern design, including a responsive landing page with pricing tiers (Basic: 100K FRW, Professional: 300K FRW, Enterprise: Custom), a multi-tab dashboard (overview, surveys, survey builder, data management, user management), and an interactive survey builder supporting diverse question types. The FastAPI backend with MongoDB handles CRUD operations, user authentication, and enumerator management. IremboPay replaced Stripe for payment processing. A React Native mobile app with offline capabilities supports enumerator login and data collection, with download links on the landing page.
+
+Recent additions include enhanced text handling for survey questions (longer text, validation), AI-powered survey generation (from prompts or uploaded documents), and automatic translation into Kinyarwanda. A new DataRW Projects module has been integrated, centralizing project data, M&E processes, activity tracking, budgeting, action plans, KPI dashboards, secure document storage, and beneficiary profiling. Future requirements include filters, organization logos, partner performance tracking, and an advanced admin panel for user and access level management.
 </product_requirements>
 
 <key_technical_concepts>
 -   **Full-stack Architecture:** React (frontend), FastAPI (backend), MongoDB (database).
--   **API Design:** RESTful API endpoints prefixed with .
--   **Authentication:** JWT-based user authentication and role-based access control.
--   **Payment Gateway Integration:** Implementation of Stripe (initial plan) and then IremboPay APIs for payment processing.
--   **Mobile Development:** React Native for cross-platform Android application with offline-first data synchronization.
--   **UI/UX:** Component-based design, Tailwind CSS, Shadcn/ui, micro-animations, responsive layouts.
+-   **API Design:** RESTful endpoints with  prefix, JWT-based authentication.
+-   **Payment Gateway Integration:** IremboPay APIs for custom/fixed payments.
+-   **Mobile Development:** React Native (Android) with offline-first data sync.
+-   **AI Integration:** LLM for survey generation, document analysis.
+-   **UI/UX:** Component-based, Shadcn/ui, Tailwind CSS, micro-animations.
+-   **Containerization:** Kubernetes environment, Supervisor for service control.
 </key_technical_concepts>
 
 <code_architecture>
-The application employs a typical full-stack architecture consisting of a React frontend, a FastAPI backend, and a MongoDB database. The services run internally on specific ports handled by supervisor, with Kubernetes ingress rules redirecting  routes to the backend and other routes to the frontend.
+The application follows a standard full-stack architecture with a React frontend, a FastAPI backend, and a MongoDB database. Services are managed by Supervisor, with Kubernetes ingress routing  requests to the backend (port 8001) and other routes to the frontend (port 3000).
 
 **Directory Structure:**
 
 
-**Key Files and Changes:**
-*   : The main FastAPI application file.
-    *   **Importance:** Defines all backend API routes, middleware (CORS), and connects to MongoDB.
-    *   **Changes:** Initially included basic  and  routes. Modified to include user authentication endpoints, Stripe payment integration (later replaced), and recently, IremboPay integration and enumerator management endpoints. Import issues for  from  were also resolved.
-*   : Defines Pydantic models for data validation and MongoDB schema.
-    *   **Importance:** Ensures data consistency and type checking for API requests and database operations.
-    *   **Changes:** Contains models for , , , , , , and others, reflecting the application's evolving data structures.
-*   : Handles user authentication logic.
-    *   **Importance:** Manages user registration, login, JWT token generation, and password hashing/verification.
-    *   **Changes:** Implements , , , and depends on .
-*   : Contains the service logic for IremboPay integration.
-    *   **Importance:** Encapsulates the specific API calls and logic for processing payments via IremboPay, adhering to the provided playbook.
-    *   **Changes:** Newly created file to replace Stripe functionality, including  class and related models.
-*   : The main React application entry point.
-    *   **Importance:** Sets up routing for the single-page application and includes global components like .
-    *   **Changes:** Initialized with basic routing. Updated to include , , and  components. Routes added for landing page and dashboard.
-*   : The public-facing landing page.
-    *   **Importance:** Serves as the initial user interface, showcasing product features and guiding users.
-    *   **Changes:** Implemented with modern design, pricing tiers, feature showcases. Updated to dynamically display the current year in the footer and attribute to Research Analytics and AI Solutions Ltd.. Mobile app download links were added here.
-*   : Component for creating and managing surveys.
-    *   **Importance:** Provides the drag-and-drop interface for building survey questionnaires.
-    *   **Changes:** Initially used mock data. Updated to integrate with the real backend for survey creation and management. A critical bug related to  icon import was fixed. Error validation display was added for form fields.
-*   : Centralized service for making API calls to the backend.
-    *   **Importance:** Abstracts API interactions, making it easier to manage backend communication and replace mock data.
-    *   **Changes:** Created to handle authenticated and unauthenticated requests to the FastAPI backend.
-*   : The generated Android APK file.
-    *   **Importance:** The actual mobile application binary available for download.
-    *   **Changes:** This file was created and made accessible for download via the landing page.
-*   : Contains the source code for the React Native mobile application.
-    *   **Importance:** Houses all components, contexts, and services for the offline-first mobile app.
-    *   **Changes:** New directory and files created to implement mobile authentication, survey listing, survey forms, and data synchronization.
 
+**Key Files and Changes:**
+
+*   :
+    *   **Importance:** Core FastAPI application, defines all API routes, handles database connection, and integrates services.
+    *   **Changes:** Expanded to include user authentication, IremboPay, and enumerator management. Significantly updated to incorporate AI survey generation endpoints (, ) and a full suite of Project Management endpoints (, , , , , , , , ). Admin panel user-related endpoints () were also added. Imports for new services like , , and  were added.
+*   :
+    *   **Importance:** Defines Pydantic models for request/response validation and MongoDB schema.
+    *   **Changes:**  enum expanded to support a wider range of survey question types (e.g., Likert, Ranking, File Upload). New models introduced for AI survey generation (, , ), and a comprehensive set of models for the Project Management System (, , , , , , , , , and related enums like , , , , , , , , , ). Also added  and updated  for admin panel.
+*   : (**NEW**)
+    *   **Importance:** Encapsulates the logic for AI-powered survey generation and document processing using LLMs.
+    *   **Changes:** Contains the  class with methods to interact with the LLM API (via ) for generating surveys based on prompts or uploaded documents.
+*   : (**NEW**)
+    *   **Importance:** Manages business logic and database interactions for all project management functionalities.
+    *   **Changes:** Implements methods for CRUD operations on Projects, Activities, Budgets, KPIs, Beneficiaries, Documents, Reports, and Partners, including aggregate functions like  and .
+*   : (**NEW**)
+    *   **Importance:** Handles administrative tasks, specifically user management and partner organization management.
+    *   **Changes:** New file created to house logic for creating users, assigning roles, and managing partner entities within the system.
+*   :
+    *   **Importance:** Lists all Python dependencies for the backend.
+    *   **Changes:**  was added to enable LLM API access.
+*   :
+    *   **Importance:** Main React application entry point, sets up routing and global components.
+    *   **Changes:** Adapted for the expanded application, though specific diffs not shown, likely routing updates for new dashboard sections.
+*   :
+    *   **Importance:** Public-facing page, showcasing product features.
+    *   **Changes:** Updated to introduce and showcase two distinct products: DataRW Surveys and DataRW Projects, with new sections, feature lists, and navigation links reflecting the integrated platform.
+*   :
+    *   **Importance:** The main authenticated user interface with multiple tabs/sections.
+    *   **Changes:** Significantly expanded to include a new DATARW PROJECTS sidebar menu with sub-sections like Project Dashboard, Projects & Activities, Budget Tracking, KPI Dashboard, Beneficiaries, Document Repository, and Automated Reporting. Imports for new icons and components (, , , , , ) were added, and existing static quick action buttons were made functional.  import bug was fixed.
+*   :
+    *   **Importance:** User interface for creating and managing surveys.
+    *   **Changes:** Critical bug fix for  icon import. Updated to integrate with the real backend for survey creation, replacing mock data. Enhanced to use  for longer text input in questions and options, with character counting and improved validation displays. The  component was significantly expanded to support all new question types (e.g., Likert, Ranking, File Upload). UI elements for AI-powered survey generation and document upload were added, along with associated state and functions.
+*   : (**NEW**)
+    *   **Importance:** The main component for displaying and interacting with the project management system dashboard.
+    *   **Changes:** New file created to display project statistics, quick actions, and integrate various project-related modals. It was debugged to correctly use the authentication token from  to fetch dashboard data. All quick action buttons (New Project, Add Activity, Add Beneficiary, Add KPI) were made functional by integrating respective modals.
+*   , , , , : (**NEW**)
+    *   **Importance:** Modals providing forms for creating various entities within the project management system.
+    *   **Changes:** New files created for each entity, including forms with validation and API integration to their respective backend endpoints.
+*   : (**NEW**)
+    *   **Importance:** Displays a preview of a created survey.
+    *   **Changes:** New file created to address the reported bug of survey preview not working, providing a basic modal to show the survey structure.
+*   :
+    *   **Importance:** Centralized service for all frontend API calls to the backend.
+    *   **Changes:** Expanded to include new API functions for AI survey generation (e.g., , ) and all project management related endpoints (e.g., , , ).
+*   :
+    *   **Importance:** Manages user authentication state and provides access tokens across the frontend.
+    *   **Changes:** Debugged to ensure the authentication token () is correctly stored and retrieved, fixing issues where project-related API calls were failing due to missing or invalid credentials.
+*   : (**NEW**)
+    *   **Importance:** A temporary Python script created for debugging backend authentication and project API endpoints directly.
+    *   **Changes:** Included methods for user registration, login, and testing various project management endpoints to isolate and verify backend functionality during debugging.
 </code_architecture>
 
 <pending_tasks>
@@ -67,17 +84,25 @@ The application employs a typical full-stack architecture consisting of a React 
 -   Thoroughly test the IremboPay integration for payment processing.
 -   Complete end-to-end testing of the mobile application's offline capabilities and data synchronization.
 -   Verify that features for each pricing plan are enforced correctly.
+-   Implement demo/mock email system for user creation.
+-   Implement partner organization tracking functionality (separate/integrated views).
+-   Develop the advanced admin panel for detailed user creation and access level definition (Directors, Officers, Field Staff, Partner Staff).
+-   Implement branding and filtering features for projects.
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer was focused on resolving issues related to survey creation.
-1.  **Survey Creation Bug Fix:** The user reported a  when trying to create a new survey. The AI identified that the  icon from  was being used in  but was not correctly imported. This import was fixed.
-2.  **SurveyBuilder Backend Integration:** Following the icon fix, it was noted that  was still relying on mock data. The AI has updated this component to now interact with the real backend API for survey creation. This involved modifying the component to handle state, API calls, and form submissions for creating new surveys and questions, including handling loading states and displaying error messages for form fields like title and description.
-3.  **Backend Testing Confirmation:** The backend's survey creation endpoint has been successfully tested and confirmed to be working correctly, ensuring that the API side is ready for frontend integration.
+Immediately before this summary request, the AI engineer was focused on implementing advanced enterprise features for the newly introduced DataRW Projects module, following user confirmation. The previous critical bug where project management functionalities (like Create New Project, Add Activity, Add Beneficiary, Add KPI) were reported as not working in all menus has been fully resolved. It was identified that these buttons were static placeholders lacking backend integration.
 
-The system is currently in a state where the  component on the frontend has been modified to interact with the backend, and the backend survey creation functionality is validated. The last action taken was fixing  and verifying backend behavior.
+The AI engineer successfully:
+1.  **Created multiple new frontend modals**: , , , and  to provide functional forms for project-related entity creation.
+2.  **Integrated these modals**: Made the static quick action buttons in  and  functional, linking them to the newly created modals.
+3.  **Fixed authentication issues**: A critical bug related to the frontend not properly passing the authentication token to backend project endpoints was identified and resolved by ensuring consistent token handling from  to API calls. An issue with  import in  was also fixed.
+4.  **Verified backend endpoints**: All project management backend APIs (, , , , , ) were thoroughly tested and confirmed to be fully operational and returning correct data.
+5.  **Enhanced backend models and services**: Added comprehensive models () and created a new  to support future advanced admin panel features. New admin endpoints were also added to .
+
+The system is currently in a state where the core DataRW Projects module, including creation of projects, activities, KPIs, beneficiaries, and budget items, is fully functional on both frontend and backend. The most recent action was creating the  and adding related endpoints to , in preparation for building the Admin Panel frontend component.
 </current_work>
 
 <optional_next_step>
-Test the frontend survey creation functionality to ensure it works correctly with the real backend.
+The next step is to create the Admin Panel frontend component to manage users and partner organizations.
 </optional_next_step>
