@@ -88,8 +88,8 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
       newErrors.project_id = 'Project is required';
     }
     
-    if (!activity.title.trim()) {
-      newErrors.title = 'Activity title is required';
+    if (!activity.name.trim()) {
+      newErrors.name = 'Activity name is required';
     }
     
     if (!activity.description.trim()) {
