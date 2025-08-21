@@ -189,6 +189,86 @@ export const adminAPI = {
   getEmailLogs: (limit = 50) => api.get('/admin/email-logs', { params: { limit } }),
 };
 
+// AI-Enhanced Automated Reporting API
+export const reportsAPI = {
+  // Report Generation
+  generateReport: (reportData) => api.post('/reports/generate', null, {
+    params: reportData
+  }),
+  
+  // Report Templates
+  getTemplates: () => api.get('/reports/templates'),
+  
+  // Generated Reports
+  getGeneratedReports: (projectId = null) => api.get('/reports/generated', 
+    projectId ? { params: { project_id: projectId } } : {}
+  ),
+  
+  // Download Report
+  downloadReport: (reportId) => api.get(`/reports/download/${reportId}`, {
+    responseType: 'blob'
+  }),
+  
+  // Image Management
+  uploadImages: (projectId, files) => {
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+    return api.post(`/reports/upload-images?project_id=${projectId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  
+  getProjectImages: (projectId) => api.get(`/reports/project-images/${projectId}`),
+  
+  // Install Dependencies (Admin only)
+  installDependencies: () => api.post('/reports/install-dependencies'),
+  
+  // Quick report generation methods
+  generateMonthlyReport: (projectId, year, month) => reportsAPI.generateReport({
+    project_id: projectId,
+    report_type: 'Monthly Report',
+    period_start: new Date(year, month - 1, 1).toISOString(),
+    period_end: new Date(year, month, 0).toISOString(),
+    include_images: true,
+    ai_narrative: true
+  }),
+  
+  generateQuarterlyReport: (projectId, year, quarter) => {
+    const quarterStartMonth = (quarter - 1) * 3;
+    const quarterEndMonth = quarterStartMonth + 3;
+    return reportsAPI.generateReport({
+      project_id: projectId,
+      report_type: 'Quarterly Report',
+      period_start: new Date(year, quarterStartMonth, 1).toISOString(),
+      period_end: new Date(year, quarterEndMonth, 0).toISOString(),
+      include_images: true,
+      ai_narrative: true
+    });
+  },
+  
+  generateAnnualReport: (projectId, year) => reportsAPI.generateReport({
+    project_id: projectId,
+    report_type: 'Annual Report',
+    period_start: new Date(year, 0, 1).toISOString(),
+    period_end: new Date(year, 11, 31).toISOString(),
+    include_images: true,
+    ai_narrative: true
+  }),
+  
+  generateCustomReport: (projectId, reportType, startDate, endDate, options = {}) => reportsAPI.generateReport({
+    project_id: projectId,
+    report_type: reportType,
+    period_start: startDate,
+    period_end: endDate,
+    include_images: options.include_images !== false,
+    ai_narrative: options.ai_narrative !== false
+  })
+};
+
 // Partners API
 export const partnersAPI = {
   getPartners: (status) => api.get('/admin/partners', status ? { params: { status } } : {}),
