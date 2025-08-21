@@ -142,291 +142,210 @@ const AdminPanel = () => {
     export_data: false,
     system_admin: false
   };
-    temporary_password: true
-  });
-
-  // Partner Organization State
-  const [createPartnerOpen, setCreatePartnerOpen] = useState(false);
-  const [newPartner, setNewPartner] = useState({
-    name: '',
-    description: '',
-    contact_person: '',
-    contact_email: '',
-    contact_phone: '',
-    address: '',
-    organization_type: 'NGO',
-    partnership_start_date: '',
-    website: '',
-    capabilities: []
-  });
-
-  // Branding State
-  const [brandingOpen, setBrandingOpen] = useState(false);
-  const [brandingData, setBrandingData] = useState({
-    primary_color: '#3B82F6',
-    secondary_color: '#10B981',
-    accent_color: '#8B5CF6',
-    white_label_enabled: false
-  });
-
-  const roles = [
-    'Director', 'Officer', 'Project Manager', 'M&E Officer', 
-    'Field Staff', 'Partner Staff', 'Donor Viewer'
-  ];
-
-  const organizationTypes = ['NGO', 'Government', 'Private', 'International'];
 
   useEffect(() => {
-    fetchUsers();
-    fetchPartners();
-    fetchEmailLogs();
-    fetchBranding();
+    fetchData();
   }, []);
 
-  const fetchUsers = async () => {
-    try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('access_token');
-      
-      const response = await fetch(`${backendUrl}/api/users`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const usersData = await response.json();
-        setUsers(usersData);
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    }
-  };
-
-  const fetchPartners = async () => {
-    try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('access_token');
-      
-      const response = await fetch(`${backendUrl}/api/admin/partners`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const partnersData = await response.json();
-        setPartners(partnersData);
-      }
-    } catch (error) {
-      console.error('Error fetching partners:', error);
-    }
-  };
-
-  const fetchEmailLogs = async () => {
-    try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('access_token');
-      
-      const response = await fetch(`${backendUrl}/api/admin/email-logs`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setEmailLogs(data.data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching email logs:', error);
-    }
-  };
-
-  const fetchBranding = async () => {
-    try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('access_token');
-      
-      const response = await fetch(`${backendUrl}/api/admin/branding`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.data) {
-          setBranding(data.data);
-          setBrandingData(data.data);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching branding:', error);
-    }
-  };
-
-  const handleCreateUser = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('access_token');
-      
-      const response = await fetch(`${backendUrl}/api/admin/users/create-advanced`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(newUser)
-      });
+      const [usersRes, partnersRes] = await Promise.allSettled([
+        usersAPI.getUsers(),
+        partnersAPI.getPartners()
+      ]);
 
-      if (response.ok) {
-        const result = await response.json();
-        
-        toast({
-          title: "User Created Successfully!",
-          description: `${newUser.name} has been added with role: ${newUser.role}${result.data.credentials_sent ? '. Credentials sent via email.' : ''}`,
-          variant: "default",
-        });
-        
-        setCreateUserOpen(false);
-        setNewUser({
-          name: '',
-          email: '',
-          role: 'Field Staff',
-          department: '',
-          position: '',
-          send_credentials_email: true,
-          temporary_password: true
-        });
-        
-        fetchUsers();
-        fetchEmailLogs();
-      } else {
-        throw new Error('Failed to create user');
+      if (usersRes.status === 'fulfilled') {
+        setUsers(usersRes.value.data);
+      }
+
+      if (partnersRes.status === 'fulfilled') {
+        setPartners(partnersRes.value.data);
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create user. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Error fetching admin data:', error);
+      setError('Failed to load admin panel data');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreatePartner = async () => {
-    setLoading(true);
+  const handleCreateUser = async (formData) => {
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('access_token');
+      setLoading(true);
+      const response = await adminAPI.createUserAdvanced(formData);
       
-      const partnerData = {
-        ...newPartner,
-        partnership_start_date: new Date(newPartner.partnership_start_date).toISOString()
-      };
-      
-      const response = await fetch(`${backendUrl}/api/admin/partners`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(partnerData)
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Partner Organization Created!",
-          description: `${newPartner.name} has been added as a partner organization.`,
-          variant: "default",
-        });
-        
-        setCreatePartnerOpen(false);
-        setNewPartner({
-          name: '',
-          description: '',
-          contact_person: '',
-          contact_email: '',
-          contact_phone: '',
-          address: '',
-          organization_type: 'NGO',
-          partnership_start_date: '',
-          website: '',
-          capabilities: []
-        });
-        
-        fetchPartners();
-      } else {
-        throw new Error('Failed to create partner');
+      if (response.data.success) {
+        setUsers(prev => [...prev, response.data.data.user]);
+        setSuccess(`User created successfully. ${formData.send_credentials_email ? 'Credentials sent via email.' : `Password: ${response.data.data.password}`}`);
+        setShowCreateUserModal(false);
+        resetUserForm();
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create partner organization. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Error creating user:', error);
+      setError(error.response?.data?.detail || 'Failed to create user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkCreateUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await adminAPI.bulkCreateUsers(bulkUsersData, true);
+      
+      if (response.data.success) {
+        const { created_count, failed_count, created_users, failed_users } = response.data.data;
+        setUsers(prev => [...prev, ...created_users.map(u => u.user)]);
+        setSuccess(`Successfully created ${created_count} users. ${failed_count > 0 ? `${failed_count} failed.` : ''}`);
+        
+        if (failed_count > 0) {
+          console.log('Failed users:', failed_users);
+        }
+        
+        setShowBulkCreateModal(false);
+        setBulkUsersData([]);
+      }
+    } catch (error) {
+      console.error('Error bulk creating users:', error);
+      setError(error.response?.data?.detail || 'Failed to create users');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreatePartner = async (formData) => {
+    try {
+      setLoading(true);
+      const response = await partnersAPI.createPartner(formData);
+      
+      setPartners(prev => [...prev, response.data]);
+      setSuccess('Partner organization created successfully');
+      setShowCreatePartnerModal(false);
+      resetPartnerForm();
+    } catch (error) {
+      console.error('Error creating partner:', error);
+      setError(error.response?.data?.detail || 'Failed to create partner organization');
     } finally {
       setLoading(false);
     }
   };
 
   const handleUpdateBranding = async () => {
-    setLoading(true);
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('access_token');
+      setLoading(true);
+      const response = await adminAPI.updateBranding(brandingData);
       
-      const response = await fetch(`${backendUrl}/api/admin/branding`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(brandingData)
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Branding Updated!",
-          description: "Organization branding has been updated successfully.",
-          variant: "default",
-        });
-        
-        setBrandingOpen(false);
-        fetchBranding();
-      } else {
-        throw new Error('Failed to update branding');
+      if (response.data.success) {
+        setSuccess('Organization branding updated successfully');
+        setShowBrandingModal(false);
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update branding. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Error updating branding:', error);
+      setError(error.response?.data?.detail || 'Failed to update branding');
     } finally {
       setLoading(false);
     }
   };
 
-  const getRoleBadgeColor = (role) => {
-    const colors = {
-      'Director': 'bg-red-100 text-red-800',
-      'Officer': 'bg-blue-100 text-blue-800',
-      'Project Manager': 'bg-green-100 text-green-800',
-      'M&E Officer': 'bg-purple-100 text-purple-800',
-      'Field Staff': 'bg-yellow-100 text-yellow-800',
-      'Partner Staff': 'bg-orange-100 text-orange-800',
-      'Donor Viewer': 'bg-gray-100 text-gray-800'
-    };
-    return colors[role] || 'bg-gray-100 text-gray-800';
+  const fetchEmailLogs = async () => {
+    try {
+      const response = await adminAPI.getEmailLogs();
+      if (response.data.success) {
+        setEmailLogs(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching email logs:', error);
+      setError('Failed to fetch email logs');
+    }
   };
+
+  const resetUserForm = () => {
+    setUserFormData({
+      name: '',
+      email: '',
+      password: '',
+      role: 'Viewer',
+      partner_organization_id: '',
+      department: '',
+      position: '',
+      supervisor_id: '',
+      access_level: 'standard',
+      permissions: {},
+      send_credentials_email: true,
+      temporary_password: true
+    });
+  };
+
+  const resetPartnerForm = () => {
+    setPartnerFormData({
+      name: '',
+      description: '',
+      contact_person: '',
+      contact_email: '',
+      contact_phone: '',
+      address: '',
+      organization_type: 'NGO',
+      partnership_start_date: '',
+      partnership_end_date: '',
+      website: '',
+      capabilities: []
+    });
+  };
+
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.name.toLowerCase().includes(userSearch.toLowerCase()) ||
+                         user.email.toLowerCase().includes(userSearch.toLowerCase());
+    const matchesFilter = userFilter === 'all' || user.role === userFilter;
+    return matchesSearch && matchesFilter;
+  });
+
+  const filteredPartners = partners.filter(partner => {
+    const matchesSearch = partner.name.toLowerCase().includes(partnerSearch.toLowerCase());
+    const matchesFilter = partnerFilter === 'all' || partner.status === partnerFilter;
+    return matchesSearch && matchesFilter;
+  });
+
+  // Permission update helper
+  const updatePermission = (permission, value) => {
+    setUserFormData(prev => ({
+      ...prev,
+      permissions: {
+        ...prev.permissions,
+        [permission]: value
+      }
+    }));
+  };
+
+  const StatCard = ({ title, value, icon, color = "blue", description }) => (
+    <Card className="hover:shadow-lg transition-shadow duration-300">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-gray-600">{title}</CardTitle>
+        <div className={`p-2 rounded-lg bg-${color}-100`}>
+          {icon}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold text-gray-900">{value}</div>
+        {description && (
+          <p className="text-xs text-gray-500 mt-1">{description}</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  if (!user || !['Admin', 'Director', 'System Admin'].includes(user.role)) {
+    return (
+      <div className="p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Access denied. You need Admin, Director, or System Admin privileges to access this panel.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -434,484 +353,926 @@ const AdminPanel = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
-          <p className="text-gray-600">Manage users, partners, and organization settings</p>
+          <p className="text-gray-600 mt-1">Manage users, partners, and system settings</p>
         </div>
-        <div className="flex space-x-2">
-          <Dialog open={createUserOpen} onOpenChange={setCreateUserOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Create User
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Create New User</DialogTitle>
-                <DialogDescription>
-                  Add a new user to your organization with automatic credential generation.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="user-name">Full Name *</Label>
-                    <Input
-                      id="user-name"
-                      value={newUser.name}
-                      onChange={(e) => setNewUser(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Enter full name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="user-email">Email Address *</Label>
-                    <Input
-                      id="user-email"
-                      type="email"
-                      value={newUser.email}
-                      onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="user@organization.com"
-                    />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="user-role">Role *</Label>
-                    <Select value={newUser.role} onValueChange={(value) => setNewUser(prev => ({ ...prev, role: value }))}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {roles.map(role => (
-                          <SelectItem key={role} value={role}>{role}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="user-department">Department</Label>
-                    <Input
-                      id="user-department"
-                      value={newUser.department}
-                      onChange={(e) => setNewUser(prev => ({ ...prev, department: e.target.value }))}
-                      placeholder="e.g., Operations, M&E, Finance"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="user-position">Position/Title</Label>
-                  <Input
-                    id="user-position"
-                    value={newUser.position}
-                    onChange={(e) => setNewUser(prev => ({ ...prev, position: e.target.value }))}
-                    placeholder="e.g., Senior Program Officer"
-                  />
-                </div>
-                
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={newUser.send_credentials_email}
-                      onCheckedChange={(checked) => setNewUser(prev => ({ ...prev, send_credentials_email: checked }))}
-                    />
-                    <Label>Send credentials via email</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={newUser.temporary_password}
-                      onCheckedChange={(checked) => setNewUser(prev => ({ ...prev, temporary_password: checked }))}
-                    />
-                    <Label>Require password change</Label>
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setCreateUserOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateUser} disabled={loading}>
-                  {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <UserPlus className="h-4 w-4 mr-2" />}
-                  Create User
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={fetchData} disabled={loading}>
+            {loading ? <Clock className="h-4 w-4 mr-2" /> : <BarChart3 className="h-4 w-4 mr-2" />}
+            Refresh Data
+          </Button>
         </div>
       </div>
 
-      <Tabs defaultValue="users" className="space-y-6">
+      {/* Alerts */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {success && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">{success}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Total Users"
+          value={users.length}
+          icon={<Users className="h-5 w-5 text-blue-600" />}
+          color="blue"
+          description="Active system users"
+        />
+        <StatCard
+          title="Partner Organizations"
+          value={partners.length}
+          icon={<Building2 className="h-5 w-5 text-green-600" />}
+          color="green"
+          description="Registered partners"
+        />
+        <StatCard
+          title="Admin Users"
+          value={users.filter(u => ['Admin', 'Director', 'System Admin'].includes(u.role)).length}
+          icon={<Shield className="h-5 w-5 text-purple-600" />}
+          color="purple"
+          description="Privileged accounts"
+        />
+        <StatCard
+          title="Active Partners"
+          value={partners.filter(p => p.status === 'active').length}
+          icon={<CheckCircle className="h-5 w-5 text-emerald-600" />}
+          color="emerald"
+          description="Currently active"
+        />
+      </div>
+
+      {/* Main Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="partners">Partner Organizations</TabsTrigger>
-          <TabsTrigger value="branding">Branding</TabsTrigger>
-          <TabsTrigger value="emails">Email Logs</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="permissions">Roles & Permissions</TabsTrigger>
+          <TabsTrigger value="branding">Organization Branding</TabsTrigger>
+          <TabsTrigger value="system">System Settings</TabsTrigger>
         </TabsList>
 
         {/* User Management Tab */}
-        <TabsContent value="users">
+        <TabsContent value="users" className="space-y-6">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div className="flex gap-4 items-center flex-1">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search users..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={userFilter} onValueChange={setUserFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  {userRoles.map(role => (
+                    <SelectItem key={role} value={role}>{role}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2">
+              <Dialog open={showBulkCreateModal} onOpenChange={setShowBulkCreateModal}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Bulk Create
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Bulk Create Users</DialogTitle>
+                    <DialogDescription>
+                      Create multiple users at once. Enter user data separated by new lines.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <Textarea
+                      placeholder="Format: Name, Email, Role&#10;John Doe, john@example.com, Editor&#10;Jane Smith, jane@example.com, Viewer"
+                      value={bulkUsersData.map(u => `${u.name}, ${u.email}, ${u.role}`).join('\n')}
+                      onChange={(e) => {
+                        const lines = e.target.value.split('\n').filter(line => line.trim());
+                        const users = lines.map(line => {
+                          const [name, email, role] = line.split(',').map(s => s.trim());
+                          return { name, email, role: role || 'Viewer' };
+                        });
+                        setBulkUsersData(users);
+                      }}
+                      rows={8}
+                    />
+                    <div className="flex justify-between">
+                      <Badge variant="outline">{bulkUsersData.length} users ready</Badge>
+                      <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => setShowBulkCreateModal(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={handleBulkCreateUsers} disabled={bulkUsersData.length === 0 || loading}>
+                          Create {bulkUsersData.length} Users
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={showCreateUserModal} onOpenChange={setShowCreateUserModal}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Create User
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Create New User</DialogTitle>
+                    <DialogDescription>
+                      Create a new user with advanced settings and permissions.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <CreateUserForm
+                    formData={userFormData}
+                    setFormData={setUserFormData}
+                    onSubmit={handleCreateUser}
+                    partners={partners}
+                    users={users}
+                    loading={loading}
+                    defaultPermissions={defaultPermissions}
+                    updatePermission={updatePermission}
+                  />
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+
+          {/* Users Table */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Users className="h-5 w-5 mr-2" />
-                Organization Users ({users.length})
-              </CardTitle>
+              <CardTitle>Users ({filteredUsers.length})</CardTitle>
               <CardDescription>
-                Manage user accounts, roles, and permissions for your organization.
+                Manage user accounts and permissions
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {users.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Last Login</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
                         <div>
-                          <h4 className="font-medium">{user.name}</h4>
-                          <p className="text-sm text-gray-600">{user.email}</p>
+                          <div className="font-medium">{user.name}</div>
+                          <div className="text-sm text-gray-500">{user.email}</div>
                         </div>
-                        <Badge className={getRoleBadgeColor(user.role)}>
-                          {user.role}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{user.role}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
+                          {user.status}
                         </Badge>
-                        {user.is_active ? (
-                          <Badge variant="success">Active</Badge>
-                        ) : (
-                          <Badge variant="secondary">Inactive</Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Button size="sm" variant="outline">
-                        Edit
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        {user.is_active ? 'Deactivate' : 'Activate'}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                      </TableCell>
+                      <TableCell>
+                        {user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-red-600">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* Partner Organizations Tab */}
-        <TabsContent value="partners">
+        <TabsContent value="partners" className="space-y-6">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div className="flex gap-4 items-center flex-1">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search partners..."
+                  value={partnerSearch}
+                  onChange={(e) => setPartnerSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={partnerFilter} onValueChange={setPartnerFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Dialog open={showCreatePartnerModal} onOpenChange={setShowCreatePartnerModal}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Add Partner
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Add Partner Organization</DialogTitle>
+                  <DialogDescription>
+                    Register a new partner organization for collaboration.
+                  </DialogDescription>
+                </DialogHeader>
+                <CreatePartnerForm
+                  formData={partnerFormData}
+                  setFormData={setPartnerFormData}
+                  onSubmit={handleCreatePartner}
+                  loading={loading}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {/* Partners Table */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center">
-                    <Building className="h-5 w-5 mr-2" />
-                    Partner Organizations ({partners.length})
-                  </CardTitle>
-                  <CardDescription>
-                    Manage partner organizations and track their performance.
-                  </CardDescription>
-                </div>
-                <Dialog open={createPartnerOpen} onOpenChange={setCreatePartnerOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Partner
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>Add Partner Organization</DialogTitle>
-                      <DialogDescription>
-                        Create a new partner organization for collaboration.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="partner-name">Organization Name *</Label>
-                          <Input
-                            id="partner-name"
-                            value={newPartner.name}
-                            onChange={(e) => setNewPartner(prev => ({ ...prev, name: e.target.value }))}
-                            placeholder="Partner Organization Name"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="partner-type">Organization Type</Label>
-                          <Select value={newPartner.organization_type} onValueChange={(value) => setNewPartner(prev => ({ ...prev, organization_type: value }))}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {organizationTypes.map(type => (
-                                <SelectItem key={type} value={type}>{type}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="partner-description">Description</Label>
-                        <Textarea
-                          id="partner-description"
-                          value={newPartner.description}
-                          onChange={(e) => setNewPartner(prev => ({ ...prev, description: e.target.value }))}
-                          placeholder="Brief description of the partner organization..."
-                          rows={3}
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="contact-person">Contact Person *</Label>
-                          <Input
-                            id="contact-person"
-                            value={newPartner.contact_person}
-                            onChange={(e) => setNewPartner(prev => ({ ...prev, contact_person: e.target.value }))}
-                            placeholder="Primary contact name"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="contact-email">Contact Email *</Label>
-                          <Input
-                            id="contact-email"
-                            type="email"
-                            value={newPartner.contact_email}
-                            onChange={(e) => setNewPartner(prev => ({ ...prev, contact_email: e.target.value }))}
-                            placeholder="contact@partner.org"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="partnership-start">Partnership Start Date</Label>
-                          <Input
-                            id="partnership-start"
-                            type="date"
-                            value={newPartner.partnership_start_date}
-                            onChange={(e) => setNewPartner(prev => ({ ...prev, partnership_start_date: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="partner-website">Website</Label>
-                          <Input
-                            id="partner-website"
-                            value={newPartner.website}
-                            onChange={(e) => setNewPartner(prev => ({ ...prev, website: e.target.value }))}
-                            placeholder="https://partner.org"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex justify-end space-x-2">
-                      <Button variant="outline" onClick={() => setCreatePartnerOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={handleCreatePartner} disabled={loading}>
-                        {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
-                        Add Partner
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
+              <CardTitle>Partner Organizations ({filteredPartners.length})</CardTitle>
+              <CardDescription>
+                Manage partner organizations and collaborations
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {partners.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Building className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>No partner organizations yet</p>
-                    <p className="text-sm">Add partners to track collaboration and performance</p>
-                  </div>
-                ) : (
-                  partners.map((partner) => (
-                    <div key={partner.id || partner._id} className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Organization</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPartners.map((partner) => (
+                    <TableRow key={partner.id}>
+                      <TableCell>
                         <div>
-                          <h4 className="font-medium">{partner.name}</h4>
-                          <p className="text-sm text-gray-600">{partner.organization_type} • {partner.contact_person}</p>
-                          <p className="text-sm text-gray-500">{partner.contact_email}</p>
+                          <div className="font-medium">{partner.name}</div>
+                          <div className="text-sm text-gray-500">{partner.description}</div>
                         </div>
-                        <Badge variant={partner.status === 'active' ? 'success' : 'secondary'}>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{partner.contact_person}</div>
+                          <div className="text-sm text-gray-500">{partner.contact_email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{partner.organization_type}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={partner.status === 'active' ? 'default' : 'secondary'}>
                           {partner.status}
                         </Badge>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-red-600">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Branding Tab */}
-        <TabsContent value="branding">
+        {/* Roles & Permissions Tab */}
+        <TabsContent value="permissions" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Palette className="h-5 w-5 mr-2" />
-                Organization Branding
-              </CardTitle>
+              <CardTitle>Role-Based Access Control</CardTitle>
               <CardDescription>
-                Customize your organization's branding and visual identity.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="primary-color">Primary Color</Label>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Input
-                        id="primary-color"
-                        type="color"
-                        value={brandingData.primary_color}
-                        onChange={(e) => setBrandingData(prev => ({ ...prev, primary_color: e.target.value }))}
-                        className="w-16 h-10"
-                      />
-                      <Input
-                        value={brandingData.primary_color}
-                        onChange={(e) => setBrandingData(prev => ({ ...prev, primary_color: e.target.value }))}
-                        placeholder="#3B82F6"
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="secondary-color">Secondary Color</Label>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Input
-                        id="secondary-color"
-                        type="color"
-                        value={brandingData.secondary_color}
-                        onChange={(e) => setBrandingData(prev => ({ ...prev, secondary_color: e.target.value }))}
-                        className="w-16 h-10"
-                      />
-                      <Input
-                        value={brandingData.secondary_color}
-                        onChange={(e) => setBrandingData(prev => ({ ...prev, secondary_color: e.target.value }))}
-                        placeholder="#10B981"
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="accent-color">Accent Color</Label>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Input
-                        id="accent-color"
-                        type="color"
-                        value={brandingData.accent_color}
-                        onChange={(e) => setBrandingData(prev => ({ ...prev, accent_color: e.target.value }))}
-                        className="w-16 h-10"
-                      />
-                      <Input
-                        value={brandingData.accent_color}
-                        onChange={(e) => setBrandingData(prev => ({ ...prev, accent_color: e.target.value }))}
-                        placeholder="#8B5CF6"
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    checked={brandingData.white_label_enabled}
-                    onCheckedChange={(checked) => setBrandingData(prev => ({ ...prev, white_label_enabled: checked }))}
-                  />
-                  <Label>Enable White Label Mode</Label>
-                  <p className="text-sm text-gray-500 ml-2">(Remove DataRW branding)</p>
-                </div>
-
-                <div className="pt-4 border-t">
-                  <Button onClick={handleUpdateBranding} disabled={loading}>
-                    {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Palette className="h-4 w-4 mr-2" />}
-                    Update Branding
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Email Logs Tab */}
-        <TabsContent value="emails">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Mail className="h-5 w-5 mr-2" />
-                Email Logs ({emailLogs.length})
-              </CardTitle>
-              <CardDescription>
-                Track all emails sent by the system including user credentials.
+                Configure permissions for different user roles
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {emailLogs.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Mail className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>No emails sent yet</p>
-                    <p className="text-sm">Email logs will appear here when users are created</p>
-                  </div>
-                ) : (
-                  emailLogs.map((log, index) => (
-                    <div key={index} className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">{log.subject}</h4>
-                          <p className="text-sm text-gray-600">To: {log.recipient_name} ({log.recipient_email})</p>
-                          <p className="text-sm text-gray-500">
-                            {new Date(log.sent_at || log.created_at).toLocaleString()}
-                          </p>
-                        </div>
-                        <Badge variant={log.status === 'sent' ? 'success' : log.status === 'failed' ? 'destructive' : 'secondary'}>
-                          {log.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Settings Tab */}
-        <TabsContent value="settings">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Settings className="h-5 w-5 mr-2" />
-                System Settings
-              </CardTitle>
-              <CardDescription>
-                Configure system-wide settings and preferences.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
                 <Alert>
                   <Shield className="h-4 w-4" />
                   <AlertDescription>
-                    Advanced system settings are available. Contact your system administrator for configuration changes.
+                    Permission management is available for individual users during creation. 
+                    Global role permissions are managed at the system level.
                   </AlertDescription>
                 </Alert>
                 
-                <div className="text-center py-8 text-gray-500">
-                  <Settings className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>Additional settings coming soon</p>
-                  <p className="text-sm">More configuration options will be available in future updates</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {userRoles.map(role => (
+                    <Card key={role}>
+                      <CardHeader>
+                        <CardTitle className="text-lg">{role}</CardTitle>
+                        <CardDescription>
+                          {users.filter(u => u.role === role).length} users
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <Badge variant="outline">
+                          System Managed
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Organization Branding Tab */}
+        <TabsContent value="branding" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Organization Branding</CardTitle>
+              <CardDescription>
+                Customize your organization's visual identity
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Button onClick={() => setShowBrandingModal(true)}>
+                  <Palette className="h-4 w-4 mr-2" />
+                  Update Branding
+                </Button>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="w-8 h-8 rounded border"
+                      style={{ backgroundColor: brandingData.primary_color }}
+                    />
+                    <span className="text-sm">Primary Color</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="w-8 h-8 rounded border"
+                      style={{ backgroundColor: brandingData.secondary_color }}
+                    />
+                    <span className="text-sm">Secondary Color</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="w-8 h-8 rounded border"
+                      style={{ backgroundColor: brandingData.accent_color }}
+                    />
+                    <span className="text-sm">Accent Color</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Dialog open={showBrandingModal} onOpenChange={setShowBrandingModal}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Update Organization Branding</DialogTitle>
+                <DialogDescription>
+                  Customize colors, logos, and visual elements
+                </DialogDescription>
+              </DialogHeader>
+              <BrandingForm
+                brandingData={brandingData}
+                setBrandingData={setBrandingData}
+                onSubmit={handleUpdateBranding}
+                loading={loading}
+              />
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
+
+        {/* System Settings Tab */}
+        <TabsContent value="system" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Email System</CardTitle>
+                <CardDescription>
+                  Monitor email delivery and logs
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button onClick={() => {
+                  setShowEmailLogsModal(true);
+                  fetchEmailLogs();
+                }}>
+                  <Mail className="h-4 w-4 mr-2" />
+                  View Email Logs
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>System Health</CardTitle>
+                <CardDescription>
+                  Monitor system performance and status
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Database</span>
+                    <Badge className="bg-green-100 text-green-800">Healthy</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">API Services</span>
+                    <Badge className="bg-green-100 text-green-800">Running</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Storage</span>
+                    <Badge className="bg-yellow-100 text-yellow-800">85% Used</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Dialog open={showEmailLogsModal} onOpenChange={setShowEmailLogsModal}>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>Email Logs</DialogTitle>
+                <DialogDescription>
+                  Recent email delivery history
+                </DialogDescription>
+              </DialogHeader>
+              <div className="max-h-96 overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Recipient</TableHead>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Sent</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {emailLogs.map((log) => (
+                      <TableRow key={log.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{log.recipient_name}</div>
+                            <div className="text-sm text-gray-500">{log.recipient_email}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{log.subject}</TableCell>
+                        <TableCell>
+                          <Badge variant={log.status === 'sent' ? 'default' : 'destructive'}>
+                            {log.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {log.sent_at ? new Date(log.sent_at).toLocaleString() : '-'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
       </Tabs>
     </div>
+  );
+};
+
+// Create User Form Component
+const CreateUserForm = ({ 
+  formData, 
+  setFormData, 
+  onSubmit, 
+  partners, 
+  users, 
+  loading, 
+  defaultPermissions, 
+  updatePermission 
+}) => {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  const supervisors = users.filter(u => 
+    ['Admin', 'Director', 'Project Manager', 'M&E Officer'].includes(u.role)
+  );
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Full Name *</Label>
+          <Input
+            id="name"
+            value={formData.name}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="email">Email Address *</Label>
+          <Input
+            id="email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="role">Role *</Label>
+          <Select value={formData.role} onValueChange={(value) => setFormData(prev => ({ ...prev, role: value }))}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {['Admin', 'Editor', 'Viewer', 'Project Manager', 'M&E Officer', 'Donor Viewer', 'Director', 'Officer', 'Field Staff', 'Partner Staff'].map(role => (
+                <SelectItem key={role} value={role}>{role}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="access_level">Access Level</Label>
+          <Select value={formData.access_level} onValueChange={(value) => setFormData(prev => ({ ...prev, access_level: value }))}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="standard">Standard</SelectItem>
+              <SelectItem value="elevated">Elevated</SelectItem>
+              <SelectItem value="restricted">Restricted</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="department">Department</Label>
+          <Input
+            id="department"
+            value={formData.department}
+            onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="position">Position</Label>
+          <Input
+            id="position"
+            value={formData.position}
+            onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
+          />
+        </div>
+      </div>
+
+      {partners.length > 0 && (
+        <div className="space-y-2">
+          <Label htmlFor="partner_organization_id">Partner Organization</Label>
+          <Select value={formData.partner_organization_id} onValueChange={(value) => setFormData(prev => ({ ...prev, partner_organization_id: value }))}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select partner (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">None</SelectItem>
+              {partners.map(partner => (
+                <SelectItem key={partner.id} value={partner.id}>{partner.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {supervisors.length > 0 && (
+        <div className="space-y-2">
+          <Label htmlFor="supervisor_id">Supervisor</Label>
+          <Select value={formData.supervisor_id} onValueChange={(value) => setFormData(prev => ({ ...prev, supervisor_id: value }))}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select supervisor (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">None</SelectItem>
+              {supervisors.map(supervisor => (
+                <SelectItem key={supervisor.id} value={supervisor.id}>{supervisor.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <Label htmlFor="password">Password (leave empty for auto-generated)</Label>
+        <Input
+          id="password"
+          type="password"
+          value={formData.password}
+          onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+          placeholder="Auto-generated if empty"
+        />
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="send_credentials_email"
+          checked={formData.send_credentials_email}
+          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, send_credentials_email: checked }))}
+        />
+        <Label htmlFor="send_credentials_email">Send credentials via email</Label>
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="temporary_password"
+          checked={formData.temporary_password}
+          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, temporary_password: checked }))}
+        />
+        <Label htmlFor="temporary_password">Force password change on first login</Label>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-4">
+        <Button type="button" variant="outline" onClick={() => setFormData(prev => ({ ...prev, name: '', email: '', password: '' }))}>
+          Reset
+        </Button>
+        <Button type="submit" disabled={loading}>
+          {loading ? <Clock className="h-4 w-4 mr-2" /> : <UserPlus className="h-4 w-4 mr-2" />}
+          Create User
+        </Button>
+      </div>
+    </form>
+  );
+};
+
+// Create Partner Form Component
+const CreatePartnerForm = ({ formData, setFormData, onSubmit, loading }) => {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Organization Name *</Label>
+          <Input
+            id="name"
+            value={formData.name}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="organization_type">Organization Type *</Label>
+          <Select value={formData.organization_type} onValueChange={(value) => setFormData(prev => ({ ...prev, organization_type: value }))}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="NGO">NGO</SelectItem>
+              <SelectItem value="Government">Government</SelectItem>
+              <SelectItem value="Private">Private</SelectItem>
+              <SelectItem value="International">International</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={formData.description}
+          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          rows={3}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="contact_person">Contact Person *</Label>
+          <Input
+            id="contact_person"
+            value={formData.contact_person}
+            onChange={(e) => setFormData(prev => ({ ...prev, contact_person: e.target.value }))}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="contact_email">Contact Email *</Label>
+          <Input
+            id="contact_email"
+            type="email"
+            value={formData.contact_email}
+            onChange={(e) => setFormData(prev => ({ ...prev, contact_email: e.target.value }))}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="contact_phone">Contact Phone</Label>
+          <Input
+            id="contact_phone"
+            value={formData.contact_phone}
+            onChange={(e) => setFormData(prev => ({ ...prev, contact_phone: e.target.value }))}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="website">Website</Label>
+          <Input
+            id="website"
+            value={formData.website}
+            onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+            placeholder="https://"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="address">Address</Label>
+        <Textarea
+          id="address"
+          value={formData.address}
+          onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+          rows={2}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="partnership_start_date">Partnership Start Date *</Label>
+          <Input
+            id="partnership_start_date"
+            type="date"
+            value={formData.partnership_start_date}
+            onChange={(e) => setFormData(prev => ({ ...prev, partnership_start_date: e.target.value }))}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="partnership_end_date">Partnership End Date</Label>
+          <Input
+            id="partnership_end_date"
+            type="date"
+            value={formData.partnership_end_date}
+            onChange={(e) => setFormData(prev => ({ ...prev, partnership_end_date: e.target.value }))}
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-4">
+        <Button type="button" variant="outline" onClick={() => setFormData({
+          name: '', description: '', contact_person: '', contact_email: '', 
+          contact_phone: '', address: '', organization_type: 'NGO', 
+          partnership_start_date: '', partnership_end_date: '', website: '', capabilities: []
+        })}>
+          Reset
+        </Button>
+        <Button type="submit" disabled={loading}>
+          {loading ? <Clock className="h-4 w-4 mr-2" /> : <Building2 className="h-4 w-4 mr-2" />}
+          Create Partner
+        </Button>
+      </div>
+    </form>
+  );
+};
+
+// Branding Form Component
+const BrandingForm = ({ brandingData, setBrandingData, onSubmit, loading }) => {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit();
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="logo_url">Logo URL</Label>
+          <Input
+            id="logo_url"
+            value={brandingData.logo_url}
+            onChange={(e) => setBrandingData(prev => ({ ...prev, logo_url: e.target.value }))}
+            placeholder="https://example.com/logo.png"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="primary_color">Primary Color</Label>
+          <Input
+            id="primary_color"
+            type="color"
+            value={brandingData.primary_color}
+            onChange={(e) => setBrandingData(prev => ({ ...prev, primary_color: e.target.value }))}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="secondary_color">Secondary Color</Label>
+          <Input
+            id="secondary_color"
+            type="color"
+            value={brandingData.secondary_color}
+            onChange={(e) => setBrandingData(prev => ({ ...prev, secondary_color: e.target.value }))}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="accent_color">Accent Color</Label>
+          <Input
+            id="accent_color"
+            type="color"
+            value={brandingData.accent_color}
+            onChange={(e) => setBrandingData(prev => ({ ...prev, accent_color: e.target.value }))}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="custom_css">Custom CSS</Label>
+        <Textarea
+          id="custom_css"
+          value={brandingData.custom_css}
+          onChange={(e) => setBrandingData(prev => ({ ...prev, custom_css: e.target.value }))}
+          rows={4}
+          placeholder="/* Custom CSS styles */"
+        />
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="white_label_enabled"
+          checked={brandingData.white_label_enabled}
+          onCheckedChange={(checked) => setBrandingData(prev => ({ ...prev, white_label_enabled: checked }))}
+        />
+        <Label htmlFor="white_label_enabled">Enable White Label Mode</Label>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-4">
+        <Button type="button" variant="outline" onClick={() => setShowBrandingModal(false)}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={loading}>
+          {loading ? <Clock className="h-4 w-4 mr-2" /> : <Palette className="h-4 w-4 mr-2" />}
+          Update Branding
+        </Button>
+      </div>
+    </form>
   );
 };
 
