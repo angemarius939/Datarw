@@ -1015,22 +1015,23 @@ class DataRWAPITester:
             return False
 
     def test_create_project(self):
-        """Test creating a new project"""
+        """Test creating a new project with CORRECTED field mapping"""
         try:
             from datetime import datetime, timedelta
             
+            # CORRECTED field mapping based on ProjectCreate model
             project_data = {
-                "title": f"Test Project {uuid.uuid4().hex[:8]}",
-                "description": "This is a test project for API testing",
-                "sector": "Education",
-                "donor": "World Bank",
-                "implementation_start": (datetime.now() + timedelta(days=30)).isoformat(),
-                "implementation_end": (datetime.now() + timedelta(days=365)).isoformat(),
-                "total_budget": 50000.0,
-                "budget_currency": "RWF",
-                "location": "Kigali, Rwanda",
-                "target_beneficiaries": 1000,
-                "team_members": []
+                "name": f"Digital Literacy Training Program {uuid.uuid4().hex[:8]}",  # CORRECTED: name not title
+                "description": "Comprehensive digital literacy training program for rural communities in Rwanda, focusing on basic computer skills, internet usage, and digital communication tools",
+                "project_manager_id": self.user_data["id"],  # REQUIRED field
+                "start_date": (datetime.now() + timedelta(days=30)).isoformat(),  # CORRECTED: start_date not implementation_start
+                "end_date": (datetime.now() + timedelta(days=365)).isoformat(),  # CORRECTED: end_date not implementation_end
+                "budget_total": 2500000.0,  # CORRECTED: budget_total not total_budget (realistic RWF amount)
+                "beneficiaries_target": 5000,  # CORRECTED: beneficiaries_target not target_beneficiaries
+                "location": "Nyagatare District, Eastern Province, Rwanda",
+                "donor_organization": "World Bank",  # CORRECTED: donor_organization not donor
+                "implementing_partners": ["Rwanda Development Board", "Local NGO Partners"],
+                "tags": ["education", "digital-literacy", "rural-development"]
             }
             
             response = self.session.post(
@@ -1042,9 +1043,9 @@ class DataRWAPITester:
                 data = response.json()
                 # Handle both 'id' and '_id' fields
                 project_id = data.get("id") or data.get("_id")
-                if project_id and data.get("title") == project_data["title"]:
+                if project_id and data.get("name") == project_data["name"]:  # Check 'name' field
                     self.project_id = project_id
-                    self.log_result("Create Project", True, "Project created successfully")
+                    self.log_result("Create Project", True, "Project created successfully with corrected field mapping")
                     return True
                 else:
                     self.log_result("Create Project", False, "Project data mismatch", data)
