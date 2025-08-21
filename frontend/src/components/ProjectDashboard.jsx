@@ -104,7 +104,7 @@ const ProjectDashboard = () => {
     fetchDashboardData();
     toast({
       title: "Success!",
-      description: `Project "${newProject.title}" was created successfully.`,
+      description: `Project "${newProject.name || newProject.title}" was created successfully.`,
       variant: "default",
     });
   };
