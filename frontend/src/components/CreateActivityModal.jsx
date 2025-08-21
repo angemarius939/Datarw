@@ -334,8 +334,8 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
                 ))}
               </SelectContent>
             </Select>
-            {errors.responsible_user_id && (
-              <div className="text-xs text-red-600 mt-1">{errors.responsible_user_id}</div>
+            {errors.assigned_to && (
+              <div className="text-xs text-red-600 mt-1">{errors.assigned_to}</div>
             )}
           </div>
 
