@@ -112,7 +112,15 @@ class ProjectService:
         cursor = self.db.activities.find(query).sort("start_date", 1)
         activities = []
         async for doc in cursor:
-            doc["_id"] = str(doc["_id"])
+            # Normalize fields for backward compatibility
+            doc["_id"] = str(doc.get("_id", doc.get("id", "")))
+            doc["id"] = doc.get("id") or doc.get("_id") or str(uuid.uuid4())
+            doc["planned_start_date"] = doc.get("planned_start_date") or doc.get("start_date")
+            doc["planned_end_date"] = doc.get("planned_end_date") or doc.get("end_date")
+            doc["last_updated_by"] = doc.get("last_updated_by") or doc.get("assigned_to") or ""
+            doc["progress_percentage"] = doc.get("progress_percentage", 0.0)
+            doc["completion_variance"] = doc.get("completion_variance", 0.0)
+            doc["schedule_variance_days"] = doc.get("schedule_variance_days", 0)
             activities.append(Activity(**doc))
         return activities
 
