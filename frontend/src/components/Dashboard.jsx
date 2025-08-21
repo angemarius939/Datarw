@@ -326,6 +326,14 @@ const Dashboard = ({ onUpgrade }) => {
               <FileText className="h-4 w-4 mr-3" />
               Document Repository
             </Button>
+            <Button
+              variant={activeTab === 'reports' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('reports')}
+              className="w-full justify-start"
+            >
+              <BarChart3 className="h-4 w-4 mr-3" />
+              Automated Reporting
+            </Button>
           </nav>
         </aside>
 
