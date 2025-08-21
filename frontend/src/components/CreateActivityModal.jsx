@@ -461,6 +461,31 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
               <Label htmlFor="end_date" className="flex items-center">
                 <Calendar className="h-4 w-4 mr-1" />
                 End Date *
+
+          {/* Planned Timeline (optional overrides) */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="planned_start_date">Planned Start (optional)</Label>
+              <Input
+                id="planned_start_date"
+                type="date"
+                value={activity.planned_start_date}
+                onChange={(e) => setActivity(prev => ({ ...prev, planned_start_date: e.target.value }))}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="planned_end_date">Planned End (optional)</Label>
+              <Input
+                id="planned_end_date"
+                type="date"
+                value={activity.planned_end_date}
+                onChange={(e) => setActivity(prev => ({ ...prev, planned_end_date: e.target.value }))}
+                className="mt-1"
+              />
+            </div>
+          </div>
+
               </Label>
               <Input
                 id="end_date"
