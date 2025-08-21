@@ -111,7 +111,7 @@ backend:
     file: "/app/backend/project_service.py, /app/frontend/src/components/ProjectDashboard.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: true
           agent: "testing"
