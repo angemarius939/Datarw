@@ -471,7 +471,7 @@ class CreateUserRequest(BaseModel):
     email: EmailStr
     password: Optional[str] = None  # Auto-generated if not provided
     role: UserRole = UserRole.VIEWER
-    phone_number: Optional[str] = Field(None, regex=r"^07[0-9]{8}$")
+    phone_number: Optional[str] = Field(None, pattern=r"^07[0-9]{8}$")
     department: Optional[str] = None
     position: Optional[str] = None
     partner_organization_id: Optional[str] = None
