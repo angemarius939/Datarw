@@ -1134,24 +1134,34 @@ class DataRWAPITester:
             self.log_result("Update Project", False, f"Request error: {str(e)}")
             return False
 
-    def test_create_activity(self):
-        """Test creating a project activity"""
+    def test_create_activity_corrected_fields(self):
+        """Test creating a project activity with CORRECTED field mapping (name not title, assigned_to not responsible_user_id)"""
         if not hasattr(self, 'project_id'):
-            self.log_result("Create Activity", False, "No project ID available from previous test")
+            self.log_result("Create Activity - Corrected Fields", False, "No project ID available from previous test")
             return False
         
         try:
             from datetime import datetime, timedelta
             
+            # CORRECTED field mapping based on ActivityCreate model
             activity_data = {
                 "project_id": self.project_id,
-                "title": f"Test Activity {uuid.uuid4().hex[:8]}",
-                "description": "This is a test activity for API testing",
-                "responsible_user_id": self.user_data["id"],
+                "name": f"Community Mobilization and Awareness Campaign {uuid.uuid4().hex[:8]}",  # CORRECTED: name not title
+                "description": "Comprehensive community outreach program to raise awareness about digital literacy opportunities and mobilize participation from target beneficiaries in rural communities",
+                "assigned_to": self.user_data["id"],  # CORRECTED: assigned_to not responsible_user_id
                 "start_date": (datetime.now() + timedelta(days=7)).isoformat(),
                 "end_date": (datetime.now() + timedelta(days=30)).isoformat(),
-                "budget_allocated": 5000.0,
-                "deliverables": ["Deliverable 1", "Deliverable 2"]
+                "budget_allocated": 150000.0,  # Realistic budget in RWF
+                "deliverables": [
+                    "Community awareness sessions conducted in 5 villages",
+                    "Registration of 200+ participants completed",
+                    "Training materials distributed to all participants",
+                    "Community feedback collected and analyzed"
+                ],
+                "dependencies": [
+                    "Project approval and funding confirmation",
+                    "Training materials preparation completed"
+                ]
             }
             
             response = self.session.post(
@@ -1163,18 +1173,152 @@ class DataRWAPITester:
                 data = response.json()
                 # Handle both 'id' and '_id' fields
                 activity_id = data.get("id") or data.get("_id")
-                if activity_id and data.get("title") == activity_data["title"]:
+                if activity_id and data.get("name") == activity_data["name"]:  # Check 'name' field
                     self.activity_id = activity_id
-                    self.log_result("Create Activity", True, "Activity created successfully")
+                    self.log_result("Create Activity - Corrected Fields", True, 
+                                  "Activity created successfully with corrected field mapping (name, assigned_to)")
                     return True
                 else:
-                    self.log_result("Create Activity", False, "Activity data mismatch", data)
+                    self.log_result("Create Activity - Corrected Fields", False, "Activity data mismatch", data)
                     return False
             else:
-                self.log_result("Create Activity", False, f"HTTP {response.status_code}", response.text)
+                self.log_result("Create Activity - Corrected Fields", False, f"HTTP {response.status_code}", response.text)
                 return False
         except Exception as e:
-            self.log_result("Create Activity", False, f"Request error: {str(e)}")
+            self.log_result("Create Activity - Corrected Fields", False, f"Request error: {str(e)}")
+            return False
+
+    def test_create_activity_validation_errors(self):
+        """Test activity creation with invalid data to verify proper JSON error responses"""
+        if not hasattr(self, 'project_id'):
+            self.log_result("Create Activity - Validation Errors", False, "No project ID available from previous test")
+            return False
+        
+        try:
+            from datetime import datetime, timedelta
+            
+            # Test 1: Missing required fields
+            invalid_data_1 = {
+                "project_id": self.project_id,
+                # Missing required 'name' field
+                "description": "Test activity without name",
+                "assigned_to": self.user_data["id"],
+                "start_date": (datetime.now() + timedelta(days=7)).isoformat(),
+                "end_date": (datetime.now() + timedelta(days=30)).isoformat(),
+                "budget_allocated": 5000.0
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/activities",
+                json=invalid_data_1
+            )
+            
+            if response.status_code == 422:  # Validation error
+                data = response.json()
+                # Verify it returns proper JSON (not objects that cause React errors)
+                if isinstance(data, dict) and "detail" in data:
+                    self.log_result("Create Activity - Validation Errors", True, 
+                                  "Missing required field properly rejected with JSON response")
+                else:
+                    self.log_result("Create Activity - Validation Errors", False, 
+                                  "Validation error response is not proper JSON", data)
+                    return False
+            else:
+                self.log_result("Create Activity - Validation Errors", False, 
+                              f"Expected 422 for missing field, got {response.status_code}", response.text)
+                return False
+            
+            # Test 2: Invalid field types
+            invalid_data_2 = {
+                "project_id": self.project_id,
+                "name": "Test Activity",
+                "assigned_to": self.user_data["id"],
+                "start_date": "invalid-date-format",  # Invalid date
+                "end_date": (datetime.now() + timedelta(days=30)).isoformat(),
+                "budget_allocated": -1000.0  # Negative budget (should be >= 0)
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/activities",
+                json=invalid_data_2
+            )
+            
+            if response.status_code == 422:  # Validation error
+                data = response.json()
+                # Verify it returns proper JSON (not objects that cause React errors)
+                if isinstance(data, dict) and "detail" in data:
+                    self.log_result("Create Activity - Validation Errors", True, 
+                                  "Invalid data types properly rejected with JSON response")
+                    return True
+                else:
+                    self.log_result("Create Activity - Validation Errors", False, 
+                                  "Validation error response is not proper JSON", data)
+                    return False
+            else:
+                self.log_result("Create Activity - Validation Errors", False, 
+                              f"Expected 422 for invalid data, got {response.status_code}", response.text)
+                return False
+                
+        except Exception as e:
+            self.log_result("Create Activity - Validation Errors", False, f"Request error: {str(e)}")
+            return False
+
+    def test_create_activity_old_field_names(self):
+        """Test activity creation with OLD field names to verify they are properly rejected"""
+        if not hasattr(self, 'project_id'):
+            self.log_result("Create Activity - Old Field Names", False, "No project ID available from previous test")
+            return False
+        
+        try:
+            from datetime import datetime, timedelta
+            
+            # Use OLD field names that should be rejected
+            old_field_data = {
+                "project_id": self.project_id,
+                "title": "Test Activity with Old Field Names",  # OLD: should be 'name'
+                "description": "Testing with old field mapping",
+                "responsible_user_id": self.user_data["id"],  # OLD: should be 'assigned_to'
+                "start_date": (datetime.now() + timedelta(days=7)).isoformat(),
+                "end_date": (datetime.now() + timedelta(days=30)).isoformat(),
+                "budget_allocated": 5000.0,
+                "deliverables": ["Test deliverable"]
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/activities",
+                json=old_field_data
+            )
+            
+            if response.status_code == 422:  # Should be validation error
+                data = response.json()
+                # Verify it returns proper JSON validation errors
+                if isinstance(data, dict) and "detail" in data:
+                    # Check if the error mentions the missing required fields
+                    error_details = str(data.get("detail", ""))
+                    if "name" in error_details.lower() or "assigned_to" in error_details.lower():
+                        self.log_result("Create Activity - Old Field Names", True, 
+                                      "Old field names properly rejected with validation errors for missing required fields")
+                        return True
+                    else:
+                        self.log_result("Create Activity - Old Field Names", False, 
+                                      "Validation error doesn't mention missing required fields", data)
+                        return False
+                else:
+                    self.log_result("Create Activity - Old Field Names", False, 
+                                  "Validation error response is not proper JSON", data)
+                    return False
+            elif response.status_code == 200:
+                # If it succeeds, that means the backend is still accepting old field names (problem)
+                self.log_result("Create Activity - Old Field Names", False, 
+                              "CRITICAL: Backend still accepts old field names - field mapping fix not working")
+                return False
+            else:
+                self.log_result("Create Activity - Old Field Names", False, 
+                              f"Unexpected response code {response.status_code}", response.text)
+                return False
+                
+        except Exception as e:
+            self.log_result("Create Activity - Old Field Names", False, f"Request error: {str(e)}")
             return False
 
     def test_get_activities(self):
