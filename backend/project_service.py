@@ -388,7 +388,10 @@ class ProjectService:
         ]
         
         budget_category_result = await self.db.budget_entries.aggregate(budget_pipeline).to_list(100)
-        budget_by_category = {item["_id"]: item["total"] for item in budget_category_result}
+        budget_by_category = {
+            str(item["_id"]) if item["_id"] is not None else "uncategorized": item["total"] 
+            for item in budget_category_result
+        }
         
         # Projects by status
         status_pipeline = [
