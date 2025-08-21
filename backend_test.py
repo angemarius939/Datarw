@@ -3385,12 +3385,21 @@ class DataRWAPITester:
             self.test_create_activity_old_field_names,    # NEW: Test old field names rejection
             self.test_get_activities,
             self.test_update_activity,
+            # PRIORITY: FIXED Budget and Beneficiary System Tests
+            self.test_budget_system_fixed,
+            self.test_budget_listing_fixed,
+            self.test_budget_summary_fixed,
+            self.test_beneficiary_system_fixed,
+            self.test_beneficiary_listing_fixed,
+            self.test_integration_dashboard_data,
+            # Original Budget Management tests (for comparison)
             self.test_create_budget_item,
             self.test_get_budget_items,
             self.test_get_budget_summary,
             self.test_create_kpi_indicator,
             self.test_get_kpi_indicators,
             self.test_update_kpi_value,
+            # Original Beneficiary Management tests (for comparison)
             self.test_create_beneficiary,
             self.test_get_beneficiaries,
             self.test_get_beneficiary_demographics,
