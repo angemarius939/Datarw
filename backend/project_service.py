@@ -906,8 +906,8 @@ class ProjectService:
             budget_variance_percentage = ((budget_utilized - budget_allocated) / budget_allocated) * 100
         
         # Output variance analysis
-        target_quantity = activity_doc.get("target_quantity", 0)
-        achieved_quantity = activity_doc.get("achieved_quantity", 0)
+        target_quantity = activity_doc.get("target_quantity", 0) or 0
+        achieved_quantity = activity_doc.get("achieved_quantity", 0) or 0
         output_variance_percentage = 0
         if target_quantity > 0:
             output_variance_percentage = ((achieved_quantity - target_quantity) / target_quantity) * 100
