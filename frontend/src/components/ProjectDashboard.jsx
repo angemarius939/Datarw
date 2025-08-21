@@ -96,6 +96,16 @@ const ProjectDashboard = () => {
     );
   }
 
+  const handleProjectCreated = (newProject) => {
+    // Refresh dashboard data when a new project is created
+    fetchDashboardData();
+    toast({
+      title: "Success!",
+      description: `Project "${newProject.title}" was created successfully.`,
+      variant: "default",
+    });
+  };
+
   const StatCard = ({ title, value, icon, subtitle, trend, color = "blue" }) => (
     <Card className="hover:shadow-md transition-shadow duration-200">
       <CardContent className="p-6">
