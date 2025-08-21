@@ -1471,17 +1471,15 @@ class DataRWAPITester:
         try:
             kpi_data = {
                 "project_id": self.project_id,
-                "name": f"Test KPI {uuid.uuid4().hex[:8]}",
-                "description": "Number of people trained in digital literacy",
-                "indicator_type": "quantitative",
-                "level": "output",
+                "name": f"Number of People Trained in Digital Literacy {uuid.uuid4().hex[:8]}",
+                "description": "Quantitative measure of people who completed digital literacy training program",
+                "type": "quantitative",  # Use correct field name 'type' not 'indicator_type'
+                "measurement_unit": "people",  # Use correct field name 'measurement_unit' not 'unit_of_measurement'
                 "baseline_value": 0.0,
-                "target_value": 500.0,
-                "unit_of_measurement": "people",
-                "frequency": "Monthly",
-                "responsible_user_id": self.user_data["id"],
-                "data_source": "Training records",
-                "collection_method": "Manual count"
+                "target_value": 5000.0,
+                "frequency": "monthly",
+                "responsible_person": self.user_data["id"],  # Use correct field name 'responsible_person' not 'responsible_user_id'
+                "data_source": "Training completion records and certificates",
             }
             
             response = self.session.post(
