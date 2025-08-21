@@ -122,6 +122,41 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
         newErrors.end_date = 'End date must be after start date';
       }
     }
+
+    // Validate numbers (non-negative)
+    const numericFields = [
+      { key: 'budget_allocated', label: 'Budget Allocated' },
+      { key: 'target_quantity', label: 'Target Quantity' },
+      { key: 'achieved_quantity', label: 'Achieved Quantity' }
+    ];
+    numericFields.forEach(({ key, label }) => {
+      const val = activity[key];
+      if (val !== '' && val !== null && val !== undefined) {
+        const num = Number(val);
+        if (Number.isNaN(num) || num < 0) {
+          newErrors[key] = `${label} must be a non-negative number`;
+        }
+      }
+    });
+
+    // Validate milestones (name + date) and ensure dates are within activity timeline if provided
+    const milestoneErrors = [];
+    activity.milestones.forEach((m, idx) => {
+      if (!m.name?.trim()) {
+        milestoneErrors.push(`Milestone ${idx + 1}: name is required`);
+      }
+      if (!m.planned_date) {
+        milestoneErrors.push(`Milestone ${idx + 1}: target date is required`);
+      } else {
+        if (activity.start_date && new Date(m.planned_date) < new Date(activity.start_date)) {
+          milestoneErrors.push(`Milestone ${idx + 1}: date before start date`);
+        }
+        if (activity.end_date && new Date(m.planned_date) > new Date(activity.end_date)) {
+          milestoneErrors.push(`Milestone ${idx + 1}: date after end date`);
+        }
+      }
+    });
+    if (milestoneErrors.length) newErrors.milestones = milestoneErrors.join(', ');
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
