@@ -15,10 +15,10 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv('/app/frontend/.env')
 
-# Get backend URL from environment - use localhost for testing
+# Get backend URL from environment - use external URL for testing
 BACKEND_URL = os.getenv('REACT_APP_BACKEND_URL', 'http://localhost:8001')
-# For testing, always use localhost since we're testing from within the container
-API_BASE_URL = "http://localhost:8001/api"
+# Use the external URL for testing as specified in the environment
+API_BASE_URL = f"{BACKEND_URL}/api"
 
 class DataRWAPITester:
     def __init__(self):
