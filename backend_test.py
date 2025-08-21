@@ -3000,7 +3000,7 @@ class DataRWAPITester:
             # Test BudgetItemCreate model with correct fields: project_id, category, item_name, description, budgeted_amount, budget_period
             budget_data = {
                 "project_id": self.project_id,
-                "category": "Training Materials",
+                "category": "supplies",  # CORRECTED: use valid enum value
                 "item_name": "Digital Literacy Training Manuals and Resources",
                 "description": "Comprehensive training materials including printed manuals, digital resources, and interactive learning tools for digital literacy program participants",
                 "budgeted_amount": 800000.0,  # Realistic amount in RWF
