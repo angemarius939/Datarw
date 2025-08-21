@@ -764,6 +764,9 @@ const Dashboard = ({ onUpgrade }) => {
               </Card>
             </div>
           )}
+
+          {/* Admin Panel Content */}
+          {activeTab === 'admin-panel' && <AdminPanel />}
         </main>
       </div>
     </div>
