@@ -538,7 +538,7 @@ agent_communication:
   - task: "Project Creation Modal Fix"
     implemented: true
     working: true
-    file: "/app/backend/server.py"
+    file: "/app/frontend/src/components/CreateProjectModal.jsx"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
