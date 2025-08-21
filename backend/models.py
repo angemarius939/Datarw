@@ -519,6 +519,82 @@ class CreatePartnerRequest(BaseModel):
     website: Optional[str] = None
     capabilities: List[str] = []
 
+# Partner organization creation (alias for admin panel)
+class PartnerOrganizationCreate(BaseModel):
+    name: str = Field(..., min_length=2, max_length=200)
+    description: Optional[str] = None
+    contact_person: str = Field(..., min_length=2, max_length=100)
+    contact_email: EmailStr
+    contact_phone: Optional[str] = None
+    address: Optional[str] = None
+    organization_type: str = "NGO"
+    partnership_start_date: datetime
+    partnership_end_date: Optional[datetime] = None
+    website: Optional[str] = None
+    capabilities: List[str] = []
+
+class PartnerOrganizationUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    contact_person: Optional[str] = None
+    contact_email: Optional[EmailStr] = None
+    contact_phone: Optional[str] = None
+    address: Optional[str] = None
+    organization_type: Optional[str] = None
+    partnership_end_date: Optional[datetime] = None
+    status: Optional[str] = None
+    website: Optional[str] = None
+    capabilities: Optional[List[str]] = None
+    performance_rating: Optional[float] = None
+
+class PartnerPerformance(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    partner_id: str
+    evaluation_period: str
+    delivery_score: float = Field(..., ge=0, le=100)
+    quality_score: float = Field(..., ge=0, le=100)
+    timeliness_score: float = Field(..., ge=0, le=100)
+    communication_score: float = Field(..., ge=0, le=100)
+    overall_score: float = Field(..., ge=0, le=100)
+    comments: Optional[str] = None
+    evaluator_id: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class PartnerPerformanceCreate(BaseModel):
+    partner_id: str
+    evaluation_period: str
+    delivery_score: float = Field(..., ge=0, le=100)
+    quality_score: float = Field(..., ge=0, le=100)
+    timeliness_score: float = Field(..., ge=0, le=100)
+    communication_score: float = Field(..., ge=0, le=100)
+    comments: Optional[str] = None
+
+class OrganizationBranding(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: str
+    primary_color: str = "#3B82F6"
+    secondary_color: str = "#64748B"
+    accent_color: str = "#10B981"
+    logo_url: Optional[str] = None
+    favicon_url: Optional[str] = None
+    custom_css: Optional[str] = None
+    white_label: bool = False
+    custom_domain: Optional[str] = None
+    footer_text: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class OrganizationBrandingCreate(BaseModel):
+    primary_color: str = "#3B82F6"
+    secondary_color: str = "#64748B" 
+    accent_color: str = "#10B981"
+    logo_url: Optional[str] = None
+    favicon_url: Optional[str] = None
+    custom_css: Optional[str] = None
+    white_label: bool = False
+    custom_domain: Optional[str] = None
+    footer_text: Optional[str] = None
+
 # Response models
 class UserResponse(BaseModel):
     id: str
