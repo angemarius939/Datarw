@@ -277,9 +277,9 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
     } catch (error) {
       console.error('Create activity error:', error);
       toast({
-        title: "Error",
+        title: 'Error',
         description: `Failed to create activity: ${error.message}`,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
