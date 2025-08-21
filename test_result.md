@@ -105,6 +105,17 @@
 user_problem_statement: "Fix project creation error - React runtime error 'Objects are not valid as a React child' occurs when creating new projects, caused by frontend sending mismatched field names to backend and improperly rendering Pydantic validation errors."
 
 backend:
+  - task: "Create Activity Modal Refactor & Backend Alignment"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/components/CreateActivityModal.jsx, /app/backend/server.py, /app/backend/project_service.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "Enhanced activity creation: POST /api/activities works with milestones and outputs; but GET /api/activities returns validation errors for legacy records missing new fields; PUT /api/activities/{id}/progress and GET variance endpoints failing due to ObjectId/UUID mismatch."
   - task: "Enhanced Project Dashboard Analytics"
     implemented: true
     working: true
