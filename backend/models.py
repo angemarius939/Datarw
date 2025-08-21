@@ -910,15 +910,15 @@ class KPIIndicatorUpdate(BaseModel):
 class BeneficiaryCreate(BaseModel):
     project_id: str
     unique_id: str = Field(..., min_length=1)
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=100)
-    date_of_birth: datetime
-    gender: str
+    name: str = Field(..., min_length=1, max_length=200)  # Single name field to match main model
+    gender: Gender  # Use Gender enum to match main model
+    age: Optional[int] = None
     location: Optional[str] = None
-    contact_phone: Optional[str] = None
+    contact_info: Optional[str] = None  # Match main model field name
+    beneficiary_type: BeneficiaryType  # Required field from main model
+    enrollment_date: datetime = Field(default_factory=datetime.utcnow)  # Required field from main model
     household_size: Optional[int] = None
     education_level: Optional[str] = None
-    employment_status: Optional[str] = None
 
 class BeneficiaryUpdate(BaseModel):
     unique_id: Optional[str] = None
