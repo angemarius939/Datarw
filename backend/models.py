@@ -923,6 +923,57 @@ class ActivityUpdate(BaseModel):
     deliverables: Optional[List[str]] = None
     dependencies: Optional[List[str]] = None
 
+# Enhanced Activity Management Models
+class Milestone(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: Optional[str] = None
+    planned_date: datetime
+    actual_date: Optional[datetime] = None
+    status: str = "pending"  # pending, completed, delayed, cancelled
+    deliverables: List[str] = []
+    
+class ActivityProgress(BaseModel):
+    activity_id: str
+    progress_percentage: float
+    actual_output: Optional[str] = None
+    achieved_quantity: Optional[float] = None
+    milestone_completed: Optional[str] = None  # Milestone ID if milestone was completed
+    comments: Optional[str] = None
+    updated_by: str
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+class VarianceAnalysis(BaseModel):
+    activity_id: str
+    schedule_variance_days: int  # Positive = ahead, Negative = behind
+    budget_variance_percentage: float
+    output_variance_percentage: float
+    completion_variance: float
+    risk_assessment: str  # low, medium, high, critical
+    variance_explanation: Optional[str] = None
+    corrective_actions: List[str] = []
+
+class ActivityComment(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    activity_id: str
+    author_id: str
+    author_name: str
+    comment: str
+    comment_type: str = "update"  # update, issue, milestone, status_change
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    
+class ProjectPortfolioSummary(BaseModel):
+    total_projects: int
+    active_projects: int
+    completed_projects: int
+    delayed_projects: int
+    total_activities: int
+    overdue_activities: int
+    completion_rate: float
+    average_schedule_variance: float
+    high_risk_activities: int
+    budget_utilization_rate: float
+
 class BudgetItem(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     project_id: str
