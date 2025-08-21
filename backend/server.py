@@ -751,6 +751,62 @@ async def update_activity(
         logger.error(f"Update activity error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to update activity: {str(e)}")
 
+# Enhanced Activity Management Endpoints
+@api_router.put("/activities/{activity_id}/progress")
+async def update_activity_progress(
+    activity_id: str,
+    progress_data: Dict[str, Any],
+    current_user: User = Depends(require_editor())
+):
+    """Update activity progress with variance analysis"""
+    try:
+        result = await project_service.update_activity_progress(activity_id, progress_data, current_user.id)
+        return {"success": True, "data": result}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Update activity progress error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update activity progress: {str(e)}")
+
+@api_router.get("/activities/{activity_id}/variance")
+async def get_activity_variance_analysis(
+    activity_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get detailed variance analysis for an activity"""
+    try:
+        analysis = await project_service.get_activity_variance_analysis(activity_id)
+        return {"success": True, "data": analysis}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Get activity variance error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get activity variance: {str(e)}")
+
+@api_router.get("/projects/portfolio-summary")
+async def get_portfolio_summary(
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get portfolio-level summary across all projects"""
+    try:
+        summary = await project_service.get_project_portfolio_summary(current_user.organization_id)
+        return {"success": True, "data": summary}
+    except Exception as e:
+        logger.error(f"Get portfolio summary error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get portfolio summary: {str(e)}")
+
+@api_router.get("/activities/flagged")
+async def get_flagged_activities(
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get automatically flagged delayed or at-risk activities"""
+    try:
+        flagged = await project_service.flag_delayed_activities(current_user.organization_id)
+        return {"success": True, "data": flagged}
+    except Exception as e:
+        logger.error(f"Get flagged activities error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get flagged activities: {str(e)}")
+
 # Budget Management Endpoints
 @api_router.post("/budget", response_model=BudgetItem)
 async def create_budget_item(
