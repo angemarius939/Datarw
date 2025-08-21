@@ -80,12 +80,12 @@ const CreateBeneficiaryModal = ({ onBeneficiaryCreated, trigger }) => {
       newErrors.unique_id = 'Unique ID is required';
     }
     
-    if (!beneficiary.first_name.trim()) {
-      newErrors.first_name = 'First name is required';
+    if (!beneficiary.name.trim()) {
+      newErrors.name = 'Full name is required';
     }
     
-    if (!beneficiary.last_name.trim()) {
-      newErrors.last_name = 'Last name is required';
+    if (!beneficiary.project_id) {
+      newErrors.project_id = 'Project selection is required';
     }
     
     // Validate email format if provided
