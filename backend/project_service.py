@@ -877,9 +877,16 @@ class ProjectService:
         current_date = datetime.utcnow()
         
         # Schedule variance analysis
-        planned_start = activity_doc.get("planned_start_date", activity_doc.get("start_date"))
-        planned_end = activity_doc.get("planned_end_date", activity_doc.get("end_date"))
-        actual_start = activity_doc.get("start_date")
+        def to_dt(value):
+            if isinstance(value, datetime):
+                return value
+            try:
+                return datetime.fromisoformat(str(value).replace('Z', '+00:00'))
+            except Exception:
+                return None
+        planned_start = to_dt(activity_doc.get("planned_start_date") or activity_doc.get("start_date"))
+        planned_end = to_dt(activity_doc.get("planned_end_date") or activity_doc.get("end_date"))
+        actual_start = to_dt(activity_doc.get("start_date"))
         
         schedule_variance_days = 0
         if planned_end:
