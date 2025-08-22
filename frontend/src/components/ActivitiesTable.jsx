@@ -157,9 +157,18 @@ const ActivitiesTable = () => {
 
   const projectById = useMemo(() => {
     const map = {};
-    (projects || []).forEach(p => { map[p.id || p._id] = p; map[p._id] = p; });
+    (projects || []).forEach(p => { map[p.id || p._id] = p; if (p._id) map[p._id] = p; });
     return map;
   }, [projects]);
+
+  const getProjectName = (a) => {
+    const key = a.project_id;
+    const fromMap = projectById[key]?.name;
+    if (fromMap) return fromMap;
+    const found = (projects || []).find(p => (p.id === key || p._id === key));
+    if (found?.name) return found.name;
+    return a.project_name || a.project || key;
+  };
 
   const teams = useMemo(() => {
     const preset = ['M&E', 'Field', 'Data', 'Operations'];
