@@ -278,7 +278,7 @@ class FinanceService:
             ]))
         return '\n'.join(lines)
 
-    async def all_projects_report_csv(self, organization_id: str) -> str:
+    async def all_projects_report_csv(self, organization_id: str, date_from: Optional[str] = None, date_to: Optional[str] = None) -> str:
         # Budget vs Actual for all projects
         variance = await self.budget_vs_actual(organization_id)
         headers = ["Project ID","Planned","Allocated","Actual","Variance Amount","Variance %"]
