@@ -5085,6 +5085,278 @@ class DataRWAPITester:
             self.log_result("All Projects Report CSV", False, f"Request error: {str(e)}")
             return False
 
+    # ==================== NEW FINANCE FEATURES TESTS ====================
+    
+    def test_finance_xlsx_project_report(self):
+        """Test GET /api/finance/reports/project-xlsx endpoint"""
+        if not hasattr(self, 'project_id'):
+            self.log_result("Finance XLSX Project Report", False, "No project ID available")
+            return False
+        
+        try:
+            response = self.session.get(
+                f"{self.base_url}/finance/reports/project-xlsx",
+                params={"project_id": self.project_id}
+            )
+            
+            if response.status_code == 200:
+                # Check content type
+                content_type = response.headers.get('content-type', '')
+                expected_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                
+                if expected_type in content_type:
+                    # Check content is not empty
+                    content_length = len(response.content)
+                    if content_length > 0:
+                        self.log_result("Finance XLSX Project Report", True, 
+                                      f"XLSX report generated successfully ({content_length} bytes)")
+                        return True
+                    else:
+                        self.log_result("Finance XLSX Project Report", False, "Empty XLSX content")
+                        return False
+                else:
+                    self.log_result("Finance XLSX Project Report", False, 
+                                  f"Wrong content type: {content_type}, expected: {expected_type}")
+                    return False
+            else:
+                self.log_result("Finance XLSX Project Report", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Finance XLSX Project Report", False, f"Request error: {str(e)}")
+            return False
+    
+    def test_finance_xlsx_activities_report(self):
+        """Test GET /api/finance/reports/activities-xlsx endpoint"""
+        if not hasattr(self, 'project_id'):
+            self.log_result("Finance XLSX Activities Report", False, "No project ID available")
+            return False
+        
+        try:
+            response = self.session.get(
+                f"{self.base_url}/finance/reports/activities-xlsx",
+                params={"project_id": self.project_id}
+            )
+            
+            if response.status_code == 200:
+                # Check content type
+                content_type = response.headers.get('content-type', '')
+                expected_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                
+                if expected_type in content_type:
+                    # Check content is not empty
+                    content_length = len(response.content)
+                    if content_length > 0:
+                        self.log_result("Finance XLSX Activities Report", True, 
+                                      f"XLSX activities report generated successfully ({content_length} bytes)")
+                        return True
+                    else:
+                        self.log_result("Finance XLSX Activities Report", False, "Empty XLSX content")
+                        return False
+                else:
+                    self.log_result("Finance XLSX Activities Report", False, 
+                                  f"Wrong content type: {content_type}, expected: {expected_type}")
+                    return False
+            else:
+                self.log_result("Finance XLSX Activities Report", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Finance XLSX Activities Report", False, f"Request error: {str(e)}")
+            return False
+    
+    def test_finance_xlsx_all_projects_report(self):
+        """Test GET /api/finance/reports/all-projects-xlsx endpoint"""
+        try:
+            response = self.session.get(f"{self.base_url}/finance/reports/all-projects-xlsx")
+            
+            if response.status_code == 200:
+                # Check content type
+                content_type = response.headers.get('content-type', '')
+                expected_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                
+                if expected_type in content_type:
+                    # Check content is not empty
+                    content_length = len(response.content)
+                    if content_length > 0:
+                        self.log_result("Finance XLSX All Projects Report", True, 
+                                      f"XLSX all projects report generated successfully ({content_length} bytes)")
+                        return True
+                    else:
+                        self.log_result("Finance XLSX All Projects Report", False, "Empty XLSX content")
+                        return False
+                else:
+                    self.log_result("Finance XLSX All Projects Report", False, 
+                                  f"Wrong content type: {content_type}, expected: {expected_type}")
+                    return False
+            else:
+                self.log_result("Finance XLSX All Projects Report", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Finance XLSX All Projects Report", False, f"Request error: {str(e)}")
+            return False
+    
+    def test_csv_date_range_filtering(self):
+        """Test CSV endpoints with date_from and date_to parameters"""
+        try:
+            from datetime import datetime, timedelta
+            
+            # Create test expenses with different dates
+            today = datetime.now()
+            old_date = today - timedelta(days=60)
+            recent_date = today - timedelta(days=10)
+            
+            # Create expense outside date range
+            old_expense_data = {
+                "project_id": getattr(self, 'project_id', 'test-project'),
+                "activity_id": getattr(self, 'activity_id', 'test-activity'),
+                "date": old_date.isoformat()[:10],
+                "vendor": "Old Vendor Ltd",
+                "invoice_no": f"OLD-{uuid.uuid4().hex[:8]}",
+                "amount": 100000.0,
+                "currency": "RWF",
+                "funding_source": "World Bank",
+                "cost_center": "Operations",
+                "notes": "Old expense for date range testing"
+            }
+            
+            # Create expense inside date range
+            recent_expense_data = {
+                "project_id": getattr(self, 'project_id', 'test-project'),
+                "activity_id": getattr(self, 'activity_id', 'test-activity'),
+                "date": recent_date.isoformat()[:10],
+                "vendor": "Recent Vendor Ltd",
+                "invoice_no": f"REC-{uuid.uuid4().hex[:8]}",
+                "amount": 200000.0,
+                "currency": "RWF",
+                "funding_source": "USAID",
+                "cost_center": "Field Work",
+                "notes": "Recent expense for date range testing"
+            }
+            
+            # Create both expenses
+            old_response = self.session.post(f"{self.base_url}/finance/expenses", json=old_expense_data)
+            recent_response = self.session.post(f"{self.base_url}/finance/expenses", json=recent_expense_data)
+            
+            if old_response.status_code != 200 or recent_response.status_code != 200:
+                self.log_result("CSV Date Range Filtering", False, 
+                              "Failed to create test expenses for date range testing")
+                return False
+            
+            # Test CSV export without date filter (should include both)
+            unfiltered_response = self.session.get(f"{self.base_url}/finance/expenses/export-csv")
+            
+            if unfiltered_response.status_code != 200:
+                self.log_result("CSV Date Range Filtering", False, 
+                              f"Unfiltered CSV export failed: {unfiltered_response.status_code}")
+                return False
+            
+            unfiltered_csv = unfiltered_response.text
+            unfiltered_lines = [line for line in unfiltered_csv.split('\n') if line.strip()]
+            unfiltered_count = len(unfiltered_lines) - 1  # Subtract header
+            
+            # Test CSV export with date filter (should include only recent)
+            date_from = (recent_date - timedelta(days=5)).isoformat()[:10]
+            date_to = (recent_date + timedelta(days=5)).isoformat()[:10]
+            
+            filtered_response = self.session.get(
+                f"{self.base_url}/finance/expenses/export-csv",
+                params={"date_from": date_from, "date_to": date_to}
+            )
+            
+            if filtered_response.status_code != 200:
+                self.log_result("CSV Date Range Filtering", False, 
+                              f"Filtered CSV export failed: {filtered_response.status_code}")
+                return False
+            
+            filtered_csv = filtered_response.text
+            filtered_lines = [line for line in filtered_csv.split('\n') if line.strip()]
+            filtered_count = len(filtered_lines) - 1  # Subtract header
+            
+            # Verify filtering worked
+            if filtered_count < unfiltered_count:
+                # Check that recent expense is in filtered results
+                if "Recent Vendor Ltd" in filtered_csv:
+                    self.log_result("CSV Date Range Filtering", True, 
+                                  f"Date range filtering working: unfiltered={unfiltered_count}, filtered={filtered_count}")
+                    return True
+                else:
+                    self.log_result("CSV Date Range Filtering", False, 
+                                  "Recent expense not found in filtered results")
+                    return False
+            else:
+                self.log_result("CSV Date Range Filtering", False, 
+                              f"Date filtering not working: unfiltered={unfiltered_count}, filtered={filtered_count}")
+                return False
+                
+        except Exception as e:
+            self.log_result("CSV Date Range Filtering", False, f"Request error: {str(e)}")
+            return False
+    
+    def test_funding_utilization_date_range(self):
+        """Test GET /api/finance/funding-utilization with date_from and date_to parameters"""
+        try:
+            from datetime import datetime, timedelta
+            
+            today = datetime.now()
+            date_from = (today - timedelta(days=30)).isoformat()[:10]
+            date_to = today.isoformat()[:10]
+            
+            # Test funding utilization without date filter
+            unfiltered_response = self.session.get(f"{self.base_url}/finance/funding-utilization")
+            
+            if unfiltered_response.status_code != 200:
+                self.log_result("Funding Utilization Date Range", False, 
+                              f"Unfiltered funding utilization failed: {unfiltered_response.status_code}")
+                return False
+            
+            unfiltered_data = unfiltered_response.json()
+            
+            # Test funding utilization with date filter
+            filtered_response = self.session.get(
+                f"{self.base_url}/finance/funding-utilization",
+                params={"date_from": date_from, "date_to": date_to}
+            )
+            
+            if filtered_response.status_code != 200:
+                self.log_result("Funding Utilization Date Range", False, 
+                              f"Filtered funding utilization failed: {filtered_response.status_code}")
+                return False
+            
+            filtered_data = filtered_response.json()
+            
+            # Verify both responses have the expected structure
+            required_fields = ["total_funding", "total_utilized", "utilization_rate", "by_source"]
+            
+            for field in required_fields:
+                if field not in unfiltered_data:
+                    self.log_result("Funding Utilization Date Range", False, 
+                                  f"Missing field '{field}' in unfiltered response")
+                    return False
+                if field not in filtered_data:
+                    self.log_result("Funding Utilization Date Range", False, 
+                                  f"Missing field '{field}' in filtered response")
+                    return False
+            
+            # Check if filtering affects the results (amounts should be different if there's data outside the range)
+            unfiltered_total = unfiltered_data.get("total_utilized", 0)
+            filtered_total = filtered_data.get("total_utilized", 0)
+            
+            # If we have expenses outside the date range, filtered should be less than or equal to unfiltered
+            if filtered_total <= unfiltered_total:
+                self.log_result("Funding Utilization Date Range", True, 
+                              f"Date range filtering working: unfiltered_total={unfiltered_total}, filtered_total={filtered_total}")
+                return True
+            else:
+                self.log_result("Funding Utilization Date Range", False, 
+                              f"Date filtering issue: filtered_total ({filtered_total}) > unfiltered_total ({unfiltered_total})")
+                return False
+                
+        except Exception as e:
+            self.log_result("Funding Utilization Date Range", False, f"Request error: {str(e)}")
+            return False
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print(f"🚀 Starting DataRW Backend API Tests")
