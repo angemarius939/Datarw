@@ -5469,6 +5469,12 @@ class DataRWAPITester:
             self.test_ai_insights,
             # FINANCE CSV REPORTS TESTS (NEW - PRIORITY)
             self.test_finance_csv_reports_comprehensive,
+            # NEW FINANCE FEATURES TESTS (XLSX & DATE RANGE)
+            self.test_finance_xlsx_project_report,
+            self.test_finance_xlsx_activities_report,
+            self.test_finance_xlsx_all_projects_report,
+            self.test_csv_date_range_filtering,
+            self.test_funding_utilization_date_range,
             # Cleanup tests
             self.test_delete_user,
             self.test_delete_survey
