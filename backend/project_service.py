@@ -32,16 +32,18 @@ class ProjectService:
         
         return Project(**project_dict)
 
-    async def get_projects(self, organization_id: str, status: Optional[ProjectStatus] = None) -> List[Project]:
-        """Get all projects for an organization"""
-        query = {"organization_id": organization_id}
+    async def get_projects(self, organization_id: Optional[str] = None, status: Optional[ProjectStatus] = None) -> List[Project]:
+        """Get projects. If organization_id is None or empty, return all (used for selection lists)."""
+        query: Dict[str, Any] = {}
+        if organization_id:
+            query["organization_id"] = organization_id
         if status:
             query["status"] = status
-            
         cursor = self.db.projects.find(query).sort("created_at", -1)
-        projects = []
+        projects: List[Project] = []
         async for doc in cursor:
-            doc["_id"] = str(doc["_id"])
+            if doc.get("_id"):
+                doc["_id"] = str(doc["_id"])
             projects.append(Project(**doc))
         return projects
 
