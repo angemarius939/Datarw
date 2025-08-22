@@ -336,6 +336,7 @@ class Activity(BaseModel):
     target_quantity: Optional[float] = None  # Quantitative target
     actual_output: Optional[str] = None   # Actual deliverable achieved
     achieved_quantity: Optional[float] = None  # Quantitative achievement
+    measurement_unit: Optional[str] = None  # Shared unit for target/achieved (e.g., people, km)
     
     # Progress and completion
     progress_percentage: float = 0.0  # Auto-calculated from outputs
