@@ -51,7 +51,6 @@ class FinanceService:
             "updated_at": now,
         })
         await self.db.expenses.insert_one(payload)
-        # Convert ObjectId to string for serialization
         payload["_id"] = str(payload.get("_id"))
         return Expense(**payload)
 
@@ -123,13 +122,13 @@ class FinanceService:
         return res.deleted_count > 0
 
     # -------------------- Summaries & Analytics --------------------
-    async def budget_vs_actual(self, organization_id: str, project_id: Optional[str] = None) -> Dict[str, Any]:
-        match = {"organization_id": organization_id}
+    async def budget_vs_actual(self, organization_id: str, project_id: Optional[str] = None, date_from: Optional[str] = None, date_to: Optional[str] = None) -> Dict[str, Any]:
+        match_budget = {"organization_id": organization_id}
         if project_id:
-            match["project_id"] = project_id
+            match_budget["project_id"] = project_id
         # Aggregate BudgetItems (planned)
         pipeline_budget = [
-            {"$match": match},
+            {"$match": match_budget},
             {"$group": {"_id": "$project_id", "planned": {"$sum": "$budgeted_amount"}, "allocated": {"$sum": "$allocated_amount"}, "utilized_pi": {"$sum": "$utilized_amount"}}}
         ]
         planned_by_project: Dict[str, Dict[str, float]] = {}
@@ -140,15 +139,22 @@ class FinanceService:
                 "utilized_pi": float(b.get("utilized_pi", 0)),
             }
         # Aggregate expenses (actual)
+        match_exp = {"organization_id": organization_id}
+        if project_id:
+            match_exp["project_id"] = project_id
+        if date_from:
+            match_exp.setdefault("date", {})["$gte"] = datetime.fromisoformat(date_from)
+        if date_to:
+            match_exp.setdefault("date", {})["$lte"] = datetime.fromisoformat(date_to)
         pipeline_exp = [
-            {"$match": match},
+            {"$match": match_exp},
             {"$group": {"_id": "$project_id", "actual": {"$sum": "$amount"}}}
         ]
-        result: List[Dict[str, Any]] = []
         actual_by_project: Dict[str, float] = {}
         async for e in self.db.expenses.aggregate(pipeline_exp):
             actual_by_project[str(e["_id"]) or "unknown"] = float(e.get("actual", 0))
         # Merge
+        result: List[Dict[str, Any]] = []
         keys = set(planned_by_project.keys()) | set(actual_by_project.keys())
         for k in keys:
             planned = planned_by_project.get(k, {}).get("planned", 0.0)
@@ -171,7 +177,6 @@ class FinanceService:
         now = datetime.utcnow()
         start = now - timedelta(days=365)
         match = {"organization_id": organization_id, "date": {"$gte": start}}
-        # Group key by period
         if period == "quarterly":
             group_id = {"year": {"$year": "$date"}, "quarter": {"$ceil": {"$divide": [{"$month": "$date"}, 3]}}}
             label_build = lambda g: f"{int(g['year'])}-Q{int(g['quarter'])}"
@@ -193,7 +198,6 @@ class FinanceService:
         return {"period": period, "series": series}
 
     async def forecast(self, organization_id: str) -> Dict[str, Any]:
-        # Simple forecast: average monthly spend * remaining months of year
         now = datetime.utcnow()
         start_year = datetime(now.year, 1, 1)
         match = {"organization_id": organization_id, "date": {"$gte": start_year}}
@@ -226,75 +230,50 @@ class FinanceService:
             items.append({"funding_source": d.get("_id") or "Unknown", "spent": float(d.get("spent", 0))})
         return {"by_funding_source": items}
 
-    # -------------------- CSV Reports (Finance) --------------------
-    async def _csv_sanitize(self, v: Any) -> str:
-        s = str(v or "")
-        if any(c in s for c in ['"', ',', '\n']):
-            s = '"' + s.replace('"','""') + '"'
-        return s
-
-    async def project_report_csv(self, organization_id: str, project_id: str, date_from: Optional[str] = None, date_to: Optional[str] = None) -> str:
-        # Budget vs Actual for a single project + funding utilization
-        # Apply optional date filters by temporarily scoping expenses aggregation
-        variance = await self.budget_vs_actual(organization_id, project_id)
-        fu = await self.funding_utilization(organization_id)
-        headers = ["Project ID","Planned","Allocated","Actual","Variance Amount","Variance %"]
-        lines = [','.join(headers)]
-        for row in variance.get("by_project", []):
-            if row.get("project_id") != project_id:
-                continue
-            line = [
-                await self._csv_sanitize(row.get("project_id")),
-                await self._csv_sanitize(row.get("planned")),
-                await self._csv_sanitize(row.get("allocated")),
-                await self._csv_sanitize(row.get("actual")),
-                await self._csv_sanitize(row.get("variance_amount")),
-                await self._csv_sanitize(f"{row.get('variance_pct',0):.1f}"),
-            ]
-            lines.append(','.join(line))
-        # Append funding utilization by source
-        lines.append("")
-        lines.append("Funding Source,Spent")
-        for item in fu.get("by_funding_source", []):
-            lines.append(','.join([
-                await self._csv_sanitize(item.get("funding_source")),
-                await self._csv_sanitize(item.get("spent")),
-            ]))
-        return '\n'.join(lines)
-
-    async def activities_report_csv(self, organization_id: str, project_id: str, date_from: Optional[str] = None, date_to: Optional[str] = None) -> str:
-        # Group expenses by activity for the project
-        match = {"organization_id": organization_id, "project_id": project_id}
+    # -------------------- Finance Reports Data Helpers --------------------
+    async def project_budget_details(self, organization_id: str, project_id: str, date_from: Optional[str] = None, date_to: Optional[str] = None) -> Dict[str, Any]:
+        # Budget lines
+        match_budget = {"organization_id": organization_id, "project_id": project_id}
+        budget_cursor = self.db.budget_items.find(match_budget)
+        budget_lines: List[Dict[str, Any]] = []
+        total_budgeted = 0.0
+        total_allocated = 0.0
+        async for b in budget_cursor:
+            amt = float(b.get("budgeted_amount", 0))
+            total_budgeted += amt
+            total_allocated += float(b.get("allocated_amount", 0))
+            budget_lines.append({
+                "category": b.get("category") or "(uncategorized)",
+                "activity_id": b.get("activity_id") or "",
+                "budgeted": amt,
+                "allocated": float(b.get("allocated_amount", 0)),
+                "utilized_pi": float(b.get("utilized_amount", 0)),
+            })
+        # Expenses by activity within date range
+        match_exp = {"organization_id": organization_id, "project_id": project_id}
+        if date_from:
+            match_exp.setdefault("date", {})["$gte"] = datetime.fromisoformat(date_from)
+        if date_to:
+            match_exp.setdefault("date", {})["$lte"] = datetime.fromisoformat(date_to)
         pipeline = [
-            {"$match": match},
-            {"$group": {"_id": "$activity_id", "spent": {"$sum": "$amount"}, "count": {"$sum": 1}}},
-            {"$sort": {"spent": -1}}
+            {"$match": match_exp},
+            {"$group": {"_id": "$activity_id", "spent": {"$sum": "$amount"}, "count": {"$sum": 1}}}
         ]
-        rows: List[Dict[str, Any]] = []
-        async for d in self.db.expenses.aggregate(pipeline):
-            rows.append({"activity_id": d.get("_id") or "(none)", "spent": float(d.get("spent", 0)), "transactions": int(d.get("count", 0))})
-        headers = ["Activity ID","Transactions","Spent"]
-        lines = [','.join(headers)]
-        for r in rows:
-            lines.append(','.join([
-                await self._csv_sanitize(r.get("activity_id")),
-                await self._csv_sanitize(r.get("transactions")),
-                await self._csv_sanitize(r.get("spent")),
-            ]))
-        return '\n'.join(lines)
+        spent_by_activity: Dict[str, Dict[str, Any]] = {}
+        async for e in self.db.expenses.aggregate(pipeline):
+            spent_by_activity[str(e.get("_id") or "")] = {"spent": float(e.get("spent", 0)), "transactions": int(e.get("count", 0))}
+        total_spent = sum([v["spent"] for v in spent_by_activity.values()])
+        variance_amount = total_budgeted - total_spent
+        variance_pct = (variance_amount / total_budgeted * 100) if total_budgeted else 0.0
+        return {
+            "total_budgeted": total_budgeted,
+            "total_allocated": total_allocated,
+            "total_spent": total_spent,
+            "variance_amount": variance_amount,
+            "variance_pct": variance_pct,
+            "budget_lines": budget_lines,
+            "spent_by_activity": spent_by_activity,
+        }
 
-    async def all_projects_report_csv(self, organization_id: str, date_from: Optional[str] = None, date_to: Optional[str] = None) -> str:
-        # Budget vs Actual for all projects
-        variance = await self.budget_vs_actual(organization_id)
-        headers = ["Project ID","Planned","Allocated","Actual","Variance Amount","Variance %"]
-        lines = [','.join(headers)]
-        for row in variance.get("by_project", []):
-            lines.append(','.join([
-                await self._csv_sanitize(row.get("project_id")),
-                await self._csv_sanitize(row.get("planned")),
-                await self._csv_sanitize(row.get("allocated")),
-                await self._csv_sanitize(row.get("actual")),
-                await self._csv_sanitize(row.get("variance_amount")),
-                await self._csv_sanitize(f"{row.get('variance_pct',0):.1f}"),
-            ]))
-        return '\n'.join(lines)
+    async def all_projects_variance(self, organization_id: str, date_from: Optional[str] = None, date_to: Optional[str] = None) -> List[Dict[str, Any]]:
+        return (await self.budget_vs_actual(organization_id, None, date_from, date_to)).get("by_project", [])

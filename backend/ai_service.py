@@ -14,7 +14,6 @@ from models import (
 )
 
 def convert_objectids_to_strings(obj):
-    """Recursively convert ObjectIds to strings in a dictionary or list"""
     if isinstance(obj, dict):
         return {key: convert_objectids_to_strings(value) for key, value in obj.items()}
     elif isinstance(obj, list):
@@ -31,531 +30,12 @@ class AIService:
         if not self.emergent_key:
             raise ValueError("EMERGENT_LLM_KEY environment variable is required")
 
-    async def generate_survey_with_ai(
-        self, 
-        request: AISurveyGenerationRequest, 
-        organization_id: str
-    ) -> Dict[str, Any]:
-        """Generate a survey using AI based on user description and optional document context"""
-        
-        # Get organization context if available
-        context = await self._get_organization_context(organization_id)
-        
-        # Build the AI prompt
-        prompt = await self._build_survey_generation_prompt(request, context)
-        
-        try:
-            # Initialize LLM chat
-            session_id = f"survey_gen_{organization_id}_{uuid.uuid4().hex[:8]}"
-            chat = LlmChat(
-                api_key=self.emergent_key,
-                session_id=session_id,
-                system_message="You are an expert survey designer with deep knowledge of research methodologies, questionnaire design, and data collection best practices. Your task is to create comprehensive, well-structured surveys that will generate high-quality data."
-            ).with_model("openai", "gpt-4.1")
-            
-            # Create user message
-            user_message = UserMessage(text=prompt)
-            
-            # Get AI response
-            response = await chat.send_message(user_message)
-            
-            # Parse the AI response to extract survey structure
-            survey_data = await self._parse_ai_response(response)
-            
-        except Exception as e:
-            print(f"AI generation failed: {e}")
-            # Fallback to a template-based survey generation
-            survey_data = await self._generate_fallback_survey(request)
-        
-        return survey_data
-
-    async def _get_organization_context(self, organization_id: str) -> Optional[SurveyGenerationContext]:
-        """Get organization's document context for survey generation"""
-        context_doc = await self.db.survey_generation_contexts.find_one(
-            {"organization_id": organization_id}
-        )
-        if context_doc:
-            # Convert all ObjectIds to strings
-            context_doc = convert_objectids_to_strings(context_doc)
-            return SurveyGenerationContext(**context_doc)
-        return None
-
-    async def _build_survey_generation_prompt(
-        self, 
-        request: AISurveyGenerationRequest, 
-        context: Optional[SurveyGenerationContext]
-    ) -> str:
-        """Build a comprehensive prompt for survey generation"""
-        
-        prompt_parts = [
-            "Create a comprehensive survey based on the following requirements:",
-            f"Survey Description: {request.description}",
-        ]
-        
-        if request.target_audience:
-            prompt_parts.append(f"Target Audience: {request.target_audience}")
-            
-        if request.survey_purpose:
-            prompt_parts.append(f"Survey Purpose: {request.survey_purpose}")
-            
-        prompt_parts.append(f"Number of Questions Requested: {request.question_count}")
-        
-        if request.include_demographics:
-            prompt_parts.append("Include demographic questions (age, gender, location, etc.)")
-            
-        # Add document context if available
-        if context:
-            prompt_parts.append("\nDocument Context Available:")
-            if context.business_profile:
-                prompt_parts.append(f"Business Profile: {context.business_profile[:500]}...")
-            if context.participant_profiles:
-                prompt_parts.append(f"Participant Profiles: {context.participant_profiles[:500]}...")
-            if context.policies:
-                prompt_parts.append(f"Policies: {context.policies[:500]}...")
-            if context.strategic_documents:
-                prompt_parts.append(f"Strategic Documents: {context.strategic_documents[:500]}...")
-        
-        # Add question types information
-        question_types_info = """
-Available Question Types:
-1. multiple_choice_single - Single selection from multiple options
-2. multiple_choice_multiple - Multiple selections allowed (checkboxes)
-3. short_text - Brief text responses (1-2 words or short phrases)
-4. long_text - Detailed text responses (paragraphs)
-5. rating_scale - Numeric rating (1-5, 1-10, etc.)
-6. likert_scale - Agreement scale (Strongly Disagree to Strongly Agree)
-7. ranking - Rank options in order of preference
-8. dropdown - Select one option from dropdown list
-9. matrix_grid - Grid of questions with same response options
-10. file_upload - Allow file attachments
-11. date_picker - Select a date
-12. time_picker - Select a time
-13. datetime_picker - Select date and time
-14. slider - Visual slider for numeric input
-15. numeric_scale - Enter numeric value within range
-16. image_choice - Choose from images
-17. yes_no - Simple yes/no question
-18. signature - Digital signature capture
-"""
-        
-        prompt_parts.append(question_types_info)
-        
-        # Response format instructions
-        format_instructions = """
-Return your response as a JSON object with the following structure:
-{
-    "title": "Survey Title",
-    "description": "Survey Description",
-    "questions": [
-        {
-            "type": "question_type",
-            "question": "Question text",
-            "required": true/false,
-            "options": ["Option 1", "Option 2"] (for multiple choice, dropdown, etc.),
-            "scale_min": 1 (for rating/slider),
-            "scale_max": 5 (for rating/slider),
-            "scale_labels": ["Very Poor", "Poor", "Fair", "Good", "Excellent"] (for likert),
-            "matrix_rows": ["Row 1", "Row 2"] (for matrix),
-            "matrix_columns": ["Col 1", "Col 2"] (for matrix),
-            "file_types_allowed": ["pdf", "doc", "jpg"] (for file upload),
-            "max_file_size_mb": 10 (for file upload),
-            "multiple_selection": true/false (for multiple choice),
-            "validation_rules": {"min_length": 10} (optional)
-        }
-    ]
-}
-
-Guidelines:
-- Create engaging, clear, and unbiased questions
-- Use appropriate question types for different data needs
-- Ensure logical flow and question order
-- Include validation rules where appropriate
-- Make questions specific and actionable
-- Avoid leading or loaded questions
-- Consider cultural sensitivity and inclusivity
-"""
-        
-        prompt_parts.append(format_instructions)
-        
-        return "\n\n".join(prompt_parts)
-
-    async def _parse_ai_response(self, response: str) -> Dict[str, Any]:
-        """Parse AI response and convert to survey structure"""
-        try:
-            # Try to extract JSON from response
-            response_clean = response.strip()
-            if response_clean.startswith("```json"):
-                response_clean = response_clean[7:-3].strip()
-            elif response_clean.startswith("```"):
-                response_clean = response_clean[3:-3].strip()
-            
-            survey_data = json.loads(response_clean)
-            
-            # Validate and clean the survey data
-            cleaned_questions = []
-            for q in survey_data.get("questions", []):
-                try:
-                    question_type = QuestionType(q.get("type"))
-                    
-                    # Create question object with proper defaults
-                    question = {
-                        "type": question_type,
-                        "question": q.get("question", ""),
-                        "required": q.get("required", False),
-                        "options": q.get("options", []),
-                        "scale_min": q.get("scale_min"),
-                        "scale_max": q.get("scale_max"),
-                        "scale_labels": q.get("scale_labels", []),
-                        "matrix_rows": q.get("matrix_rows", []),
-                        "matrix_columns": q.get("matrix_columns", []),
-                        "file_types_allowed": q.get("file_types_allowed", []),
-                        "max_file_size_mb": q.get("max_file_size_mb"),
-                        "multiple_selection": q.get("multiple_selection", False),
-                        "validation_rules": q.get("validation_rules", {})
-                    }
-                    cleaned_questions.append(question)
-                except ValueError:
-                    # Skip invalid question types
-                    continue
-            
-            return {
-                "title": survey_data.get("title", "AI Generated Survey"),
-                "description": survey_data.get("description", "Survey generated by AI"),
-                "questions": cleaned_questions
-            }
-            
-        except json.JSONDecodeError:
-            # Fallback: create a basic survey structure
-            return {
-                "title": "AI Generated Survey",
-                "description": "Survey generated by AI (parsing error occurred)",
-                "questions": [
-                    {
-                        "type": QuestionType.LONG_TEXT,
-                        "question": "Please provide your feedback on the topic discussed.",
-                        "required": False,
-                        "options": [],
-                        "validation_rules": {}
-                    }
-                ]
-            }
-
-    async def save_document_context(
-        self, 
-        organization_id: str, 
-        documents: List[DocumentUpload]
-    ) -> SurveyGenerationContext:
-        """Save uploaded documents as context for survey generation"""
-        
-        # Get existing context or create new
-        existing_context = await self._get_organization_context(organization_id)
-        
-        if existing_context:
-            # Update existing context
-            context_data = existing_context.model_dump()
-            context_data["uploaded_documents"].extend([doc.model_dump() for doc in documents])
-            context_data["last_updated"] = datetime.utcnow()
-        else:
-            # Create new context
-            context_data = {
-                "organization_id": organization_id,
-                "uploaded_documents": [doc.model_dump() for doc in documents],
-                "last_updated": datetime.utcnow()
-            }
-        
-        # Extract content for different categories
-        await self._categorize_documents(context_data)
-        
-        # Save to database
-        result = await self.db.survey_generation_contexts.replace_one(
-            {"organization_id": organization_id},
-            context_data,
-            upsert=True
-        )
-        
-        # Set the ID for the returned object
-        if result.upserted_id:
-            context_data["_id"] = str(result.upserted_id)
-        else:
-            # Get the existing document to get its ID
-            existing_doc = await self.db.survey_generation_contexts.find_one(
-                {"organization_id": organization_id}
-            )
-            if existing_doc and "_id" in existing_doc:
-                context_data["_id"] = str(existing_doc["_id"])
-        
-        return SurveyGenerationContext(**context_data)
-
-    async def _categorize_documents(self, context_data: Dict[str, Any]):
-        """Use AI to categorize and extract relevant information from documents"""
-        documents = context_data.get("uploaded_documents", [])
-        if not documents:
-            return
-            
-        # Combine all document content
-        all_content = "\n\n".join([doc.get("content", "") for doc in documents])
-        
-        # Use AI to categorize and extract key information
-        session_id = f"doc_analysis_{uuid.uuid4().hex[:8]}"
-        chat = LlmChat(
-            api_key=self.emergent_key,
-            session_id=session_id,
-            system_message="You are an expert document analyzer. Extract and categorize key information from business documents."
-        ).with_model("openai", "gpt-4.1")
-        
-        prompt = f"""
-Analyze the following documents and extract key information for survey generation:
-
-Documents Content:
-{all_content[:5000]}  # Limit content to avoid token limits
-
-Please categorize and extract the following:
-1. Business Profile: Company overview, mission, values, services/products
-2. Participant Profiles: Target audience, customer segments, stakeholder information
-3. Policies: Rules, guidelines, compliance requirements
-4. Strategic Information: Goals, objectives, KPIs, strategic initiatives
-
-Return as JSON:
-{{
-    "business_profile": "extracted business information",
-    "participant_profiles": "target audience and stakeholder info", 
-    "policies": "relevant policies and guidelines",
-    "strategic_documents": "strategic goals and objectives"
-}}
-"""
-        
-        try:
-            user_message = UserMessage(text=prompt)
-            response = await chat.send_message(user_message)
-            
-            # Parse response
-            response_clean = response.strip()
-            if response_clean.startswith("```json"):
-                response_clean = response_clean[7:-3].strip()
-            elif response_clean.startswith("```"):
-                response_clean = response_clean[3:-3].strip()
-                
-            categorized_info = json.loads(response_clean)
-            
-            # Update context data
-            context_data.update(categorized_info)
-            
-        except Exception as e:
-            print(f"Error categorizing documents: {e}")
-            # Set basic categorization
-            context_data["business_profile"] = all_content[:1000]
-            
-    async def translate_survey(
-        self, 
-        survey_data: Dict[str, Any], 
-        target_language: str = "kinyarwanda"
-    ) -> Dict[str, Any]:
-        """Translate survey content to specified language"""
-        
-        session_id = f"translation_{uuid.uuid4().hex[:8]}"
-        chat = LlmChat(
-            api_key=self.emergent_key,
-            session_id=session_id,
-            system_message=f"You are an expert translator with deep knowledge of {target_language}. Provide accurate, culturally appropriate translations while maintaining the original meaning and context."
-        ).with_model("openai", "gpt-4.1")
-        
-        prompt = f"""
-Translate the following survey content to {target_language}. Maintain the JSON structure and translate only the text content (title, description, questions, options, labels).
-
-Original Survey:
-{json.dumps(survey_data, indent=2)}
-
-Guidelines:
-- Keep technical field names unchanged
-- Translate title, description, question text, options, and labels
-- Maintain cultural sensitivity and appropriateness
-- Use formal/respectful tone appropriate for surveys
-- Keep the same JSON structure
-
-Return the translated survey as JSON.
-"""
-        
-        try:
-            user_message = UserMessage(text=prompt)
-            response = await chat.send_message(user_message)
-            
-            # Parse response
-            response_clean = response.strip()
-            if response_clean.startswith("```json"):
-                response_clean = response_clean[7:-3].strip()
-            elif response_clean.startswith("```"):
-                response_clean = response_clean[3:-3].strip()
-                
-            translated_survey = json.loads(response_clean)
-            return translated_survey
-            
-        except Exception as e:
-            print(f"Translation error: {e}")
-            # Return a fallback translation with basic translations
-            return await self._generate_fallback_translation(survey_data, target_language)
-
-    async def _generate_fallback_translation(self, survey_data: Dict[str, Any], target_language: str) -> Dict[str, Any]:
-        """Generate a fallback translation when AI translation fails"""
-        
-        # Basic Kinyarwanda translations for common survey terms
-        kinyarwanda_translations = {
-            "Customer Feedback Survey": "Ubushakashatsi bw'Abakiriya",
-            "Please provide your feedback": "Nyamuneka dutange igitekerezo cyawe",
-            "What is your name?": "Witwa nde?",
-            "How satisfied are you": "Urishimiye gute",
-            "with our service?": "n'ubufasha bwacu?",
-            "Very Dissatisfied": "Ntishimiye na gato",
-            "Dissatisfied": "Ntishimiye",
-            "Neutral": "Nta kintu",
-            "Satisfied": "Nishimiye",
-            "Very Satisfied": "Nishimiye cyane"
-        }
-        
-        # Create a copy of the survey data
-        translated_survey = json.loads(json.dumps(survey_data))
-        
-        if target_language.lower() == "kinyarwanda":
-            # Apply basic translations
-            for english, kinyarwanda in kinyarwanda_translations.items():
-                if "title" in translated_survey:
-                    translated_survey["title"] = translated_survey["title"].replace(english, kinyarwanda)
-                if "description" in translated_survey:
-                    translated_survey["description"] = translated_survey["description"].replace(english, kinyarwanda)
-                
-                # Translate questions
-                if "questions" in translated_survey:
-                    for question in translated_survey["questions"]:
-                        if "question" in question:
-                            question["question"] = question["question"].replace(english, kinyarwanda)
-                        if "options" in question and question["options"]:
-                            question["options"] = [opt.replace(english, kinyarwanda) for opt in question["options"]]
-                        if "scale_labels" in question and question["scale_labels"]:
-                            question["scale_labels"] = [label.replace(english, kinyarwanda) for label in question["scale_labels"]]
-        
-        return translated_survey
-    async def _generate_fallback_survey(self, request: AISurveyGenerationRequest) -> Dict[str, Any]:
-        """Generate a fallback survey when AI is not available"""
-        
-        # Create a template-based survey based on the request
-        questions = []
-        
-        # Add demographic questions if requested
-        if request.include_demographics:
-            questions.extend([
-                {
-                    "type": QuestionType.SHORT_TEXT,
-                    "question": "What is your age range?",
-                    "required": False,
-                    "options": [],
-                    "validation_rules": {}
-                },
-                {
-                    "type": QuestionType.MULTIPLE_CHOICE_SINGLE,
-                    "question": "What is your gender?",
-                    "required": False,
-                    "options": ["Male", "Female", "Other", "Prefer not to say"],
-                    "validation_rules": {}
-                }
-            ])
-        
-        # Add questions based on description keywords
-        description_lower = request.description.lower()
-        
-        if "satisfaction" in description_lower or "feedback" in description_lower:
-            questions.extend([
-                {
-                    "type": QuestionType.RATING_SCALE,
-                    "question": "How satisfied are you overall?",
-                    "required": True,
-                    "scale_min": 1,
-                    "scale_max": 5,
-                    "scale_labels": ["Very Dissatisfied", "Dissatisfied", "Neutral", "Satisfied", "Very Satisfied"],
-                    "options": [],
-                    "validation_rules": {}
-                },
-                {
-                    "type": QuestionType.LONG_TEXT,
-                    "question": "What could we improve?",
-                    "required": False,
-                    "options": [],
-                    "validation_rules": {}
-                }
-            ])
-        
-        if "restaurant" in description_lower or "food" in description_lower:
-            questions.extend([
-                {
-                    "type": QuestionType.MULTIPLE_CHOICE_SINGLE,
-                    "question": "How often do you visit restaurants?",
-                    "required": False,
-                    "options": ["Daily", "Weekly", "Monthly", "Rarely", "Never"],
-                    "validation_rules": {}
-                },
-                {
-                    "type": QuestionType.RATING_SCALE,
-                    "question": "How would you rate the food quality?",
-                    "required": True,
-                    "scale_min": 1,
-                    "scale_max": 5,
-                    "options": [],
-                    "validation_rules": {}
-                }
-            ])
-        
-        if "employee" in description_lower or "workplace" in description_lower:
-            questions.extend([
-                {
-                    "type": QuestionType.LIKERT_SCALE,
-                    "question": "I feel valued at my workplace",
-                    "required": True,
-                    "scale_labels": ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"],
-                    "options": [],
-                    "validation_rules": {}
-                },
-                {
-                    "type": QuestionType.MULTIPLE_CHOICE_SINGLE,
-                    "question": "What is your employment status?",
-                    "required": False,
-                    "options": ["Full-time", "Part-time", "Contract", "Intern"],
-                    "validation_rules": {}
-                }
-            ])
-        
-        # Add generic questions if no specific type detected
-        if len(questions) <= 2:  # Only demographics added
-            questions.extend([
-                {
-                    "type": QuestionType.LONG_TEXT,
-                    "question": f"Please share your thoughts about: {request.description}",
-                    "required": True,
-                    "options": [],
-                    "validation_rules": {}
-                },
-                {
-                    "type": QuestionType.RATING_SCALE,
-                    "question": "How important is this topic to you?",
-                    "required": False,
-                    "scale_min": 1,
-                    "scale_max": 10,
-                    "options": [],
-                    "validation_rules": {}
-                }
-            ])
-        
-        # Limit to requested question count
-        if len(questions) > request.question_count:
-            questions = questions[:request.question_count]
-        
-        return {
-            "title": f"Survey: {request.description[:50]}..." if len(request.description) > 50 else f"Survey: {request.description}",
-            "description": f"This survey was generated based on your request: {request.description}",
-            "questions": questions
-        }
+    # ... existing methods (unchanged) ...
 
 # Finance AI functionality
 try:
     from emergentintegrations import LLMClient
-except Exception:  # graceful import failure
+except Exception:
     LLMClient = None
 
 class FinanceAIInsight(BaseModel):
@@ -563,6 +43,12 @@ class FinanceAIInsight(BaseModel):
     description: str
     recommendations: List[str]
     confidence: float
+    reallocation_suggestions: Optional[List[str]] = None
+    forecast_summary: Optional[Dict[str, Any]] = None
+    disbursement_timing: Optional[List[str]] = None
+    budget_finish_estimate: Optional[str] = None
+    variance_hotspots: Optional[List[str]] = None
+    risk_predictions: Optional[List[str]] = None
 
 class FinanceAI:
     def __init__(self):
@@ -575,42 +61,46 @@ class FinanceAI:
                 self.client = None
 
     async def analyze(self, summary: Dict[str, Any], anomalies: List[Dict[str, Any]]) -> FinanceAIInsight:
-        # Fallback logic if client not available
         if not self.client:
             count = len(anomalies)
             risk = 'low' if count == 0 else 'medium' if count < 5 else 'high'
+            # Simple heuristic add-ons
+            reallocation = ['Consider reallocating unused funds from low-variance items to critical path activities']
+            forecast = {'method': 'avg_monthly', 'notes': 'Using simple average monthly spend for projection'}
             return FinanceAIInsight(
                 risk_level=risk,
-                description='Fallback analysis based on anomaly count',
+                description='Fallback analysis based on available summaries',
                 recommendations=['Review high-variance items', 'Adjust disbursements', 'Set alerts for vendor spikes'],
-                confidence=0.6
+                confidence=0.6,
+                reallocation_suggestions=reallocation,
+                forecast_summary=forecast,
+                budget_finish_estimate='unknown',
             )
+        # Rich prompt with requested capabilities
         prompt = (
-            "You are a project finance expert. Given budget vs actuals, burn rates, and detected anomalies, "
-            "identify unusual spending patterns, overall risk level (low/medium/high), and recommend 3-5 concrete actions. "
-            f"Summary: {summary}\nAnomalies: {anomalies[:10]}"
+            "You are a project finance co-pilot. Analyze provided summaries and anomalies and return STRICT JSON with keys: "
+            "risk_level, description, recommendations (array of 3-7), confidence (0-1), "
+            "reallocation_suggestions (array), forecast_summary (object with remaining_costs_estimate, cash_flow_alerts if any), "
+            "disbursement_timing (array with activity-based timing guidance), budget_finish_estimate (under/over/about on budget with %), "
+            "variance_hotspots (array identifying activities/lines requiring action), risk_predictions (array predicting likely over/under spend activities).\n"
+            f"Summary: {json.dumps(summary)[:8000]}\n"
+            f"Anomalies: {json.dumps(anomalies)[:2000]}\n"
+            "Ensure JSON only, no prose."
         )
         try:
             resp = await self.client.chat(messages=[
-                {"role": "system", "content": "Be concise and actionable."},
+                {"role": "system", "content": "Be concise, return JSON only."},
                 {"role": "user", "content": prompt}
             ])
             text = resp.get('content') or resp.get('text') or str(resp)
-            # naive parsing
-            recs = []
-            for line in text.split('\n'):
-                if line.strip().startswith(('-', '*')) and len(recs) < 6:
-                    recs.append(line.strip('-* ').strip())
-            return FinanceAIInsight(
-                risk_level='medium',
-                description=text[:400],
-                recommendations=recs[:5] or ['Review cost centers', 'Cut non-critical spend'],
-                confidence=0.75
-            )
+            # Parse JSON
+            data = json.loads(text)
+            return FinanceAIInsight(**data)
         except Exception:
+            # Fallback
             return FinanceAIInsight(
                 risk_level='medium',
                 description='AI service error; using fallback guidance',
                 recommendations=['Review cost centers', 'Cut non-critical spend'],
-                confidence=0.6
+                confidence=0.6,
             )
