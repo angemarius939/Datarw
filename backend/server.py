@@ -440,4 +440,59 @@ async def ai_insights(payload: Dict[str, Any], organization_id: Optional[str] = 
           'confidence': 0.6 if count == 0 else 0.7 if count < 5 else 0.8,
       }
 
+
+# --------------- Finance Reports (XLSX) ---------------
+@api.get('/finance/reports/project-xlsx')
+async def finance_report_project_xlsx(project_id: str, organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    csv_text = await finance_service.project_report_csv(org, project_id, date_from, date_to)
+    # Convert CSV-like rows to DataFrames
+    dfs = []
+    parts = csv_text.split('\n\n') if '\n\n' in csv_text else [csv_text]
+    for idx, part in enumerate(parts):
+        lines = [l for l in part.split('\n') if l.strip()]
+        if not lines:
+            continue
+        header = lines[0].split(',')
+        rows = [r.split(',') for r in lines[1:]]
+        dfs.append(pd.DataFrame(rows, columns=header))
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        for i, df in enumerate(dfs):
+            sheet_name = 'Sheet' + str(i+1)
+            df.to_excel(writer, index=False, sheet_name=sheet_name)
+    output.seek(0)
+    filename = f"finance_project_{project_id}.xlsx"
+    return StreamingResponse(output, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={"Content-Disposition": f"attachment; filename={filename}"})
+
+@api.get('/finance/reports/activities-xlsx')
+async def finance_report_activities_xlsx(project_id: str, organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    csv_text = await finance_service.activities_report_csv(org, project_id, date_from, date_to)
+    lines = [l for l in csv_text.split('\n') if l.strip()]
+    header = lines[0].split(',') if lines else []
+    rows = [r.split(',') for r in lines[1:]]
+    df = pd.DataFrame(rows, columns=header)
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Activities')
+    output.seek(0)
+    filename = f"finance_activities_{project_id}.xlsx"
+    return StreamingResponse(output, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={"Content-Disposition": f"attachment; filename={filename}"})
+
+@api.get('/finance/reports/all-projects-xlsx')
+async def finance_report_all_projects_xlsx(organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    csv_text = await finance_service.all_projects_report_csv(org, date_from, date_to)
+    lines = [l for l in csv_text.split('\n') if l.strip()]
+    header = lines[0].split(',') if lines else []
+    rows = [r.split(',') for r in lines[1:]]
+    df = pd.DataFrame(rows, columns=header)
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='All Projects')
+    output.seek(0)
+    filename = "finance_all_projects.xlsx"
+    return StreamingResponse(output, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={"Content-Disposition": f"attachment; filename={filename}"})
+
 app.include_router(api)
