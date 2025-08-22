@@ -432,13 +432,26 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
           {/* Assigned Team (optional) */}
           <div>
             <Label htmlFor="assigned_team">Assigned Team (optional)</Label>
-            <Input
-              id="assigned_team"
-              value={activity.assigned_team}
-              onChange={(e) => setActivity(prev => ({ ...prev, assigned_team: e.target.value }))}
-              placeholder="Team/Department name"
-              className="mt-1"
-            />
+            <div className="flex space-x-2 mt-1">
+              <select
+                className="w-48 border rounded px-2"
+                value={activity.assigned_team}
+                onChange={(e) => setActivity(prev => ({ ...prev, assigned_team: e.target.value }))}
+              >
+                <option value="">Select team</option>
+                <option value="M&E">M&E</option>
+                <option value="Field">Field</option>
+                <option value="Data">Data</option>
+                <option value="Operations">Operations</option>
+              </select>
+              <Input
+                id="assigned_team"
+                value={activity.assigned_team}
+                onChange={(e) => setActivity(prev => ({ ...prev, assigned_team: e.target.value }))}
+                placeholder="Or type a custom team"
+                className="flex-1"
+              />
+            </div>
           </div>
 
           {/* Timeline */}
