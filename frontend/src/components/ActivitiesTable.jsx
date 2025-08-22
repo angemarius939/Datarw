@@ -859,6 +859,11 @@ const ActivitiesTable = () => {
                       {visibleCols.updated && (
                         <td className="p-2">{a.updated_at ? format(new Date(a.updated_at), 'yyyy-MM-dd HH:mm') : ''}</td>
                       )}
+                      <td className="p-2 text-right">
+                        <Button size="sm" variant="outline" onClick={() => openEdit(a)}>
+                          <EditIcon className="h-4 w-4 mr-1" /> Edit
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
