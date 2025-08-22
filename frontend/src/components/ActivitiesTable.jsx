@@ -148,6 +148,8 @@ const ActivitiesTable = () => {
       if (status !== 'all' && a.status !== status) return false;
       if (risk !== 'all' && a.risk_level !== risk) return false;
       if (team !== 'all' && (a.assigned_team || '') !== team) return false;
+      if (projectText && !((projectById[a.project_id]?.name || '').toLowerCase().includes(projectText.toLowerCase()))) return false;
+      if (teamText && !((a.assigned_team || '').toLowerCase().includes(teamText.toLowerCase()))) return false;
       if (s && !(`${a.name || ''} ${a.description || ''}`.toLowerCase().includes(s))) return false;
       if (descFilter && !(a.description || '').toLowerCase().includes(descFilter.toLowerCase())) return false;
       const budget = Number(a.budget_allocated || 0);
