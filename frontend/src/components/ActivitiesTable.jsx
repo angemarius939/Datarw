@@ -8,7 +8,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { projectsAPI, usersAPI } from '../services/api';
 import { useToast } from '../hooks/use-toast';
-import { Calendar, Filter, Download, Search, BookmarkPlus, X as XIcon, MoreVertical } from 'lucide-react';
+import { Calendar, Filter, Download, Search, BookmarkPlus, X as XIcon, MoreVertical, Edit as EditIcon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { format } from 'date-fns';
 import * as XLSX from 'xlsx';
