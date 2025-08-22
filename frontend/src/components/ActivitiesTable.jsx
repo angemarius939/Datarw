@@ -395,6 +395,11 @@ const ActivitiesTable = () => {
                         const d = new Date(v);
                         return isNaN(d.getTime()) ? null : d.toISOString();
                       };
+                      const projectsByName = {};
+                      projects.forEach(p => { if (p.name) projectsByName[p.name.toLowerCase()] = p; });
+                      const usersByName = {};
+                      users.forEach(u => { if (u.name) usersByName[u.name.toLowerCase()] = u; if (u.email) usersByName[u.email.toLowerCase()] = u; });
+
                       const mapped = rows.map(r => ({
                         project_id: r['Project ID'] || r['Project'] || '',
                         name: r['Activity Name'] || r['Name'] || r['Activity'] || '',
