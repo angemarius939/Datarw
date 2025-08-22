@@ -456,6 +456,8 @@ const ActivitiesTable = () => {
                       // Refresh table
                       const actsRes = await projectsAPI.getActivities();
                       setActivities(actsRes.data || []);
+                      setSelectedRows({});
+                      setPage(1);
                     } catch (err) {
                       console.error('CSV import failed', err);
                       toast({ title: 'Import failed', description: 'Could not import CSV. Check the format and required fields.', variant: 'destructive' });
