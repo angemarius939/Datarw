@@ -369,6 +369,10 @@ async def export_expenses_csv(
     csv = '\n'.join(lines)
     return PlainTextResponse(content=csv, media_type='text/csv')
 
+from io import BytesIO
+from fastapi.responses import StreamingResponse
+import pandas as pd
+
 # --------------- Finance Reports (CSV) ---------------
 @api.get('/finance/reports/project-csv', response_class=PlainTextResponse)
 async def finance_report_project_csv(project_id: str, organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
