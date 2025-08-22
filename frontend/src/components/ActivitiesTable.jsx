@@ -907,6 +907,83 @@ const ActivitiesTable = () => {
           </div>
         )}
       </CardContent>
+
+      {/* Edit Modal */}
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) closeEdit(); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Activity</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium">Name</label>
+              <Input value={editData.name || ''} onChange={e => setEditData({ ...editData, name: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Team</label>
+              <Input value={editData.assigned_team || ''} onChange={e => setEditData({ ...editData, assigned_team: e.target.value })} placeholder="M&E / Field / Data / Operations" />
+            </div>
+            <div className="col-span-2">
+              <label className="text-sm font-medium">Description</label>
+              <Input value={editData.description || ''} onChange={e => setEditData({ ...editData, description: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Risk</label>
+              <Select value={editData.risk_level} onValueChange={(v) => setEditData({ ...editData, risk_level: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Start Date</label>
+              <Input type="date" value={editData.start_date || ''} onChange={e => setEditData({ ...editData, start_date: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium">End Date</label>
+              <Input type="date" value={editData.end_date || ''} onChange={e => setEditData({ ...editData, end_date: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Target</label>
+              <Input type="number" value={editData.target_quantity} onChange={e => setEditData({ ...editData, target_quantity: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Achieved</label>
+              <Input type="number" value={editData.achieved_quantity} onChange={e => setEditData({ ...editData, achieved_quantity: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Unit</label>
+              <Select value={editData.measurement_unit || ''} onValueChange={(v) => setEditData({ ...editData, measurement_unit: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">(none)</SelectItem>
+                  <SelectItem value="count">count</SelectItem>
+                  <SelectItem value="people">people</SelectItem>
+                  <SelectItem value="households">households</SelectItem>
+                  <SelectItem value="km">km</SelectItem>
+                  <SelectItem value="km²">km²</SelectItem>
+                  <SelectItem value="liters">liters</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="RWF">RWF</SelectItem>
+                  <SelectItem value="%">%</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeEdit}>Cancel</Button>
+            <Button onClick={saveEdit}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
