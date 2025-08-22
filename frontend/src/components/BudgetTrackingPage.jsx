@@ -465,7 +465,7 @@ const BudgetTrackingPage = () => {
                           <span className="text-right">Planned: {row.planned.toLocaleString()}</span>
                           <span className="text-right">Allocated: {row.allocated.toLocaleString()}</span>
                           <span className="text-right">Actual: {row.actual.toLocaleString()}</span>
-                          <span className={`text-right ${row.variance_amount &lt; 0 ? 'text-red-600' : 'text-green-700'}`}>Var: {row.variance_amount.toLocaleString()} ({row.variance_pct.toFixed(1)}%)</span>
+                          <span className={`text-right ${row.variance_amount < 0 ? 'text-red-600' : 'text-green-700'}`}>Var: {row.variance_amount.toLocaleString()} ({row.variance_pct.toFixed(1)}%)</span>
                         </div>
                       ))}
                     </div>
