@@ -57,6 +57,17 @@ const ActivitiesTable = () => {
     return def;
   });
   const [selectedRows, setSelectedRows] = useState({});
+  const selectedCount = useMemo(() => Object.values(selectedRows).filter(Boolean).length, [selectedRows]);
+  const toggleRow = (id, checked) => {
+    setSelectedRows(prev => ({ ...prev, [id]: checked }));
+  };
+  const isRowSelected = (id) => !!selectedRows[id];
+  const togglePage = (checked) => {
+    const pageRows = filtered.slice((page-1)*pageSize, page*pageSize);
+    const next = { ...selectedRows };
+    pageRows.forEach(a => { next[a.id] = !!checked; });
+    setSelectedRows(next);
+  };
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const pageCount = Math.max(1, Math.ceil((activities || []).length / pageSize));
