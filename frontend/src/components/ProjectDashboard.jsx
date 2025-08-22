@@ -71,7 +71,8 @@ const ProjectDashboard = () => {
       if (response.ok) {
         const data = await response.json();
         console.log('📊 Dashboard Data:', data);
-        setDashboardData(data.data);
+        // Server returns the dashboard object directly (not wrapped)
+        setDashboardData(data);
       } else {
         const errorText = await response.text();
         console.error('📊 Dashboard Error Response:', errorText);
