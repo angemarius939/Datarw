@@ -324,7 +324,8 @@ class FinanceCSVTester:
                 csv_content = response.text
                 
                 # Verify it's CSV format
-                if response.headers.get('content-type') == 'text/csv':
+                content_type = response.headers.get('content-type', '')
+                if content_type.startswith('text/csv'):
                     # Check for expected headers (same as project CSV but without funding rows)
                     expected_headers = ["Project ID", "Planned", "Allocated", "Actual", "Variance Amount", "Variance %"]
                     lines = csv_content.strip().split('\n')
