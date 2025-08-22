@@ -269,7 +269,7 @@ export const financeAPI = {
 
   // Finance CSV Reports
   downloadProjectReportCSV: (projectId, params = {}) => api.get('/finance/reports/project-csv', { params: { project_id: projectId, ...params }, responseType: 'blob' }),
-  downloadActivitiesReportCSV: (projectId) => api.get('/finance/reports/activities-csv', { params: { project_id: projectId }, responseType: 'blob' }),
+  downloadActivitiesReportCSV: (projectId, params = {}) => api.get('/finance/reports/activities-csv', { params: { project_id: projectId, ...params }, responseType: 'blob' }),
   downloadAllProjectsReportCSV: (params = {}) => api.get('/finance/reports/all-projects-csv', { params, responseType: 'blob' }),
 };
 
