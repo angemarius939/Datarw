@@ -338,6 +338,20 @@ test_plan:
   test_priority: "high_first"
 
 
+backend:
+  - task: "Finance Phase 1 - Org Config, Expenses CRUD, CSV stubs, Analytics, AI Insights"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py, /app/backend/finance_service.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "main"
+          comment: "Implemented Phase 1 finance endpoints: org config (GET/PUT), expenses CRUD with server-side pagination, CSV import/export stubs, QuickBooks stub routes, analytics (burn rate, variance, forecast, funding utilization), and AI insights wired to FinanceAI with emergentintegrations fallback. Frontend BudgetTrackingPage added with tabs (Config, Expenses, Reports, AI) and integrated API calls. Needs backend route testing."
+
+
 - agent: "main"
   message: "FEATURE UPDATE: Implemented unit selector and Gantt bars. Backend models extended with optional measurement_unit on Activity/ActivityCreate/ActivityUpdate; progress update now accepts measurement_unit. Frontend CreateActivityModal now includes unit selector next to Target and Achieved quantities; EnhancedActivityTracker shows units and adds simple Gantt-style bar per row; Assigned Team input supports presets (M&E, Field, Data, Operations) plus free text. Ready for backend verification."
 
