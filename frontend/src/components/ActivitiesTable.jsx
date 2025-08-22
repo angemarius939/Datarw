@@ -219,7 +219,7 @@ const ActivitiesTable = () => {
         end_date: editData.end_date ? new Date(editData.end_date).toISOString() : undefined,
         target_quantity: editData.target_quantity === '' ? null : Number(editData.target_quantity),
         achieved_quantity: editData.achieved_quantity === '' ? null : Number(editData.achieved_quantity),
-        measurement_unit: editData.measurement_unit || null,
+        measurement_unit: editData.measurement_unit === 'none' ? null : editData.measurement_unit,
       };
       await projectsAPI.updateActivity(editing.id, payload);
       const actsRes = await projectsAPI.getActivities();
