@@ -4197,6 +4197,21 @@ class DataRWAPITester:
             self.test_enhanced_activity_creation_endpoints,
             self.test_enhanced_activity_edge_cases,
             self.test_delete_project,
+            # FINANCE PHASE 1 TESTS (NEW - PRIORITY)
+            self.test_finance_config_get_default,
+            self.test_finance_config_update_and_persist,
+            self.test_create_simple_project_for_expenses,
+            self.test_create_expense,
+            self.test_list_expenses_with_pagination_and_filters,
+            self.test_update_expense,
+            self.test_delete_expense,
+            self.test_analytics_burn_rate,
+            self.test_analytics_variance,
+            self.test_analytics_forecast,
+            self.test_analytics_funding_utilization,
+            self.test_csv_import_stub,
+            self.test_csv_export,
+            self.test_ai_insights,
             # Cleanup tests
             self.test_delete_user,
             self.test_delete_survey
