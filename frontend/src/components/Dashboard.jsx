@@ -523,7 +523,70 @@ const Dashboard = ({ onUpgrade }) => {
 
           {activeTab === 'data' && (
             <div className="space-y-6">
-              {/* ... unchanged content ... */}
+              <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold text-gray-900">Data Management</h1>
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export All Data
+                </Button>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Surveys Data</CardTitle>
+                  <CardDescription>Quick overview of your collected responses</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-3 gap-6 text-sm">
+                    <div>
+                      <div className="text-gray-600">Total Surveys</div>
+                      <div className="text-xl font-semibold">{surveys.length}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-600">Total Responses</div>
+                      <div className="text-xl font-semibold">{analytics?.total_responses?.toLocaleString() || '0'}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-600">Response Rate</div>
+                      <div className="text-xl font-semibold">{`${analytics?.response_rate?.toFixed(1) || 0}%`}</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Surveys</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {(surveys || []).length === 0 ? (
+                    <p className="text-gray-500">No surveys yet.</p>
+                  ) : (
+                    <div className="overflow-x-auto border rounded">
+                      <table className="min-w-full text-sm">
+                        <thead className="bg-gray-50 text-gray-600">
+                          <tr>
+                            <th className="text-left p-2">Title</th>
+                            <th className="text-left p-2">Status</th>
+                            <th className="text-left p-2">Responses</th>
+                            <th className="text-left p-2">Updated</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {surveys.slice(0, 10).map(s => (
+                            <tr key={s.id} className="border-t hover:bg-gray-50">
+                              <td className="p-2">{s.title}</td>
+                              <td className="p-2">{s.status}</td>
+                              <td className="p-2">{s.responses_count || 0}</td>
+                              <td className="p-2">{s.updated_at ? new Date(s.updated_at).toLocaleDateString() : '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           )}
 
