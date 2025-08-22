@@ -173,10 +173,16 @@ class FinanceService:
             })
         return {"by_project": result}
 
-    async def burn_rate(self, organization_id: str, period: str = "monthly") -> Dict[str, Any]:
+    async def burn_rate(self, organization_id: str, period: str = "monthly", project_id: Optional[str] = None, date_from: Optional[str] = None, date_to: Optional[str] = None) -> Dict[str, Any]:
         now = datetime.utcnow()
         start = now - timedelta(days=365)
         match = {"organization_id": organization_id, "date": {"$gte": start}}
+        if project_id:
+            match["project_id"] = project_id
+        if date_from:
+            match.setdefault("date", {})["$gte"] = datetime.fromisoformat(date_from)
+        if date_to:
+            match.setdefault("date", {})["$lte"] = datetime.fromisoformat(date_to)
         if period == "quarterly":
             group_id = {"year": {"$year": "$date"}, "quarter": {"$ceil": {"$divide": [{"$month": "$date"}, 3]}}}
             label_build = lambda g: f"{int(g['year'])}-Q{int(g['quarter'])}"
