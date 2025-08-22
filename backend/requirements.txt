@@ -27,3 +27,4 @@ emergentintegrations>=0.1.0
 matplotlib==3.8.2
 seaborn==0.13.0
 reportlab==4.0.7
+emergentintegrations>=0.1.0
