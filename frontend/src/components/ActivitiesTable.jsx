@@ -393,7 +393,7 @@ const ActivitiesTable = () => {
           </div>
         </div>
 
-        {/* Export options */}
+        {/* Import/Export options */}
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600">Format</span>
