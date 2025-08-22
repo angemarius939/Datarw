@@ -47,8 +47,31 @@ if not MONGO_URL:
     raise RuntimeError('MONGO_URL not configured')
 
 client = AsyncIOMotorClient(MONGO_URL)
-_db_name = os.environ.get('DB_NAME') or os.environ.get('MONGO_DB_NAME') or 'datarw_database'
-db = client[_db_name]
+
+# Auto-detect database containing prior data if configured DB is empty
+def select_database(client: AsyncIOMotorClient) -> Any:
+    configured = os.environ.get('DB_NAME') or os.environ.get('MONGO_DB_NAME') or 'datarw_database'
+    try:
+        db = client[configured]
+        # Check if projects or activities exist
+        if db.projects.estimated_document_count() > 0 or db.activities.estimated_document_count() > 0:
+            return db
+        # Fallback: scan databases
+        for name in client.list_database_names():
+            if name in ('admin', 'local', 'config'):
+                continue
+            cand = client[name]
+            try:
+                if cand.projects.estimated_document_count() > 0 or cand.activities.estimated_document_count() > 0:
+                    return cand
+            except Exception:
+                continue
+        return db
+    except Exception:
+        return client[configured]
+
+_db = select_database(client)
+db = _db
 
 project_service = ProjectService(db)
 finance_service = FinanceService(db)
