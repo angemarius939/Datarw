@@ -231,6 +231,7 @@ class FinanceService:
 
     async def project_report_csv(self, organization_id: str, project_id: str, date_from: Optional[str] = None, date_to: Optional[str] = None) -> str:
         # Budget vs Actual for a single project + funding utilization
+        # Apply optional date filters by temporarily scoping expenses aggregation
         variance = await self.budget_vs_actual(organization_id, project_id)
         fu = await self.funding_utilization(organization_id)
         headers = ["Project ID","Planned","Allocated","Actual","Variance Amount","Variance %"]
