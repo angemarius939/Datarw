@@ -256,6 +256,15 @@ const ActivitiesTable = () => {
         </div>
         {/* Filters */}
         <div className="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3">
+          {/* Quick filter chips */}
+          <div className="md:col-span-6 flex flex-wrap gap-2">
+            {['not_started','in_progress','completed','delayed'].map(s => (
+              <Button key={s} size="sm" variant={status === s ? 'default' : 'outline'} onClick={() => setStatus(s)}>
+                {s.replace('_',' ')}
+              </Button>
+            ))}
+            <Button size="sm" variant={status === 'all' ? 'default' : 'outline'} onClick={() => setStatus('all')}>All status</Button>
+          </div>
           <div className="col-span-2">
             <div className="flex items-center border rounded px-2 py-1 bg-white">
               <Search className="h-4 w-4 text-gray-400" />
