@@ -959,12 +959,12 @@ const ActivitiesTable = () => {
             </div>
             <div>
               <label className="text-sm font-medium">Unit</label>
-              <Select value={editData.measurement_unit || ''} onValueChange={(v) => setEditData({ ...editData, measurement_unit: v })}>
+              <Select value={editData.measurement_unit} onValueChange={(v) => setEditData({ ...editData, measurement_unit: v })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Unit" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">(none)</SelectItem>
+                  <SelectItem value="none">(none)</SelectItem>
                   <SelectItem value="count">count</SelectItem>
                   <SelectItem value="people">people</SelectItem>
                   <SelectItem value="households">households</SelectItem>
