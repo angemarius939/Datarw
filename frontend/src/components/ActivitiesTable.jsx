@@ -478,6 +478,24 @@ const ActivitiesTable = () => {
             <Button variant="outline" onClick={exportToExcel}>
               <Download className="h-4 w-4 mr-2" /> Export Excel
             </Button>
+            <Button variant="outline" onClick={() => {
+              const headers = ['Activity ID','Project ID','Project','Activity Name','Description','Assigned Person ID','Assigned Person','Assigned Team','Start Date','End Date','Planned Start','Planned End','Budget Allocated','Planned Output','Target','Achieved','Unit','Notes','Risk','Milestones','Deliverables'];
+              const example = [[
+                '','proj-123','Water Access Program','Drill boreholes in sector A','Borehole drilling and setup','user-456','Jane Doe','Field','2025-06-01','2025-07-15','2025-06-01','2025-06-30','50000','10 boreholes','10','0','count','Initial planning','medium','Milestone 1 (2025-06-10); Milestone 2 (2025-07-01)','Pump; Pipes'
+              ]];
+              const csv = [headers.join(','), ...example.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','))].join('\n');
+              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.setAttribute('download', 'activities_template.csv');
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+            }}>
+              <Download className="h-4 w-4 mr-2" /> Download CSV Template
+            </Button>
           </div>
         </div>
 
