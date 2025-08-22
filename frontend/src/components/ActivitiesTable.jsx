@@ -246,6 +246,9 @@ const ActivitiesTable = () => {
             <CardDescription>Browse, filter and export your activities</CardDescription>
           </div>
           <div className="flex items-center space-x-2">
+            <Button variant="outline" onClick={exportToCSV}>
+              <Download className="h-4 w-4 mr-2" /> Export CSV
+            </Button>
             <Button variant="outline" onClick={exportToExcel}>
               <Download className="h-4 w-4 mr-2" /> Export Excel
             </Button>
