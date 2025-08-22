@@ -302,4 +302,9 @@ async def finance_report_all_projects_pdf(organization_id: Optional[str] = Query
     buf.close()
     return StreamingResponse(BytesIO(pdf), media_type='application/pdf', headers={"Content-Disposition": f"attachment; filename=finance_all_projects.pdf"})
 
+@api.get('/finance/burn-rate')
+async def burn_rate(period: str = 'monthly', organization_id: Optional[str] = Query(None), project_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    return await finance_service.burn_rate(org, period, project_id, date_from, date_to)
+
 app.include_router(api)
