@@ -194,6 +194,7 @@ const EnhancedActivityTracker = ({ dashboardData, onDataRefresh }) => {
       actual_output: activity.actual_output || '',
       achieved_quantity: activity.achieved_quantity || 0,
       status_notes: activity.status_notes || '',
+      measurement_unit: activity.measurement_unit || '',
       milestone_completed: ''
     });
 
