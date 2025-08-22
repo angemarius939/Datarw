@@ -15,6 +15,30 @@ class FinanceService:
     def __init__(self, db: AsyncIOMotorDatabase):
         self.db = db
 
+    # -------------------- Organization Finance Config --------------------
+    async def get_org_config(self, organization_id: str) -> Dict[str, Any]:
+        doc = await self.db.org_finance_configs.find_one({"organization_id": organization_id})
+        if not doc:
+            return {
+                "organization_id": organization_id,
+                "funding_sources": ["World Bank", "Mastercard Foundation", "USAID", "UNDP"],
+                "cost_centers": ["HR", "Operations", "Field Work", "M&E", "Project officers"],
+                "updated_at": datetime.utcnow().isoformat()
+            }
+        doc.pop("_id", None)
+        return doc
+
+    async def update_org_config(self, organization_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
+        allowed = {k: v for k, v in updates.items() if k in ("funding_sources", "cost_centers") and isinstance(v, list)}
+        allowed["updated_at"] = datetime.utcnow().isoformat()
+        allowed["organization_id"] = organization_id
+        await self.db.org_finance_configs.update_one(
+            {"organization_id": organization_id},
+            {"$set": allowed},
+            upsert=True
+        )
+        return await self.get_org_config(organization_id)
+
     # -------------------- Expenses CRUD --------------------
     async def create_expense(self, data: ExpenseCreate, organization_id: str, user_id: str) -> Expense:
         payload = data.model_dump()
