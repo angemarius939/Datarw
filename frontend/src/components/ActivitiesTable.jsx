@@ -89,6 +89,8 @@ const ActivitiesTable = () => {
   const [team, setTeam] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [projectText, setProjectText] = useState('');
+  const [teamText, setTeamText] = useState('');
 
   useEffect(() => {
     const load = async () => {
