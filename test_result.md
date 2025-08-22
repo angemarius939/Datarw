@@ -337,6 +337,10 @@ test_plan:
   test_all: false
   test_priority: "high_first"
 
+
+- agent: "main"
+  message: "FEATURE UPDATE: Implemented unit selector and Gantt bars. Backend models extended with optional measurement_unit on Activity/ActivityCreate/ActivityUpdate; progress update now accepts measurement_unit. Frontend CreateActivityModal now includes unit selector next to Target and Achieved quantities; EnhancedActivityTracker shows units and adds simple Gantt-style bar per row; Assigned Team input supports presets (M&E, Field, Data, Operations) plus free text. Ready for backend verification."
+
 agent_communication:
   - agent: "main"
     message: "Refactored CreateActivityModal to support PMS specs: added assigned person dropdown (from /api/users), planned/actual outputs with quantities, inline milestones (name + target date), risk level, planned timeline overrides, validations (dates, numbers, milestones), and initial actual output + notes. Backend aligned: create_activity now auto-stamps last_updated_by and ensures planned dates fallback. Ready for backend testing."
