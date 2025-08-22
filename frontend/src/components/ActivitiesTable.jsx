@@ -157,17 +157,24 @@ const ActivitiesTable = () => {
 
   const projectById = useMemo(() => {
     const map = {};
-    (projects || []).forEach(p => { map[p.id || p._id] = p; if (p._id) map[p._id] = p; });
+    (projects || []).forEach(p => {
+      if (p.id) map[p.id] = p;
+      if (p._id) map[p._id] = p;
+    });
     return map;
   }, [projects]);
 
   const getProjectName = (a) => {
-    const key = a.project_id;
-    const fromMap = projectById[key]?.name;
-    if (fromMap) return fromMap;
-    const found = (projects || []).find(p => (p.id === key || p._id === key));
-    if (found?.name) return found.name;
-    return a.project_name || a.project || key;
+    const candidates = [a.project_id, a.projectId, a.project, a.project_ref, a.project_uuid];
+    for (const key of candidates) {
+      if (!key) continue;
+      if (projectById[key]?.name) return projectById[key].name;
+      const byName = (projects || []).find(p => p.name === key);
+      if (byName?.name) return byName.name;
+      const byId = (projects || []).find(p => (p.id === key || p._id === key));
+      if (byId?.name) return byId.name;
+    }
+    return a.project_name || a.project || a.project_id || '';
   };
 
   const teams = useMemo(() => {
