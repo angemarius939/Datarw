@@ -192,6 +192,45 @@ const ActivitiesTable = () => {
   }, [activities, projectId, status, risk, team, search, dateFrom, dateTo, descFilter, minBudget, maxBudget, projectText, teamText, projectById]);
 
   const currentPageRows = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
+
+  // Edit modal state
+  const [editing, setEditing] = useState(null); // activity object
+  const [editData, setEditData] = useState({});
+  const openEdit = (a) => { setEditing(a); setEditData({
+    name: a.name || '',
+    description: a.description || '',
+    assigned_team: a.assigned_team || '',
+    risk_level: a.risk_level || 'low',
+    start_date: a.start_date ? a.start_date.slice(0,10) : '',
+    end_date: a.end_date ? a.end_date.slice(0,10) : '',
+    target_quantity: a.target_quantity ?? '',
+    achieved_quantity: a.achieved_quantity ?? '',
+    measurement_unit: a.measurement_unit || '',
+  }); };
+  const closeEdit = () => { setEditing(null); setEditData({}); };
+  const saveEdit = async () => {
+    try {
+      const payload = {
+        name: editData.name,
+        description: editData.description,
+        assigned_team: editData.assigned_team,
+        risk_level: editData.risk_level,
+        start_date: editData.start_date ? new Date(editData.start_date).toISOString() : undefined,
+        end_date: editData.end_date ? new Date(editData.end_date).toISOString() : undefined,
+        target_quantity: editData.target_quantity === '' ? null : Number(editData.target_quantity),
+        achieved_quantity: editData.achieved_quantity === '' ? null : Number(editData.achieved_quantity),
+        measurement_unit: editData.measurement_unit || null,
+      };
+      await projectsAPI.updateActivity(editing.id, payload);
+      const actsRes = await projectsAPI.getActivities();
+      setActivities(actsRes.data || []);
+      closeEdit();
+      toast({ title: 'Updated', description: 'Activity updated successfully' });
+    } catch (e) {
+      console.error('Update failed', e);
+      toast({ title: 'Update failed', description: 'Could not update activity', variant: 'destructive' });
+    }
+  };
   const togglePage = (checked) => {
     const next = { ...selectedRows };
     currentPageRows.forEach(a => { next[a.id] = !!checked; });
