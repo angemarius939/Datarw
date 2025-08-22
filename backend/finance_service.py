@@ -51,6 +51,8 @@ class FinanceService:
             "updated_at": now,
         })
         await self.db.expenses.insert_one(payload)
+        # Convert ObjectId to string for serialization
+        payload["_id"] = str(payload.get("_id"))
         return Expense(**payload)
 
     async def list_expenses(self, organization_id: str, filters: Dict[str, Any], page: int = 1, page_size: int = 20) -> Dict[str, Any]:
