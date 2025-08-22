@@ -368,6 +368,9 @@ backend:
 
 - agent: "main"
   message: "FEATURE UPDATE: Implemented unit selector and Gantt bars. Backend models extended with optional measurement_unit on Activity/ActivityCreate/ActivityUpdate; progress update now accepts measurement_unit. Frontend CreateActivityModal now includes unit selector next to Target and Achieved quantities; EnhancedActivityTracker shows units and adds simple Gantt-style bar per row; Assigned Team input supports presets (M&E, Field, Data, Operations) plus free text. Ready for backend verification."
+  - agent: "main"
+    message: "Added finance CSV report endpoints: /api/finance/reports/project-csv, activities-csv, all-projects-csv and wired frontend download buttons in BudgetTrackingPage."
+
 
 agent_communication:
   - agent: "main"
