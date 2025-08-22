@@ -150,6 +150,56 @@ const ActivitiesTable = () => {
     localStorage.setItem('activities_table_columns', JSON.stringify(next));
   };
 
+  const exportToCSV = () => {
+    try {
+      const headers = [
+        'Activity Name','Project','Assigned Person','Assigned Team','Status','Risk Level','Start Date','End Date','Planned Start','Planned End','Progress %','Target','Achieved','Planned Output','Actual Output','Budget Allocated','Budget Utilized','Schedule Variance (days)','Completion Variance %','Last Updated','Milestones','Deliverables'
+      ];
+      const lines = filtered.map(a => {
+        const milestones = (a.milestones || []).map(m => `${m.name || ''} (${m.target_date ? format(new Date(m.target_date), 'yyyy-MM-dd') : ''})`).join('; ');
+        const deliverables = (a.deliverables || []).join('; ');
+        const row = [
+          a.name,
+          projectById[a.project_id]?.name || a.project_id,
+          userById[a.assigned_to]?.name || a.assigned_to,
+          a.assigned_team || '',
+          (a.status || '').replace('_', ' '),
+          a.risk_level || '',
+          a.start_date ? format(new Date(a.start_date), 'yyyy-MM-dd') : '',
+          a.end_date ? format(new Date(a.end_date), 'yyyy-MM-dd') : '',
+          a.planned_start_date ? format(new Date(a.planned_start_date), 'yyyy-MM-dd') : '',
+          a.planned_end_date ? format(new Date(a.planned_end_date), 'yyyy-MM-dd') : '',
+          a.progress_percentage ?? 0,
+          a.target_quantity != null ? `${a.target_quantity}${a.measurement_unit ? ' ' + a.measurement_unit : ''}` : '',
+          a.achieved_quantity != null ? `${a.achieved_quantity}${a.measurement_unit ? ' ' + a.measurement_unit : ''}` : '',
+          a.planned_output || '',
+          a.actual_output || '',
+          a.budget_allocated ?? 0,
+          a.budget_utilized ?? 0,
+          a.schedule_variance_days ?? 0,
+          a.completion_variance ?? 0,
+          a.updated_at ? format(new Date(a.updated_at), 'yyyy-MM-dd HH:mm') : '',
+          milestones,
+          deliverables
+        ];
+        return row.map(v => (v === null || v === undefined) ? '' : String(v).replace(/\n/g, ' ')).join(',');
+      });
+      const csv = [headers.join(','), ...lines].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'activities.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('CSV export error', e);
+      toast({ title: 'Export failed', description: 'Unable to export to CSV', variant: 'destructive' });
+    }
+  };
+
   const exportToExcel = () => {
     try {
       const rows = filtered.map(a => ({
