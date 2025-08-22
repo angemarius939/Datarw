@@ -266,6 +266,16 @@ const ActivitiesTable = () => {
             <CardDescription>Browse, filter and export your activities</CardDescription>
           </div>
           <div className="flex items-center space-x-2">
+            {selectedCount > 0 && (
+              <Button variant="default" onClick={() => exportToCSV(true)}>
+                <Download className="h-4 w-4 mr-2" /> Selected to CSV ({selectedCount})
+              </Button>
+            )}
+            {selectedCount > 0 && (
+              <Button variant="default" onClick={() => exportToExcel(true)}>
+                <Download className="h-4 w-4 mr-2" /> Selected to Excel ({selectedCount})
+              </Button>
+            )}
             <Button variant="outline" onClick={exportToCSV}>
               <Download className="h-4 w-4 mr-2" /> Export CSV
             </Button>
