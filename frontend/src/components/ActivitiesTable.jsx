@@ -8,10 +8,9 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { projectsAPI, usersAPI } from '../services/api';
 import { useToast } from '../hooks/use-toast';
-import { Calendar, Filter, Download, RefreshCcw, Search } from 'lucide-react';
+import { Calendar, Filter, Download, Search, BookmarkPlus, X as XIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import * as XLSX from 'xlsx';
-//
 
 const statusColors = {
   completed: 'bg-green-100 text-green-800 border-green-200',
@@ -46,9 +45,29 @@ const DEFAULT_COLUMNS = [
   { key: 'updated', label: 'Updated', default: true }
 ];
 
+// Map visibleCols keys to export header labels (nested/default export)
+const EXPORT_HEADER_MAP = {
+  name: 'Activity Name',
+  project: 'Project',
+  assigned: 'Assigned Person',
+  team: 'Assigned Team',
+  status: 'Status',
+  risk: 'Risk Level',
+  start: 'Start Date',
+  end: 'End Date',
+  progress: 'Progress %',
+  target: 'Target',
+  achieved: 'Achieved',
+  budget: 'Budget Allocated',
+  schedule_var: 'Schedule Variance (days)',
+  completion_var: 'Completion Variance %',
+  updated: 'Last Updated',
+};
+
 const ActivitiesTable = () => {
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
+
+  // Columns visibility
   const [visibleCols, setVisibleCols] = useState(() => {
     const saved = localStorage.getItem('activities_table_columns');
     if (saved) return JSON.parse(saved);
@@ -56,33 +75,127 @@ const ActivitiesTable = () => {
     DEFAULT_COLUMNS.forEach(c => { def[c.key] = c.default; });
     return def;
   });
+
+  // Data
+  const [loading, setLoading] = useState(true);
+  const [activities, setActivities] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [users, setUsers] = useState([]);
+
+  // Row selection
   const [selectedRows, setSelectedRows] = useState({});
   const selectedCount = useMemo(() => Object.values(selectedRows).filter(Boolean).length, [selectedRows]);
-  const toggleRow = (id, checked) => {
-    setSelectedRows(prev => ({ ...prev, [id]: checked }));
-  };
   const isRowSelected = (id) => !!selectedRows[id];
-  const togglePage = (checked) => {
-    const pageRows = filtered.slice((page-1)*pageSize, page*pageSize);
-    const next = { ...selectedRows };
-    pageRows.forEach(a => { next[a.id] = !!checked; });
-    setSelectedRows(next);
-  };
+  const toggleRow = (id, checked) => setSelectedRows(prev => ({ ...prev, [id]: !!checked }));
+
+  // Paging
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const pageCount = Math.max(1, Math.ceil((activities || []).length / pageSize));
-  const pageNumbers = Array.from({ length: Math.min(5, pageCount) }, (_, i) => i + 1);
+
+  // Filters
+  const [search, setSearch] = useState('');
+  const [projectId, setProjectId] = useState('all');
+  const [status, setStatus] = useState('all');
+  const [risk, setRisk] = useState('all');
+  const [team, setTeam] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  // Per-column filters
+  const [descFilter, setDescFilter] = useState('');
+  const [minBudget, setMinBudget] = useState('');
+  const [maxBudget, setMaxBudget] = useState('');
+  const [projectText, setProjectText] = useState('');
+  const [teamText, setTeamText] = useState('');
 
   // Export options
   const [exportFormat, setExportFormat] = useState('nested'); // 'nested' | 'wide'
   const [exportVisibleOnly, setExportVisibleOnly] = useState(false);
 
-  // Saved filter presets
+  // Presets
   const [presets, setPresets] = useState(() => {
     try { return JSON.parse(localStorage.getItem('activities_filter_presets') || '[]'); } catch { return []; }
   });
   const [presetName, setPresetName] = useState('');
 
+  const persistCols = (next) => {
+    setVisibleCols(next);
+    localStorage.setItem('activities_table_columns', JSON.stringify(next));
+  };
+
+  // Load data
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        const [actsRes, projsRes, usersRes] = await Promise.all([
+          projectsAPI.getActivities(),
+          projectsAPI.getProjects(),
+          usersAPI.getUsers()
+        ]);
+        setActivities(actsRes.data || []);
+        setProjects(projsRes.data || []);
+        setUsers(usersRes.data || []);
+      } catch (e) {
+        console.error('Failed to load activities table data', e);
+        toast({ title: 'Error', description: 'Failed to load activities data', variant: 'destructive' });
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  // Maps
+  const userById = useMemo(() => {
+    const map = {};
+    (users || []).forEach(u => { map[u.id] = u; });
+    return map;
+  }, [users]);
+
+  const projectById = useMemo(() => {
+    const map = {};
+    (projects || []).forEach(p => { map[p.id || p._id] = p; map[p._id] = p; });
+    return map;
+  }, [projects]);
+
+  const teams = useMemo(() => {
+    const preset = ['M&E', 'Field', 'Data', 'Operations'];
+    const found = new Set(preset);
+    (activities || []).forEach(a => { if (a.assigned_team) found.add(a.assigned_team); });
+    return Array.from(found);
+  }, [activities]);
+
+  // Filters
+  const filtered = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    const from = dateFrom ? new Date(dateFrom) : null;
+    const to = dateTo ? new Date(dateTo) : null;
+    return (activities || []).filter(a => {
+      if (projectId !== 'all' && a.project_id !== projectId) return false;
+      if (status !== 'all' && a.status !== status) return false;
+      if (risk !== 'all' && a.risk_level !== risk) return false;
+      if (team !== 'all' && (a.assigned_team || '') !== team) return false;
+      if (s && !(`${a.name || ''} ${a.description || ''}`.toLowerCase().includes(s))) return false;
+      if (descFilter && !(a.description || '').toLowerCase().includes(descFilter.toLowerCase())) return false;
+      if (projectText && !((projectById[a.project_id]?.name || '').toLowerCase().includes(projectText.toLowerCase()))) return false;
+      if (teamText && !((a.assigned_team || '').toLowerCase().includes(teamText.toLowerCase()))) return false;
+      const budget = Number(a.budget_allocated || 0);
+      if (minBudget !== '' && budget < Number(minBudget)) return false;
+      if (maxBudget !== '' && budget > Number(maxBudget)) return false;
+      if (from) { const sd = a.start_date ? new Date(a.start_date) : null; if (sd && sd < from) return false; }
+      if (to) { const ed = a.end_date ? new Date(a.end_date) : null; if (ed && ed > to) return false; }
+      return true;
+    });
+  }, [activities, projectId, status, risk, team, search, dateFrom, dateTo, descFilter, minBudget, maxBudget, projectText, teamText, projectById]);
+
+  const currentPageRows = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
+  const togglePage = (checked) => {
+    const next = { ...selectedRows };
+    currentPageRows.forEach(a => { next[a.id] = !!checked; });
+    setSelectedRows(next);
+  };
+
+  // Presets handlers
   const savePreset = () => {
     const name = (presetName || '').trim();
     if (!name) { toast({ title: 'Name required', description: 'Please provide a name for the preset', variant: 'destructive' }); return; }
@@ -121,103 +234,8 @@ const ActivitiesTable = () => {
     localStorage.setItem('activities_filter_presets', JSON.stringify(next));
   };
 
-
-  const [activities, setActivities] = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [users, setUsers] = useState([]);
-
-  // Filters
-  const [search, setSearch] = useState('');
-  const [projectId, setProjectId] = useState('all');
-  const [status, setStatus] = useState('all');
-  const [risk, setRisk] = useState('all');
-  const [team, setTeam] = useState('all');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [projectText, setProjectText] = useState('');
-  const [teamText, setTeamText] = useState('');
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const [actsRes, projsRes, usersRes] = await Promise.all([
-          projectsAPI.getActivities(),
-          projectsAPI.getProjects(),
-          usersAPI.getUsers()
-        ]);
-        setActivities(actsRes.data);
-        setProjects(projsRes.data);
-        setUsers(usersRes.data);
-      } catch (e) {
-        console.error('Failed to load activities table data', e);
-        toast({ title: 'Error', description: 'Failed to load activities data', variant: 'destructive' });
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
-
-  const userById = useMemo(() => {
-    const map = {};
-    (users || []).forEach(u => { map[u.id] = u; });
-    return map;
-  }, [users]);
-
-  const projectById = useMemo(() => {
-    const map = {};
-    (projects || []).forEach(p => { map[p.id || p._id] = p; map[p._id] = p; });
-    return map;
-  }, [projects]);
-
-  const teams = useMemo(() => {
-    // derive from activities + presets
-    const preset = ['M&E', 'Field', 'Data', 'Operations'];
-    const found = new Set(preset);
-    activities.forEach(a => { if (a.assigned_team) found.add(a.assigned_team); });
-    return Array.from(found);
-  }, [activities]);
-
-  // Per-column filters
-  const [descFilter, setDescFilter] = useState('');
-  const [minBudget, setMinBudget] = useState('');
-  const [maxBudget, setMaxBudget] = useState('');
-
-  const filtered = useMemo(() => {
-    const s = search.trim().toLowerCase();
-    const from = dateFrom ? new Date(dateFrom) : null;
-    const to = dateTo ? new Date(dateTo) : null;
-    return (activities || []).filter(a => {
-      if (projectId !== 'all' && a.project_id !== projectId) return false;
-      if (status !== 'all' && a.status !== status) return false;
-      if (risk !== 'all' && a.risk_level !== risk) return false;
-      if (team !== 'all' && (a.assigned_team || '') !== team) return false;
-      if (projectText && !((projectById[a.project_id]?.name || '').toLowerCase().includes(projectText.toLowerCase()))) return false;
-      if (teamText && !((a.assigned_team || '').toLowerCase().includes(teamText.toLowerCase()))) return false;
-      if (s && !(`${a.name || ''} ${a.description || ''}`.toLowerCase().includes(s))) return false;
-      if (descFilter && !(a.description || '').toLowerCase().includes(descFilter.toLowerCase())) return false;
-      const budget = Number(a.budget_allocated || 0);
-      if (minBudget !== '' && budget < Number(minBudget)) return false;
-      if (maxBudget !== '' && budget > Number(maxBudget)) return false;
-      if (from) {
-        const sd = a.start_date ? new Date(a.start_date) : null;
-        if (sd && sd < from) return false;
-      }
-      if (to) {
-        const ed = a.end_date ? new Date(a.end_date) : null;
-        if (ed && ed > to) return false;
-      }
-      return true;
-    });
-  }, [activities, projectId, status, risk, team, search, dateFrom, dateTo]);
-
-  const persistCols = (next) => {
-    setVisibleCols(next);
-    localStorage.setItem('activities_table_columns', JSON.stringify(next));
-  };
-
-  const buildExportRows = (rows, visibleOnly = false, wide = false) => {
+  // Export helpers
+  const buildExportRows = (rows, wide = false) => {
     if (!wide) {
       return rows.map(a => ({
         'Activity Name': a.name,
@@ -264,57 +282,46 @@ const ActivitiesTable = () => {
         'Budget Utilized': a.budget_utilized ?? 0,
       };
       (a.milestones || []).forEach((m, idx) => {
-        base[`Milestone ${idx+1} Name`] = m.name || '';
-        base[`Milestone ${idx+1} Date`] = m.target_date ? format(new Date(m.target_date), 'yyyy-MM-dd') : '';
+        base[`Milestone ${idx + 1} Name`] = m.name || '';
+        base[`Milestone ${idx + 1} Date`] = m.target_date ? format(new Date(m.target_date), 'yyyy-MM-dd') : '';
       });
       for (let i = (a.milestones || []).length; i < maxMilestones; i++) {
-        base[`Milestone ${i+1} Name`] = '';
-        base[`Milestone ${i+1} Date`] = '';
+        base[`Milestone ${i + 1} Name`] = '';
+        base[`Milestone ${i + 1} Date`] = '';
       }
       (a.deliverables || []).forEach((d, idx) => {
-        base[`Deliverable ${idx+1}`] = d;
+        base[`Deliverable ${idx + 1}`] = d;
       });
       for (let i = (a.deliverables || []).length; i < maxDeliverables; i++) {
-        base[`Deliverable ${i+1}`] = '';
+        base[`Deliverable ${i + 1}`] = '';
       }
       return base;
     });
   };
 
+  const computeHeaders = (rows) => {
+    if (!rows.length) return [];
+    const all = Object.keys(rows[0]);
+    if (!exportVisibleOnly || exportFormat === 'wide') return all;
+    const allowed = new Set(Object.entries(EXPORT_HEADER_MAP)
+      .filter(([k]) => visibleCols[k])
+      .map(([, v]) => v));
+    return all.filter(h => allowed.has(h));
+  };
+
+  const sanitizeCSV = (v) => {
+    const s = String(v ?? '');
+    const needsQuotes = /[",\n]/.test(s);
+    const escaped = s.replace(/"/g, '""');
+    return needsQuotes ? `"${escaped}"` : escaped;
+  };
+
   const exportToCSV = (selectedOnly = false) => {
     try {
       const dataToExport = selectedOnly ? filtered.filter(a => selectedRows[a.id]) : filtered;
-      const rows = buildExportRows(dataToExport, false, exportFormat === 'wide');
-      const headers = Object.keys(rows[0] || {});
-      const lines = rows.map(row => {
-        const milestones = (a.milestones || []).map(m => `${m.name || ''} (${m.target_date ? format(new Date(m.target_date), 'yyyy-MM-dd') : ''})`).join('; ');
-        const deliverables = (a.deliverables || []).join('; ');
-        const row = [
-          a.name,
-          projectById[a.project_id]?.name || a.project_id,
-          userById[a.assigned_to]?.name || a.assigned_to,
-          a.assigned_team || '',
-          (a.status || '').replace('_', ' '),
-          a.risk_level || '',
-          a.start_date ? format(new Date(a.start_date), 'yyyy-MM-dd') : '',
-          a.end_date ? format(new Date(a.end_date), 'yyyy-MM-dd') : '',
-          a.planned_start_date ? format(new Date(a.planned_start_date), 'yyyy-MM-dd') : '',
-          a.planned_end_date ? format(new Date(a.planned_end_date), 'yyyy-MM-dd') : '',
-          a.progress_percentage ?? 0,
-          a.target_quantity != null ? `${a.target_quantity}${a.measurement_unit ? ' ' + a.measurement_unit : ''}` : '',
-          a.achieved_quantity != null ? `${a.achieved_quantity}${a.measurement_unit ? ' ' + a.measurement_unit : ''}` : '',
-          a.planned_output || '',
-          a.actual_output || '',
-          a.budget_allocated ?? 0,
-          a.budget_utilized ?? 0,
-          a.schedule_variance_days ?? 0,
-          a.completion_variance ?? 0,
-          a.updated_at ? format(new Date(a.updated_at), 'yyyy-MM-dd HH:mm') : '',
-          milestones,
-          deliverables
-        ];
-        return row.map(v => (v === null || v === undefined) ? '' : String(v).replace(/\n/g, ' ')).join(',');
-      });
+      const rows = buildExportRows(dataToExport, exportFormat === 'wide');
+      const headers = computeHeaders(rows);
+      const lines = rows.map(obj => headers.map(h => sanitizeCSV(obj[h])).join(','));
       const csv = [headers.join(','), ...lines].join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -334,30 +341,15 @@ const ActivitiesTable = () => {
   const exportToExcel = (selectedOnly = false) => {
     try {
       const dataToExport = selectedOnly ? filtered.filter(a => selectedRows[a.id]) : filtered;
-      const rows = dataToExport.map(a => ({
-        'Activity Name': a.name,
-        'Project': projectById[a.project_id]?.name || a.project_id,
-        'Assigned Person': userById[a.assigned_to]?.name || a.assigned_to,
-        'Assigned Team': a.assigned_team || '', 'Milestones': (a.milestones || []).map(m => `${m.name || ''} (${m.target_date ? format(new Date(m.target_date), 'yyyy-MM-dd') : ''})`).join('; '), 'Deliverables': (a.deliverables || []).join('; '),
-        'Milestones': (a.milestones || []).map(m => `${m.name || ''} (${m.target_date ? format(new Date(m.target_date), 'yyyy-MM-dd') : ''})`).join('; '),
-        'Deliverables': (a.deliverables || []).join('; '),
-        'Status': (a.status || '').replace('_', ' '),
-        'Risk Level': a.risk_level || '',
-        'Start Date': a.start_date ? format(new Date(a.start_date), 'yyyy-MM-dd') : '',
-        'End Date': a.end_date ? format(new Date(a.end_date), 'yyyy-MM-dd') : '',
-        'Planned Start': a.planned_start_date ? format(new Date(a.planned_start_date), 'yyyy-MM-dd') : '',
-        'Planned End': a.planned_end_date ? format(new Date(a.planned_end_date), 'yyyy-MM-dd') : '',
-        'Progress %': a.progress_percentage ?? 0,
-        'Target': a.target_quantity != null ? `${a.target_quantity}${a.measurement_unit ? ' ' + a.measurement_unit : ''}` : '',
-        'Achieved': a.achieved_quantity != null ? `${a.achieved_quantity}${a.measurement_unit ? ' ' + a.measurement_unit : ''}` : '',
-        'Planned Output': a.planned_output || '',
-        'Actual Output': a.actual_output || '',
-        'Budget Allocated': a.budget_allocated ?? 0,
-        'Budget Utilized': a.budget_utilized ?? 0,
-        'Schedule Variance (days)': a.schedule_variance_days ?? 0,
-        'Completion Variance %': a.completion_variance ?? 0,
-        'Last Updated': a.updated_at ? format(new Date(a.updated_at), 'yyyy-MM-dd HH:mm') : ''
-      }));
+      let rows = buildExportRows(dataToExport, exportFormat === 'wide');
+      const headers = computeHeaders(rows);
+      if (exportVisibleOnly && exportFormat !== 'wide') {
+        rows = rows.map(obj => {
+          const n = {};
+          headers.forEach(h => { n[h] = obj[h]; });
+          return n;
+        });
+      }
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Activities');
@@ -398,6 +390,27 @@ const ActivitiesTable = () => {
             </Button>
           </div>
         </div>
+
+        {/* Export options */}
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600">Format</span>
+            <Select value={exportFormat} onValueChange={setExportFormat}>
+              <SelectTrigger className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nested">Nested</SelectItem>
+                <SelectItem value="wide">Wide</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <label className="flex items-center space-x-2 text-sm">
+            <Checkbox checked={exportVisibleOnly} onCheckedChange={(c) => setExportVisibleOnly(!!c)} />
+            <span>Export only visible columns</span>
+          </label>
+        </div>
+
         {/* Filters */}
         <div className="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3">
           {/* Quick filter chips */}
@@ -426,7 +439,7 @@ const ActivitiesTable = () => {
                 <Input placeholder="Max budget" type="number" value={maxBudget} onChange={e => setMaxBudget(e.target.value)} />
               </div>
               <div className="flex items-center space-x-2">
-                <Button variant="outline" onClick={() => { setDescFilter(''); setMinBudget(''); setMaxBudget(''); }}>Clear</Button>
+                <Button variant="outline" onClick={() => { setDescFilter(''); setMinBudget(''); setMaxBudget(''); setProjectText(''); setTeamText(''); }}>Clear</Button>
               </div>
             </div>
             <div className="flex items-center border rounded px-2 py-1 bg-white">
@@ -505,25 +518,49 @@ const ActivitiesTable = () => {
           </div>
         </div>
 
-          {/* Column chooser */}
-          <div className="md:col-span-6">
-            <div className="flex items-center flex-wrap gap-3 p-2 border rounded bg-white">
-              <span className="text-sm text-gray-600 mr-2">Columns:</span>
-              {DEFAULT_COLUMNS.map(col => (
-                <label key={col.key} className="flex items-center space-x-2 text-sm">
-                  <Checkbox
-                    checked={!!visibleCols[col.key]}
-                    onCheckedChange={(checked) => {
-                      const next = { ...visibleCols, [col.key]: !!checked };
-                      persistCols(next);
-                    }}
-                  />
-                  <span>{col.label}</span>
-                </label>
+        {/* Column chooser */}
+        <div className="md:col-span-6 mt-3">
+          <div className="flex items-center flex-wrap gap-3 p-2 border rounded bg-white">
+            <span className="text-sm text-gray-600 mr-2">Columns:</span>
+            {DEFAULT_COLUMNS.map(col => (
+              <label key={col.key} className="flex items-center space-x-2 text-sm">
+                <Checkbox
+                  checked={!!visibleCols[col.key]}
+                  onCheckedChange={(checked) => {
+                    const next = { ...visibleCols, [col.key]: !!checked };
+                    persistCols(next);
+                  }}
+                />
+                <span>{col.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Presets UI */}
+        <div className="mt-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <Input className="w-64" placeholder="Preset name" value={presetName} onChange={e => setPresetName(e.target.value)} />
+            <Button variant="outline" onClick={savePreset}>
+              <BookmarkPlus className="h-4 w-4 mr-2" /> Save Preset
+            </Button>
+          </div>
+          {presets.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {presets.map(p => (
+                <div key={p.name} className="flex items-center border rounded px-2 py-1 bg-white">
+                  <span className="text-sm mr-2">{p.name}</span>
+                  <Button size="sm" variant="outline" onClick={() => applyPreset(p)}>Apply</Button>
+                  <Button size="sm" variant="ghost" className="text-red-600" onClick={() => deletePreset(p.name)}>
+                    <XIcon className="h-4 w-4" />
+                  </Button>
+                </div>
               ))}
             </div>
-          </div>
+          )}
+        </div>
       </CardHeader>
+
       <CardContent>
         {loading ? (
           <div className="text-center py-10 text-gray-500">Loading activities...</div>
@@ -537,7 +574,7 @@ const ActivitiesTable = () => {
                   <tr>
                     <th className="text-left p-2 w-12">
                       <Checkbox
-                        checked={filtered.slice((page-1)*pageSize, page*pageSize).every(a => isRowSelected(a.id))}
+                        checked={currentPageRows.every(a => isRowSelected(a.id))}
                         onCheckedChange={togglePage}
                       />
                     </th>
@@ -559,7 +596,7 @@ const ActivitiesTable = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.slice((page-1)*pageSize, page*pageSize).map(a => (
+                  {currentPageRows.map(a => (
                     <tr key={a.id} className="border-t hover:bg-gray-50">
                       <td className="p-2">
                         <Checkbox
@@ -634,23 +671,23 @@ const ActivitiesTable = () => {
             {/* Pagination */}
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
-                Showing {(page-1)*pageSize + 1} - {Math.min(page*pageSize, filtered.length)} of {filtered.length}
+                Showing {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, filtered.length)} of {filtered.length}
               </div>
               <div className="flex items-center space-x-3">
-                <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
                   <SelectTrigger className="w-24">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {[10,20,50,100].map(s => (
+                    {[10, 20, 50, 100].map(s => (
                       <SelectItem key={s} value={String(s)}>{s} / page</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <Pagination>
                   <PaginationContent>
-                    <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setPage(p => Math.max(1, p-1)); }} />
-                    {Array.from({ length: Math.min(5, Math.ceil(filtered.length / pageSize)) }).map((_, idx) => {
+                    <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setPage(p => Math.max(1, p - 1)); }} />
+                    {Array.from({ length: Math.ceil(filtered.length / pageSize) }).slice(0, 5).map((_, idx) => {
                       const pnum = idx + 1;
                       return (
                         <PaginationItem key={pnum}>
@@ -660,7 +697,7 @@ const ActivitiesTable = () => {
                         </PaginationItem>
                       );
                     })}
-                    <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setPage(p => Math.min(Math.ceil(filtered.length / pageSize) || 1, p+1)); }} />
+                    <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setPage(p => Math.min(Math.ceil(filtered.length / pageSize) || 1, p + 1)); }} />
                   </PaginationContent>
                 </Pagination>
               </div>
