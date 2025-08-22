@@ -16,10 +16,14 @@ from models import (
     Beneficiary, BeneficiaryCreate, BeneficiaryUpdate,
     ProjectDocument, ProjectDashboardData,
     Expense, ExpenseCreate, ExpenseUpdate,
-    User
+    User, Organization
 )
 from project_service import ProjectService
 from finance_service import FinanceService
+
+# Auth utilities
+import auth as auth_util
+from models import UserRole
 
 # Environment loader (fallback to .env file)
 from pathlib import Path
@@ -78,6 +82,9 @@ def select_database(client: AsyncIOMotorClient) -> Any:
 _db = select_database(client)
 db = _db
 
+# Set DB for auth utils
+auth_util.db = db
+
 project_service = ProjectService(db)
 finance_service = FinanceService(db)
 finance_ai = FinanceAI()
@@ -100,6 +107,67 @@ api = APIRouter(prefix='/api')
 async def health():
     return {'status': 'ok', 'time': datetime.utcnow().isoformat()}
 
+# --------------- Auth ---------------
+@api.post('/auth/register')
+async def register(payload: Dict[str, Any]):
+    name = (payload or {}).get('name')
+    email = (payload or {}).get('email')
+    password = (payload or {}).get('password')
+    if not (name and email and password):
+        raise HTTPException(status_code=400, detail='Missing name, email or password')
+    # Check existing user
+    existing = await db.users.find_one({'email': email})
+    if existing:
+        raise HTTPException(status_code=400, detail='Email already registered')
+    # Create organization
+    org = Organization(name=f"{name.split(' ')[0]}'s Organization")
+    org_doc = org.model_dump()
+    org_doc['_id'] = org.id
+    await db.organizations.insert_one(org_doc)
+    # Create user
+    user = User(
+        email=email,
+        name=name,
+        organization_id=org.id,
+        role=UserRole.EDITOR,
+        password_hash=auth_util.get_password_hash(password)
+    )
+    user_doc = user.model_dump()
+    user_doc['_id'] = user.id
+    await db.users.insert_one(user_doc)
+    # Token
+    token = auth_util.create_access_token({'sub': user.id, 'org_id': org.id, 'role': str(user.role)})
+    await db.users.update_one({'_id': user.id}, {'$set': {'last_login': datetime.utcnow()}})
+    return {
+        'access_token': token,
+        'token_type': 'bearer',
+        'user': user.model_dump(),
+        'organization': org.model_dump()
+    }
+
+@api.post('/auth/login')
+async def login(payload: Dict[str, Any]):
+    email = (payload or {}).get('email')
+    password = (payload or {}).get('password')
+    if not (email and password):
+        raise HTTPException(status_code=400, detail='Missing email or password')
+    user_doc = await db.users.find_one({'email': email})
+    if not user_doc:
+        raise HTTPException(status_code=401, detail='Incorrect email or password')
+    from models import User as UserModel
+    user = UserModel(**user_doc)
+    if not auth_util.verify_password(password, user.password_hash or ''):
+        raise HTTPException(status_code=401, detail='Incorrect email or password')
+    org_doc = await db.organizations.find_one({'_id': user.organization_id})
+    token = auth_util.create_access_token({'sub': user.id, 'org_id': user.organization_id, 'role': str(user.role)})
+    await db.users.update_one({'_id': user.id}, {'$set': {'last_login': datetime.utcnow()}})
+    return {
+        'access_token': token,
+        'token_type': 'bearer',
+        'user': user.model_dump(),
+        'organization': (org_doc or {})
+    }
+
 # --------------- Users (minimal) ---------------
 @api.get('/users')
 async def list_users():
@@ -109,6 +177,14 @@ async def list_users():
         u['id'] = u.get('id') or str(u.get('_id'))
         users.append({'id': u['id'], 'name': u.get('name') or u.get('email'), 'email': u.get('email')})
     return users
+
+# --------------- Organization Me ---------------
+@api.get('/organizations/me')
+async def get_my_org(current_user: User = Depends(auth_util.get_current_user)):
+    org = await db.organizations.find_one({'_id': current_user.organization_id})
+    if not org:
+        raise HTTPException(status_code=404, detail='Organization not found')
+    return org
 
 # --------------- Projects ---------------
 @api.get('/projects')

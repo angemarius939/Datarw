@@ -61,7 +61,9 @@ class User(SafeModel):
     name: str
     organization_id: str
     role: UserRole = UserRole.EDITOR
+    status: Optional[str] = 'active'
     password_hash: Optional[str] = None
+    last_login: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -75,6 +77,11 @@ class UserCreate(SafeModel):
 class UserUpdate(SafeModel):
     email: Optional[EmailStr] = None
     name: Optional[str] = None
+    role: Optional[UserRole] = None
+
+class TokenData(SafeModel):
+    user_id: str
+    organization_id: Optional[str] = None
     role: Optional[UserRole] = None
 
 # -------------------- Projects --------------------
