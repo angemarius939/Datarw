@@ -442,6 +442,12 @@ const ActivitiesTable = () => {
               <tbody>
                 {filtered.slice((page-1)*pageSize, page*pageSize).map(a => (
                   <tr key={a.id} className="border-t hover:bg-gray-50">
+                    <td className="p-2">
+                      <Checkbox
+                        checked={isRowSelected(a.id)}
+                        onCheckedChange={(checked) => toggleRow(a.id, checked)}
+                      />
+                    </td>
                     {visibleCols.name && (
                       <td className="p-2">
                         <div className="font-medium text-gray-900">{a.name}</div>
