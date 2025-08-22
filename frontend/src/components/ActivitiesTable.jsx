@@ -172,6 +172,70 @@ const ActivitiesTable = () => {
     localStorage.setItem('activities_table_columns', JSON.stringify(next));
   };
 
+  const buildExportRows = (rows, visibleOnly = false, wide = false) => {
+    if (!wide) {
+      return rows.map(a => ({
+        'Activity Name': a.name,
+        'Project': projectById[a.project_id]?.name || a.project_id,
+        'Assigned Person': userById[a.assigned_to]?.name || a.assigned_to,
+        'Assigned Team': a.assigned_team || '',
+        'Status': (a.status || '').replace('_', ' '),
+        'Risk Level': a.risk_level || '',
+        'Start Date': a.start_date ? format(new Date(a.start_date), 'yyyy-MM-dd') : '',
+        'End Date': a.end_date ? format(new Date(a.end_date), 'yyyy-MM-dd') : '',
+        'Planned Start': a.planned_start_date ? format(new Date(a.planned_start_date), 'yyyy-MM-dd') : '',
+        'Planned End': a.planned_end_date ? format(new Date(a.planned_end_date), 'yyyy-MM-dd') : '',
+        'Progress %': a.progress_percentage ?? 0,
+        'Target': a.target_quantity != null ? `${a.target_quantity}${a.measurement_unit ? ' ' + a.measurement_unit : ''}` : '',
+        'Achieved': a.achieved_quantity != null ? `${a.achieved_quantity}${a.measurement_unit ? ' ' + a.measurement_unit : ''}` : '',
+        'Planned Output': a.planned_output || '',
+        'Actual Output': a.actual_output || '',
+        'Budget Allocated': a.budget_allocated ?? 0,
+        'Budget Utilized': a.budget_utilized ?? 0,
+        'Schedule Variance (days)': a.schedule_variance_days ?? 0,
+        'Completion Variance %': a.completion_variance ?? 0,
+        'Last Updated': a.updated_at ? format(new Date(a.updated_at), 'yyyy-MM-dd HH:mm') : '',
+        'Milestones': (a.milestones || []).map(m => `${m.name || ''} (${m.target_date ? format(new Date(m.target_date), 'yyyy-MM-dd') : ''})`).join('; '),
+        'Deliverables': (a.deliverables || []).join('; ')
+      }));
+    }
+    // wide format
+    const maxMilestones = Math.max(0, ...rows.map(a => (a.milestones || []).length));
+    const maxDeliverables = Math.max(0, ...rows.map(a => (a.deliverables || []).length));
+    return rows.map(a => {
+      const base = {
+        'Activity Name': a.name,
+        'Project': projectById[a.project_id]?.name || a.project_id,
+        'Assigned Person': userById[a.assigned_to]?.name || a.assigned_to,
+        'Assigned Team': a.assigned_team || '',
+        'Status': (a.status || '').replace('_', ' '),
+        'Risk Level': a.risk_level || '',
+        'Start Date': a.start_date ? format(new Date(a.start_date), 'yyyy-MM-dd') : '',
+        'End Date': a.end_date ? format(new Date(a.end_date), 'yyyy-MM-dd') : '',
+        'Progress %': a.progress_percentage ?? 0,
+        'Target': a.target_quantity != null ? `${a.target_quantity}${a.measurement_unit ? ' ' + a.measurement_unit : ''}` : '',
+        'Achieved': a.achieved_quantity != null ? `${a.achieved_quantity}${a.measurement_unit ? ' ' + a.measurement_unit : ''}` : '',
+        'Budget Allocated': a.budget_allocated ?? 0,
+        'Budget Utilized': a.budget_utilized ?? 0,
+      };
+      (a.milestones || []).forEach((m, idx) => {
+        base[`Milestone ${idx+1} Name`] = m.name || '';
+        base[`Milestone ${idx+1} Date`] = m.target_date ? format(new Date(m.target_date), 'yyyy-MM-dd') : '';
+      });
+      for (let i = (a.milestones || []).length; i < maxMilestones; i++) {
+        base[`Milestone ${i+1} Name`] = '';
+        base[`Milestone ${i+1} Date`] = '';
+      }
+      (a.deliverables || []).forEach((d, idx) => {
+        base[`Deliverable ${idx+1}`] = d;
+      });
+      for (let i = (a.deliverables || []).length; i < maxDeliverables; i++) {
+        base[`Deliverable ${i+1}`] = '';
+      }
+      return base;
+    });
+  };
+
   const exportToCSV = (selectedOnly = false) => {
     try {
       const headers = [
