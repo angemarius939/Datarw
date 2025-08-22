@@ -487,7 +487,34 @@ const Dashboard = ({ onUpgrade }) => {
 
           {activeTab === 'surveys' && (
             <div className="space-y-6">
-              {/* ... unchanged content ... */}
+              <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold text-gray-900">Surveys</h1>
+                <Button 
+                  onClick={() => setActiveTab('builder')} 
+                  className="bg-gradient-to-r from-blue-600 to-purple-600"
+                  disabled={isAtLimit(surveys.length, organization?.survey_limit)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Survey
+                </Button>
+              </div>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {surveys.map((survey) => (
+                  <SurveyCard key={survey.id} survey={survey} />
+                ))}
+                {surveys.length === 0 && (
+                  <div className="col-span-full text-center py-12">
+                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No surveys yet</h3>
+                    <p className="text-gray-600 mb-4">Create your first survey to start collecting data.</p>
+                    <Button onClick={() => setActiveTab('builder')}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Survey
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
