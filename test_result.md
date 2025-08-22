@@ -665,7 +665,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Budget Tracking CSV Reports: project, activities, all projects"
+    - "New Finance Features - XLSX Reports and Date Range Filtering"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
