@@ -404,7 +404,7 @@ const ActivitiesTable = () => {
                         project_id: r['Project ID'] || (projectsByName[String(r['Project'] || '').toLowerCase()]?.id || projectsByName[String(r['Project'] || '').toLowerCase()]?._id) || '',
                         name: r['Activity Name'] || r['Name'] || r['Activity'] || '',
                         description: r['Description'] || '',
-                        assigned_to: r['Assigned Person ID'] || r['Assigned Person'] || '',
+                        assigned_to: r['Assigned Person ID'] || (usersByName[String(r['Assigned Person'] || '').toLowerCase()]?.id) || (usersByName[String(r['Assigned Person Email'] || '').toLowerCase()]?.id) || '',
                         assigned_team: r['Assigned Team'] || '',
                         start_date: toDate(r['Start Date']) || toDate(r['Start']) || new Date().toISOString(),
                         end_date: toDate(r['End Date']) || toDate(r['End']) || new Date().toISOString(),
