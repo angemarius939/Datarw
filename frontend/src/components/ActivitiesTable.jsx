@@ -487,7 +487,7 @@ const ActivitiesTable = () => {
               <Pagination>
                 <PaginationContent>
                   <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setPage(p => Math.max(1, p-1)); }} />
-                  {Array.from({ length: Math.ceil(filtered.length / pageSize) }).slice(0,5).map((_, idx) => {
+                  {(Array.from({ length: Math.ceil(filtered.length / pageSize) })).slice(0,5).map((_, idx) => {
                     const pnum = idx + 1;
                     return (
                       <PaginationItem key={pnum}>
