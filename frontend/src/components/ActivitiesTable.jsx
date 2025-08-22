@@ -416,6 +416,12 @@ const ActivitiesTable = () => {
             <table className="min-w-full text-sm relative">
               <thead className="bg-gray-50 text-gray-600 sticky top-0 z-10">
                 <tr>
+                  <th className="text-left p-2 w-12">
+                    <Checkbox
+                      checked={filtered.slice((page-1)*pageSize, page*pageSize).every(a => isRowSelected(a.id))}
+                      onCheckedChange={togglePage}
+                    />
+                  </th>
                   {visibleCols.name && <th className="text-left p-2">Activity</th>}
                   {visibleCols.project && <th className="text-left p-2">Project</th>}
                   {visibleCols.assigned && <th className="text-left p-2">Assigned</th>}
