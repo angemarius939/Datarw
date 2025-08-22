@@ -472,10 +472,13 @@ const BudgetTrackingPage = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Finance Reports</CardTitle>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button variant="outline" onClick={downloadProjectReport}><Download className="h-4 w-4 mr-2"/>Project CSV</Button>
                   <Button variant="outline" onClick={downloadActivitiesReport}><Download className="h-4 w-4 mr-2"/>Activities CSV</Button>
                   <Button variant="outline" onClick={downloadAllProjectsReport}><Download className="h-4 w-4 mr-2"/>All Projects CSV</Button>
+                  <Button variant="outline" onClick={() => downloadProjectReportXLSX()}><Download className="h-4 w-4 mr-2"/>Project XLSX</Button>
+                  <Button variant="outline" onClick={() => downloadActivitiesReportXLSX()}><Download className="h-4 w-4 mr-2"/>Activities XLSX</Button>
+                  <Button variant="outline" onClick={() => downloadAllProjectsReportXLSX()}><Download className="h-4 w-4 mr-2"/>All Projects XLSX</Button>
                   <Button onClick={runReports} disabled={loadingReports}>{loadingReports ? 'Running…' : 'Run Summaries'}</Button>
                 </div>
               </div>
