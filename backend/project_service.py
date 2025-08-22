@@ -818,7 +818,7 @@ class ProjectService:
         }
         
         # Add optional fields if provided
-        for field in ["actual_output", "achieved_quantity", "status_notes"]:
+        for field in ["actual_output", "achieved_quantity", "status_notes", "measurement_unit"]:
             if field in progress_data:
                 update_data[field] = progress_data[field]
         
