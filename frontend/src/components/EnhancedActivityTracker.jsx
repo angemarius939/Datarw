@@ -515,8 +515,8 @@ const EnhancedActivityTracker = ({ dashboardData, onDataRefresh }) => {
                     <div className="col-span-2">
                       {activity.target_quantity && (
                         <div className="text-xs text-gray-600">
-                          <div>Target: {activity.target_quantity}</div>
-                          <div>Achieved: {activity.achieved_quantity || 0}</div>
+                          <div>Target: {activity.target_quantity}{activity.measurement_unit ? ` ${activity.measurement_unit}` : ''}</div>
+                          <div>Achieved: {activity.achieved_quantity || 0}{activity.measurement_unit ? ` ${activity.measurement_unit}` : ''}</div>
                         </div>
                       )}
                     </div>
