@@ -534,18 +534,70 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
             
             <div>
               <Label htmlFor="target_quantity">Target Quantity</Label>
-              <Input
-                id="target_quantity"
-                type="number"
-                value={activity.target_quantity}
-                onChange={(e) => setActivity(prev => ({ ...prev, target_quantity: e.target.value }))}
-                placeholder="0"
-                className={`mt-1 ${errors.target_quantity ? 'border-red-500' : ''}`}
-              />
+              <div className="flex space-x-2 mt-1">
+                <Input
+                  id="target_quantity"
+                  type="number"
+                  value={activity.target_quantity}
+                  onChange={(e) => setActivity(prev => ({ ...prev, target_quantity: e.target.value }))}
+                  placeholder="0"
+                  className={`flex-1 ${errors.target_quantity ? 'border-red-500' : ''}`}
+                />
+                <select
+                  className="w-36 border rounded px-2"
+                  value={activity.measurement_unit}
+                  onChange={(e) => setActivity(prev => ({ ...prev, measurement_unit: e.target.value }))}
+                >
+                  <option value="">Unit</option>
+                  <option value="count">count</option>
+                  <option value="people">people</option>
+                  <option value="households">households</option>
+                  <option value="km">km</option>
+                  <option value="km²">km²</option>
+                  <option value="liters">liters</option>
+                  <option value="USD">USD</option>
+                  <option value="RWF">RWF</option>
+                  <option value="%">%</option>
+                </select>
+              </div>
               {errors.target_quantity && (
                 <div className="text-xs text-red-600 mt-1">{errors.target_quantity}</div>
               )}
             </div>
+          </div>
+
+          {/* Achieved Quantity with unit */}
+          <div>
+            <Label htmlFor="achieved_quantity">Achieved Quantity</Label>
+            <div className="flex space-x-2 mt-1">
+              <Input
+                id="achieved_quantity"
+                type="number"
+                value={activity.achieved_quantity}
+                onChange={(e) => setActivity(prev => ({ ...prev, achieved_quantity: e.target.value }))}
+                placeholder="0"
+                className={`flex-1 ${errors.achieved_quantity ? 'border-red-500' : ''}`}
+              />
+              <select
+                className="w-36 border rounded px-2"
+                value={activity.measurement_unit}
+                onChange={(e) => setActivity(prev => ({ ...prev, measurement_unit: e.target.value }))}
+              >
+                <option value="">Unit</option>
+                <option value="count">count</option>
+                <option value="people">people</option>
+                <option value="households">households</option>
+                <option value="km">km</option>
+                <option value="km²">km²</option>
+                <option value="liters">liters</option>
+                <option value="USD">USD</option>
+                <option value="RWF">RWF</option>
+                <option value="%">%</option>
+              </select>
+            </div>
+            {errors.achieved_quantity && (
+              <div className="text-xs text-red-600 mt-1">{errors.achieved_quantity}</div>
+            )}
           </div>
 
           {/* Risk Level */}
