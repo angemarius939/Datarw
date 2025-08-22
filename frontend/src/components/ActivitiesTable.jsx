@@ -219,9 +219,10 @@ const ActivitiesTable = () => {
     }
   };
 
-  const exportToExcel = () => {
+  const exportToExcel = (selectedOnly = false) => {
     try {
-      const rows = filtered.map(a => ({
+      const dataToExport = selectedOnly ? filtered.filter(a => selectedRows[a.id]) : filtered;
+      const rows = dataToExport.map(a => ({
         'Activity Name': a.name,
         'Project': projectById[a.project_id]?.name || a.project_id,
         'Assigned Person': userById[a.assigned_to]?.name || a.assigned_to,
