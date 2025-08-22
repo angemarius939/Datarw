@@ -221,14 +221,20 @@ const ActivitiesTable = () => {
         achieved_quantity: editData.achieved_quantity === '' ? null : Number(editData.achieved_quantity),
         measurement_unit: editData.measurement_unit === 'none' ? null : editData.measurement_unit,
       };
-      await projectsAPI.updateActivity(editing.id, payload);
+      const actId = editing?.id || editing?._id;
+      if (!actId) {
+        toast({ title: 'Update failed', description: 'Missing activity ID', variant: 'destructive' });
+        return;
+      }
+      await projectsAPI.updateActivity(actId, payload);
       const actsRes = await projectsAPI.getActivities();
       setActivities(actsRes.data || []);
       closeEdit();
       toast({ title: 'Updated', description: 'Activity updated successfully' });
     } catch (e) {
-      console.error('Update failed', e);
-      toast({ title: 'Update failed', description: 'Could not update activity', variant: 'destructive' });
+      console.error('Update failed', e?.response?.data || e);
+      const msg = e?.response?.data?.detail || e?.message || 'Could not update activity';
+      toast({ title: 'Update failed', description: String(msg), variant: 'destructive' });
     }
   };
   const togglePage = (checked) => {
