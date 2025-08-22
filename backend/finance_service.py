@@ -209,10 +209,14 @@ class FinanceService:
         projection = avg * remaining_months
         return {"avg_monthly": avg, "projected_spend_rest_of_year": projection, "months_remaining": remaining_months}
 
-    async def funding_utilization(self, organization_id: str, donor: Optional[str] = None) -> Dict[str, Any]:
+    async def funding_utilization(self, organization_id: str, donor: Optional[str] = None, date_from: Optional[str] = None, date_to: Optional[str] = None) -> Dict[str, Any]:
         match = {"organization_id": organization_id}
         if donor:
             match["funding_source"] = donor
+        if date_from:
+            match.setdefault("date", {})["$gte"] = datetime.fromisoformat(date_from)
+        if date_to:
+            match.setdefault("date", {})["$lte"] = datetime.fromisoformat(date_to)
         pipeline = [
             {"$match": match},
             {"$group": {"_id": "$funding_source", "spent": {"$sum": "$amount"}}}
