@@ -205,7 +205,7 @@ const ActivitiesTable = () => {
     end_date: a.end_date ? a.end_date.slice(0,10) : '',
     target_quantity: a.target_quantity ?? '',
     achieved_quantity: a.achieved_quantity ?? '',
-    measurement_unit: a.measurement_unit || '',
+    measurement_unit: a.measurement_unit || 'none',
   }); };
   const closeEdit = () => { setEditing(null); setEditData({}); };
   const saveEdit = async () => {
