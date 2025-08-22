@@ -12,6 +12,7 @@ import { Calendar, Filter, Download, Search, BookmarkPlus, X as XIcon, MoreVerti
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { format } from 'date-fns';
 import * as XLSX from 'xlsx';
+import Papa from 'papaparse';
 
 const statusColors = {
   completed: 'bg-green-100 text-green-800 border-green-200',
