@@ -266,6 +266,19 @@ const ActivitiesTable = () => {
             <Button size="sm" variant={status === 'all' ? 'default' : 'outline'} onClick={() => setStatus('all')}>All status</Button>
           </div>
           <div className="col-span-2">
+            {/* Per-column filters row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+              <div>
+                <Input placeholder="Filter by description" value={descFilter} onChange={e => setDescFilter(e.target.value)} />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Input placeholder="Min budget" type="number" value={minBudget} onChange={e => setMinBudget(e.target.value)} />
+                <Input placeholder="Max budget" type="number" value={maxBudget} onChange={e => setMaxBudget(e.target.value)} />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" onClick={() => { setDescFilter(''); setMinBudget(''); setMaxBudget(''); }}>Clear</Button>
+              </div>
+            </div>
             <div className="flex items-center border rounded px-2 py-1 bg-white">
               <Search className="h-4 w-4 text-gray-400" />
               <Input
