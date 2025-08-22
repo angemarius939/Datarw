@@ -408,3 +408,56 @@ class ExpenseUpdate(SafeModel):
     funding_source: Optional[str] = None
     cost_center: Optional[str] = None
     notes: Optional[str] = None
+
+# -------------------- AI Service Models --------------------
+class QuestionType(str, Enum):
+    SHORT_TEXT = 'short_text'
+    LONG_TEXT = 'long_text'
+    MULTIPLE_CHOICE_SINGLE = 'multiple_choice_single'
+    MULTIPLE_CHOICE_MULTIPLE = 'multiple_choice_multiple'
+    RATING_SCALE = 'rating_scale'
+    LIKERT_SCALE = 'likert_scale'
+    YES_NO = 'yes_no'
+    DATE_PICKER = 'date_picker'
+    TIME_PICKER = 'time_picker'
+    SLIDER = 'slider'
+    MATRIX_GRID = 'matrix_grid'
+    FILE_UPLOAD = 'file_upload'
+    IMAGE_CHOICE = 'image_choice'
+    SIGNATURE = 'signature'
+
+class SurveyQuestion(SafeModel):
+    type: QuestionType
+    question: str
+    required: bool = False
+    options: Optional[List[str]] = None
+    scale_min: Optional[int] = None
+    scale_max: Optional[int] = None
+    scale_labels: Optional[List[str]] = None
+    matrix_rows: Optional[List[str]] = None
+    matrix_columns: Optional[List[str]] = None
+    slider_step: Optional[int] = None
+    date_format: Optional[str] = None
+    file_types: Optional[List[str]] = None
+    max_file_size: Optional[int] = None
+
+class AISurveyGenerationRequest(SafeModel):
+    description: str
+    target_audience: Optional[str] = None
+    survey_purpose: Optional[str] = None
+    question_count: Optional[int] = 8
+    include_demographics: Optional[bool] = False
+    document_context: Optional[str] = None
+
+class SurveyGenerationContext(SafeModel):
+    organization_id: str
+    documents: List[Dict[str, Any]] = []
+    context_summary: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class DocumentUpload(SafeModel):
+    filename: str
+    content: str
+    content_type: str
+    size: int
+    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
