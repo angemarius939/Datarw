@@ -187,6 +187,7 @@ const CreateActivityModal = ({ onActivityCreated, trigger }) => {
         budget_allocated: activity.budget_allocated ? parseFloat(activity.budget_allocated) : 0,
         planned_output: activity.planned_output || null,
         target_quantity: activity.target_quantity !== '' ? parseFloat(activity.target_quantity) : null,
+        measurement_unit: activity.measurement_unit || null,
         status_notes: activity.status_notes || null,
         risk_level: activity.risk_level || 'low',
         deliverables: activity.deliverables.filter(d => d.trim() !== ''),
