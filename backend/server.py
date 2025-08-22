@@ -107,7 +107,8 @@ async def list_users():
 # --------------- Projects ---------------
 @api.get('/projects')
 async def get_projects(status: Optional[ProjectStatus] = None, organization_id: Optional[str] = Query(None)):
-    org = organization_id or ''
+    # Default to 'org' to match existing records if no org provided
+    org = organization_id or 'org'
     return await project_service.get_projects(org, status)
 
 @api.post('/projects', response_model=Project)
