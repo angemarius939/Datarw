@@ -238,12 +238,30 @@ const EnhancedActivityTracker = ({ dashboardData, onDataRefresh }) => {
             
             <div>
               <label className="block text-sm font-medium mb-1">Achieved Quantity</label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded"
-                value={editData.achieved_quantity}
-                onChange={(e) => setEditData({...editData, achieved_quantity: parseFloat(e.target.value)})}
-              />
+              <div className="flex space-x-2">
+                <input
+                  type="number"
+                  className="w-full p-2 border rounded"
+                  value={editData.achieved_quantity}
+                  onChange={(e) => setEditData({...editData, achieved_quantity: parseFloat(e.target.value)})}
+                />
+                <select
+                  className="w-36 border rounded px-2"
+                  value={editData.measurement_unit}
+                  onChange={(e) => setEditData({...editData, measurement_unit: e.target.value})}
+                >
+                  <option value="">Unit</option>
+                  <option value="count">count</option>
+                  <option value="people">people</option>
+                  <option value="households">households</option>
+                  <option value="km">km</option>
+                  <option value="km²">km²</option>
+                  <option value="liters">liters</option>
+                  <option value="USD">USD</option>
+                  <option value="RWF">RWF</option>
+                  <option value="%">%</option>
+                </select>
+              </div>
             </div>
             
             <div>
