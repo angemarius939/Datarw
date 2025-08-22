@@ -75,6 +75,51 @@ const ActivitiesTable = () => {
 
   // Export options
   const [exportFormat, setExportFormat] = useState('nested'); // 'nested' | 'wide'
+  const [exportVisibleOnly, setExportVisibleOnly] = useState(false);
+
+  // Saved filter presets
+  const [presets, setPresets] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('activities_filter_presets') || '[]'); } catch { return []; }
+  });
+  const [presetName, setPresetName] = useState('');
+
+  const savePreset = () => {
+    const name = (presetName || '').trim();
+    if (!name) { toast({ title: 'Name required', description: 'Please provide a name for the preset', variant: 'destructive' }); return; }
+    const newPreset = {
+      name,
+      created_at: new Date().toISOString(),
+      filters: { search, projectId, status, risk, team, dateFrom, dateTo, descFilter, minBudget, maxBudget, projectText, teamText }
+    };
+    const next = [...presets.filter(p => p.name !== name), newPreset];
+    setPresets(next);
+    localStorage.setItem('activities_filter_presets', JSON.stringify(next));
+    setPresetName('');
+    toast({ title: 'Saved', description: `Preset "${name}" saved.` });
+  };
+
+  const applyPreset = (p) => {
+    const f = p.filters || {};
+    setSearch(f.search || '');
+    setProjectId(f.projectId || 'all');
+    setStatus(f.status || 'all');
+    setRisk(f.risk || 'all');
+    setTeam(f.team || 'all');
+    setDateFrom(f.dateFrom || '');
+    setDateTo(f.dateTo || '');
+    setDescFilter(f.descFilter || '');
+    setMinBudget(f.minBudget || '');
+    setMaxBudget(f.maxBudget || '');
+    setProjectText(f.projectText || '');
+    setTeamText(f.teamText || '');
+    toast({ title: 'Applied', description: `Preset "${p.name}" applied` });
+  };
+
+  const deletePreset = (name) => {
+    const next = presets.filter(p => p.name !== name);
+    setPresets(next);
+    localStorage.setItem('activities_filter_presets', JSON.stringify(next));
+  };
 
 
   const [activities, setActivities] = useState([]);
