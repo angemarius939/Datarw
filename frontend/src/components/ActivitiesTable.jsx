@@ -48,6 +48,17 @@ const DEFAULT_COLUMNS = [
 const ActivitiesTable = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [visibleCols, setVisibleCols] = useState(() => {
+    const saved = localStorage.getItem('activities_table_columns');
+    if (saved) return JSON.parse(saved);
+    const def = {};
+    DEFAULT_COLUMNS.forEach(c => { def[c.key] = c.default; });
+    return def;
+  });
+  const [selectedRows, setSelectedRows] = useState({});
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const [activities, setActivities] = useState([]);
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
