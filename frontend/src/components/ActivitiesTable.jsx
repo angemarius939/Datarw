@@ -545,6 +545,30 @@ const ActivitiesTable = () => {
             <Button variant="outline" onClick={savePreset}>
               <BookmarkPlus className="h-4 w-4 mr-2" /> Save Preset
             </Button>
+            {presets.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline"><MoreVertical className="h-4 w-4 mr-2" /> Manage Presets</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-64">
+                  {presets.map(p => (
+                    <div key={p.name} className="flex items-center justify-between px-2 py-1">
+                      <span className="text-sm truncate mr-2">{p.name}</span>
+                      <div className="flex items-center gap-1">
+                        <Button size="sm" variant="outline" onClick={() => applyPreset(p)}>Apply</Button>
+                        <Button size="sm" variant="outline" onClick={() => { setPresetName(p.name); savePreset(); }}>Overwrite</Button>
+                        <Button size="sm" variant="ghost" className="text-red-600" onClick={() => deletePreset(p.name)}>
+                          <XIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  {presets.length === 0 && (
+                    <div className="px-2 py-1 text-sm text-gray-500">No presets saved</div>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
           {presets.length > 0 && (
             <div className="flex flex-wrap gap-2">
