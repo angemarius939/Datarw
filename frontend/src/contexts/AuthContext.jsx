@@ -36,6 +36,18 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
+  const postAuthRedirect = (tab = 'budgets') => {
+    try {
+      const usp = new URLSearchParams(window.location.search);
+      usp.set('tab', tab);
+      const newUrl = `${window.location.pathname}?${usp.toString()}`;
+      window.history.replaceState({}, '', newUrl);
+    } catch (e) {
+      // fallback: hard redirect
+      try { window.location.href = `/?tab=${tab}`; } catch {}
+    }
+  };
+
   const login = async (credentials) => {
     try {
       const response = await authAPI.login(credentials);
@@ -49,6 +61,9 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       setOrganization(orgData);
       setIsAuthenticated(true);
+
+      // Ensure dashboard becomes visible and deep link to budgets by default
+      postAuthRedirect('budgets');
 
       return { success: true };
     } catch (error) {
@@ -72,6 +87,9 @@ export const AuthProvider = ({ children }) => {
       setUser(newUser);
       setOrganization(orgData);
       setIsAuthenticated(true);
+
+      // Ensure dashboard becomes visible and deep link to budgets by default
+      postAuthRedirect('budgets');
 
       return { success: true };
     } catch (error) {

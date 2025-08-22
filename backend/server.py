@@ -114,8 +114,6 @@ api = APIRouter(prefix='/api')
 async def health():
     return {'status': 'ok', 'time': datetime.utcnow().isoformat()}
 
-# ... existing endpoints omitted for brevity ...
-
 # --------------- Helpers: Charts for PDFs ---------------
 def _fig_to_image_reader(fig) -> ImageReader:
     buf = BytesIO()
@@ -172,6 +170,44 @@ async def _chart_funding_util(organization_id: str, project_id: Optional[str], d
         ax.barh(x, y, color='#f59e0b')
         ax.set_title('Funding Utilization by Source')
         ax.set_xlabel('Spent')
+        return _fig_to_image_reader(fig)
+    except Exception:
+        return None
+
+async def _chart_activities_spend(details: Dict[str, Any]) -> Optional[ImageReader]:
+    try:
+        rows = [(k or '(none)', v.get('spent',0.0)) for k, v in details.get('spent_by_activity', {}).items()]
+        rows.sort(key=lambda x: x[1], reverse=True)
+        rows = rows[:10]
+        if not rows:
+            return None
+        labels = [r[0] for r in rows]
+        values = [r[1] for r in rows]
+        fig, ax = plt.subplots(figsize=(6, 2.4))
+        ax.barh(labels, values, color='#10b981')
+        ax.set_title('Top Activities by Spend')
+        ax.set_xlabel('Spent')
+        return _fig_to_image_reader(fig)
+    except Exception:
+        return None
+
+async def _chart_all_projects_variance(org: str, date_from: Optional[str], date_to: Optional[str]) -> Optional[ImageReader]:
+    try:
+        var = await finance_service.budget_vs_actual(org, None, date_from, date_to)
+        rows = var.get('by_project', [])[:10]
+        if not rows:
+            return None
+        labels = [r.get('project_id') for r in rows]
+        planned = [r.get('planned',0) for r in rows]
+        actual = [r.get('actual',0) for r in rows]
+        x = range(len(labels))
+        fig, ax = plt.subplots(figsize=(6, 2.8))
+        ax.bar([i-0.2 for i in x], planned, width=0.4, label='Planned')
+        ax.bar([i+0.2 for i in x], actual, width=0.4, label='Actual')
+        ax.set_xticks(list(x))
+        ax.set_xticklabels(labels, rotation=45, ha='right')
+        ax.set_title('Planned vs Actual by Project')
+        ax.legend()
         return _fig_to_image_reader(fig)
     except Exception:
         return None
@@ -262,6 +298,81 @@ async def finance_report_project_pdf(project_id: str, organization_id: Optional[
     buf.close()
     return StreamingResponse(BytesIO(pdf), media_type='application/pdf', headers={"Content-Disposition": f"attachment; filename=finance_project_{project_id}.pdf"})
 
-# Other PDF endpoints (activities/all-projects) already implemented above
+@api.get('/finance/reports/activities-pdf')
+async def finance_report_activities_pdf(project_id: str, organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    details = await finance_service.project_budget_details(org, project_id, date_from, date_to)
+    buf = BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    width, height = A4
+
+    # Header
+    c.setFont('Helvetica-Bold', 14)
+    c.drawString(50, height - 60, 'Activities Finance Summary')
+    c.setFont('Helvetica', 11)
+    c.drawString(50, height - 80, f"Project ID: {project_id}")
+
+    # Chart: Top activities by spend
+    chart_img = await _chart_activities_spend(details)
+    y = height - 110
+    if chart_img:
+        c.drawImage(chart_img, 50, y - 180, width=500, height=170, preserveAspectRatio=True, mask='auto')
+        y -= 190
+
+    # Table
+    c.setFont('Helvetica-Bold', 12)
+    c.drawString(50, y, 'Expenses by Activity (Activity ID / Transactions / Spent)')
+    y -= 18
+    c.setFont('Helvetica', 10)
+    for aid, row in list(details['spent_by_activity'].items())[:80]:
+        line = f"{aid or '(none)'} / {row['transactions']} / {row['spent']:.2f}"
+        c.drawString(50, y, line[:110])
+        y -= 12
+        if y < 60:
+            c.showPage()
+            y = height - 60
+            c.setFont('Helvetica', 10)
+
+    c.showPage()
+    c.save()
+    return StreamingResponse(BytesIO(buf.getvalue()), media_type='application/pdf', headers={"Content-Disposition": f"attachment; filename=finance_activities_{project_id}.pdf"})
+
+@api.get('/finance/reports/all-projects-pdf')
+async def finance_report_all_projects_pdf(organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    var = await finance_service.budget_vs_actual(org, None, date_from, date_to)
+    rows = var.get('by_project', [])
+    buf = BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    width, height = A4
+
+    # Header
+    c.setFont('Helvetica-Bold', 14)
+    c.drawString(50, height - 60, 'All Projects Finance Summary')
+
+    # Chart
+    chart = await _chart_all_projects_variance(org, date_from, date_to)
+    y = height - 90
+    if chart:
+        c.drawImage(chart, 50, y - 180, width=500, height=170, preserveAspectRatio=True, mask='auto')
+        y -= 190
+
+    # Table header
+    c.setFont('Helvetica-Bold', 11)
+    c.drawString(50, y, 'Project ID / Planned / Allocated / Actual / Variance / Var%')
+    y -= 16
+    c.setFont('Helvetica', 10)
+    for r in rows[:120]:
+        line = f"{r['project_id']} / {r['planned']:.2f} / {r['allocated']:.2f} / {r['actual']:.2f} / {r['variance_amount']:.2f} / {r['variance_pct']:.1f}%"
+        c.drawString(50, y, line[:110])
+        y -= 12
+        if y < 60:
+            c.showPage()
+            y = height - 60
+            c.setFont('Helvetica', 10)
+
+    c.showPage()
+    c.save()
+    return StreamingResponse(BytesIO(buf.getvalue()), media_type='application/pdf', headers={"Content-Disposition": f"attachment; filename=finance_all_projects.pdf"})
 
 app.include_router(api)
