@@ -910,6 +910,7 @@ class ActivityUpdate(BaseModel):
     actual_output: Optional[str] = None
     achieved_quantity: Optional[float] = None
     progress_percentage: Optional[float] = None
+    measurement_unit: Optional[str] = None
     
     # Milestones updates
     milestones: Optional[List[Dict[str, Any]]] = None
