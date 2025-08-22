@@ -315,9 +315,9 @@ async def forecast(organization_id: Optional[str] = Query(None)):
     return await finance_service.forecast(org)
 
 @api.get('/finance/funding-utilization')
-async def funding_utilization(donor: Optional[str] = None, organization_id: Optional[str] = Query(None)):
+async def funding_utilization(donor: Optional[str] = None, organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
     org = organization_id or 'org'
-    return await finance_service.funding_utilization(org, donor)
+    return await finance_service.funding_utilization(org, donor, date_from, date_to)
 
 # --------------- Finance CSV import/export (stubs/minimal) ---------------
 @api.post('/finance/expenses/import-csv')
