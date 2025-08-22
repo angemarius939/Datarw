@@ -59,6 +59,12 @@ const ActivitiesTable = () => {
   const [selectedRows, setSelectedRows] = useState({});
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const pageCount = Math.max(1, Math.ceil((activities || []).length / pageSize));
+  const pageNumbers = Array.from({ length: Math.min(5, pageCount) }, (_, i) => i + 1);
+
+  // Export options
+  const [exportFormat, setExportFormat] = useState('nested'); // 'nested' | 'wide'
+
 
   const [activities, setActivities] = useState([]);
   const [projects, setProjects] = useState([]);
