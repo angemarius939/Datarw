@@ -371,9 +371,9 @@ async def export_expenses_csv(
 
 # --------------- Finance Reports (CSV) ---------------
 @api.get('/finance/reports/project-csv', response_class=PlainTextResponse)
-async def finance_report_project_csv(project_id: str, organization_id: Optional[str] = Query(None)):
+async def finance_report_project_csv(project_id: str, organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
     org = organization_id or 'org'
-    csv = await finance_service.project_report_csv(org, project_id)
+    csv = await finance_service.project_report_csv(org, project_id, date_from, date_to)
     return PlainTextResponse(content=csv, media_type='text/csv')
 
 @api.get('/finance/reports/activities-csv', response_class=PlainTextResponse)
