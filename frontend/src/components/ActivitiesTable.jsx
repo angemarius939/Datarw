@@ -401,7 +401,7 @@ const ActivitiesTable = () => {
                       users.forEach(u => { if (u.name) usersByName[u.name.toLowerCase()] = u; if (u.email) usersByName[u.email.toLowerCase()] = u; });
 
                       const mapped = rows.map(r => ({
-                        project_id: r['Project ID'] || r['Project'] || '',
+                        project_id: r['Project ID'] || (projectsByName[String(r['Project'] || '').toLowerCase()]?.id || projectsByName[String(r['Project'] || '').toLowerCase()]?._id) || '',
                         name: r['Activity Name'] || r['Name'] || r['Activity'] || '',
                         description: r['Description'] || '',
                         assigned_to: r['Assigned Person ID'] || r['Assigned Person'] || '',
