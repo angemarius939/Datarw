@@ -383,9 +383,9 @@ async def finance_report_activities_csv(project_id: str, organization_id: Option
     return PlainTextResponse(content=csv, media_type='text/csv')
 
 @api.get('/finance/reports/all-projects-csv', response_class=PlainTextResponse)
-async def finance_report_all_projects_csv(organization_id: Optional[str] = Query(None)):
+async def finance_report_all_projects_csv(organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
     org = organization_id or 'org'
-    csv = await finance_service.all_projects_report_csv(org)
+    csv = await finance_service.all_projects_report_csv(org, date_from, date_to)
     return PlainTextResponse(content=csv, media_type='text/csv')
 
 # --------------- QuickBooks Online stub endpoints ---------------
