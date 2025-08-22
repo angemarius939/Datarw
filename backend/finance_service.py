@@ -1,0 +1,197 @@
+import os
+import uuid
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple
+
+from bson import ObjectId
+from motor.motor_asyncio import AsyncIOMotorDatabase
+
+from models import (
+    Expense, ExpenseCreate, ExpenseUpdate,
+    BudgetItem, BudgetItemCreate, BudgetItemUpdate,
+)
+
+class FinanceService:
+    def __init__(self, db: AsyncIOMotorDatabase):
+        self.db = db
+
+    # -------------------- Expenses CRUD --------------------
+    async def create_expense(self, data: ExpenseCreate, organization_id: str, user_id: str) -> Expense:
+        payload = data.model_dump()
+        now = datetime.utcnow()
+        payload.update({
+            "id": str(uuid.uuid4()),
+            "organization_id": organization_id,
+            "created_by": user_id,
+            "created_at": now,
+            "updated_at": now,
+        })
+        await self.db.expenses.insert_one(payload)
+        return Expense(**payload)
+
+    async def list_expenses(self, organization_id: str, filters: Dict[str, Any], page: int = 1, page_size: int = 20) -> Dict[str, Any]:
+        query: Dict[str, Any] = {"organization_id": organization_id}
+        if project_id := filters.get("project_id"):
+            query["project_id"] = project_id
+        if activity_id := filters.get("activity_id"):
+            query["activity_id"] = activity_id
+        if funding_source := filters.get("funding_source"):
+            query["funding_source"] = funding_source
+        if vendor := filters.get("vendor"):
+            query["vendor"] = {"$regex": vendor, "$options": "i"}
+        if date_from := filters.get("date_from"):
+            query.setdefault("date", {})["$gte"] = datetime.fromisoformat(date_from)
+        if date_to := filters.get("date_to"):
+            query.setdefault("date", {})["$lte"] = datetime.fromisoformat(date_to)
+
+        total = await self.db.expenses.count_documents(query)
+        cursor = self.db.expenses.find(query).sort("date", -1).skip((page - 1) * page_size).limit(page_size)
+        items: List[Dict[str, Any]] = []
+        async for doc in cursor:
+            doc["_id"] = str(doc.get("_id"))
+            items.append(doc)
+        return {"items": items, "total": total, "page": page, "page_size": page_size}
+
+    async def get_expense(self, organization_id: str, expense_id: str) -> Optional[Expense]:
+        filters = []
+        try:
+            filters.append({"_id": ObjectId(expense_id)})
+        except Exception:
+            pass
+        filters.append({"id": expense_id})
+        query = {"$and": [{"organization_id": organization_id}, {"$or": filters}]}
+        doc = await self.db.expenses.find_one(query)
+        if doc:
+            doc["_id"] = str(doc.get("_id"))
+            return Expense(**doc)
+        return None
+
+    async def update_expense(self, organization_id: str, expense_id: str, updates: ExpenseUpdate, user_id: str) -> Optional[Expense]:
+        update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
+        update_data["updated_at"] = datetime.utcnow()
+        update_data["last_updated_by"] = user_id
+        filters = []
+        try:
+            filters.append({"_id": ObjectId(expense_id)})
+        except Exception:
+            pass
+        filters.append({"id": expense_id})
+        query = {"$and": [{"organization_id": organization_id}, {"$or": filters}]}
+        res = await self.db.expenses.update_one(query, {"$set": update_data})
+        if res.matched_count:
+            doc = await self.db.expenses.find_one(query)
+            if doc:
+                doc["_id"] = str(doc.get("_id"))
+                return Expense(**doc)
+        return None
+
+    async def delete_expense(self, organization_id: str, expense_id: str) -> bool:
+        filters = []
+        try:
+            filters.append({"_id": ObjectId(expense_id)})
+        except Exception:
+            pass
+        filters.append({"id": expense_id})
+        query = {"$and": [{"organization_id": organization_id}, {"$or": filters}]}
+        res = await self.db.expenses.delete_one(query)
+        return res.deleted_count > 0
+
+    # -------------------- Summaries & Analytics --------------------
+    async def budget_vs_actual(self, organization_id: str, project_id: Optional[str] = None) -> Dict[str, Any]:
+        match = {"organization_id": organization_id}
+        if project_id:
+            match["project_id"] = project_id
+        # Aggregate BudgetItems (planned)
+        pipeline_budget = [
+            {"$match": match},
+            {"$group": {"_id": "$project_id", "planned": {"$sum": "$budgeted_amount"}, "allocated": {"$sum": "$allocated_amount"}, "utilized_pi": {"$sum": "$utilized_amount"}}}
+        ]
+        planned_by_project: Dict[str, Dict[str, float]] = {}
+        async for b in self.db.budget_items.aggregate(pipeline_budget):
+            planned_by_project[str(b["_id"]) or "unknown"] = {
+                "planned": float(b.get("planned", 0)),
+                "allocated": float(b.get("allocated", 0)),
+                "utilized_pi": float(b.get("utilized_pi", 0)),
+            }
+        # Aggregate expenses (actual)
+        pipeline_exp = [
+            {"$match": match},
+            {"$group": {"_id": "$project_id", "actual": {"$sum": "$amount"}}}
+        ]
+        result: List[Dict[str, Any]] = []
+        actual_by_project: Dict[str, float] = {}
+        async for e in self.db.expenses.aggregate(pipeline_exp):
+            actual_by_project[str(e["_id"]) or "unknown"] = float(e.get("actual", 0))
+        # Merge
+        keys = set(planned_by_project.keys()) | set(actual_by_project.keys())
+        for k in keys:
+            planned = planned_by_project.get(k, {}).get("planned", 0.0)
+            allocated = planned_by_project.get(k, {}).get("allocated", 0.0)
+            utilized_pi = planned_by_project.get(k, {}).get("utilized_pi", 0.0)
+            actual = actual_by_project.get(k, 0.0)
+            variance_amount = planned - actual
+            variance_pct = (variance_amount / planned * 100.0) if planned else 0.0
+            result.append({
+                "project_id": k,
+                "planned": planned,
+                "allocated": allocated,
+                "actual": actual,
+                "variance_amount": variance_amount,
+                "variance_pct": variance_pct,
+            })
+        return {"by_project": result}
+
+    async def burn_rate(self, organization_id: str, period: str = "monthly") -> Dict[str, Any]:
+        now = datetime.utcnow()
+        start = now - timedelta(days=365)
+        match = {"organization_id": organization_id, "date": {"$gte": start}}
+        # Group key by period
+        if period == "quarterly":
+            group_id = {"year": {"$year": "$date"}, "quarter": {"$ceil": {"$divide": [{"$month": "$date"}, 3]}}}
+            label_build = lambda g: f"{int(g['year'])}-Q{int(g['quarter'])}"
+        elif period == "annual":
+            group_id = {"year": {"$year": "$date"}}
+            label_build = lambda g: f"{int(g['year'])}"
+        else:
+            group_id = {"year": {"$year": "$date"}, "month": {"$month": "$date"}}
+            label_build = lambda g: f"{int(g['year'])}-{int(g['month']):02d}"
+        pipeline = [
+            {"$match": match},
+            {"$group": {"_id": group_id, "spent": {"$sum": "$amount"}}},
+            {"$sort": {"_id.year": 1, "_id.month": 1 if period == 'monthly' else 1, "_id.quarter": 1 if period == 'quarterly' else 1}},
+        ]
+        series: List[Dict[str, Any]] = []
+        async for d in self.db.expenses.aggregate(pipeline):
+            label = label_build(d["_id"])
+            series.append({"period": label, "spent": float(d.get("spent", 0))})
+        return {"period": period, "series": series}
+
+    async def forecast(self, organization_id: str) -> Dict[str, Any]:
+        # Simple forecast: average monthly spend * remaining months of year
+        now = datetime.utcnow()
+        start_year = datetime(now.year, 1, 1)
+        match = {"organization_id": organization_id, "date": {"$gte": start_year}}
+        pipeline = [
+            {"$match": match},
+            {"$group": {"_id": {"year": {"$year": "$date"}, "month": {"$month": "$date"}}, "spent": {"$sum": "$amount"}}}
+        ]
+        monthly = []
+        async for d in self.db.expenses.aggregate(pipeline):
+            monthly.append(float(d.get("spent", 0)))
+        avg = sum(monthly) / len(monthly) if monthly else 0.0
+        remaining_months = 12 - now.month
+        projection = avg * remaining_months
+        return {"avg_monthly": avg, "projected_spend_rest_of_year": projection, "months_remaining": remaining_months}
+
+    async def funding_utilization(self, organization_id: str, donor: Optional[str] = None) -> Dict[str, Any]:
+        match = {"organization_id": organization_id}
+        if donor:
+            match["funding_source"] = donor
+        pipeline = [
+            {"$match": match},
+            {"$group": {"_id": "$funding_source", "spent": {"$sum": "$amount"}}}
+        ]
+        items: List[Dict[str, Any]] = []
+        async for d in self.db.expenses.aggregate(pipeline):
+            items.append({"funding_source": d.get("_id") or "Unknown", "spent": float(d.get("spent", 0))})
+        return {"by_funding_source": items}
