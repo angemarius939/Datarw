@@ -257,7 +257,7 @@ const BudgetTrackingPage = () => {
       toast({ title: 'Select project', description: 'Choose a project in the Expenses filter first', variant: 'destructive' });
       return;
     }
-    const res = await financeAPI.downloadActivitiesReportCSV(filters.project_id);
+    const res = await financeAPI.downloadActivitiesReportCSV(filters.project_id, buildDateParams());
     downloadBlob(res.data, `finance_activities_${filters.project_id}.csv`);
   };
 
