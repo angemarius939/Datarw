@@ -257,7 +257,7 @@ class FinanceService:
             ]))
         return '\n'.join(lines)
 
-    async def activities_report_csv(self, organization_id: str, project_id: str) -> str:
+    async def activities_report_csv(self, organization_id: str, project_id: str, date_from: Optional[str] = None, date_to: Optional[str] = None) -> str:
         # Group expenses by activity for the project
         match = {"organization_id": organization_id, "project_id": project_id}
         pipeline = [
