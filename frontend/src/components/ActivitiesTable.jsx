@@ -27,6 +27,24 @@ const riskColors = {
   critical: 'bg-purple-100 text-purple-800'
 };
 
+const DEFAULT_COLUMNS = [
+  { key: 'name', label: 'Activity', default: true },
+  { key: 'project', label: 'Project', default: true },
+  { key: 'assigned', label: 'Assigned', default: true },
+  { key: 'team', label: 'Team', default: true },
+  { key: 'status', label: 'Status', default: true },
+  { key: 'risk', label: 'Risk', default: true },
+  { key: 'start', label: 'Start', default: true },
+  { key: 'end', label: 'End', default: true },
+  { key: 'progress', label: 'Progress %', default: true },
+  { key: 'target', label: 'Target', default: true },
+  { key: 'achieved', label: 'Achieved', default: true },
+  { key: 'budget', label: 'Budget', default: true },
+  { key: 'schedule_var', label: 'Sched Var (d)', default: true },
+  { key: 'completion_var', label: 'Compl Var %', default: true },
+  { key: 'updated', label: 'Updated', default: true }
+];
+
 const ActivitiesTable = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
