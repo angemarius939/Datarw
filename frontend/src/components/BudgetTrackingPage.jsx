@@ -262,8 +262,38 @@ const BudgetTrackingPage = () => {
   };
 
   const downloadAllProjectsReport = async () => {
-    const res = await financeAPI.downloadAllProjectsReportCSV();
+    const res = await financeAPI.downloadAllProjectsReportCSV(buildDateParams());
     downloadBlob(res.data, 'finance_all_projects.csv');
+  };
+
+  const buildDateParams = () => {
+    const params = {};
+    if (filters.date_from) params.date_from = filters.date_from;
+    if (filters.date_to) params.date_to = filters.date_to;
+    return params;
+  };
+
+  const downloadProjectReportXLSX = async () => {
+    if (!filters.project_id) {
+      toast({ title: 'Select project', description: 'Choose a project in the Expenses filter first', variant: 'destructive' });
+      return;
+    }
+    const res = await financeAPI.downloadProjectReportXLSX(filters.project_id, buildDateParams());
+    downloadBlob(res.data, `finance_project_${filters.project_id}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  };
+
+  const downloadActivitiesReportXLSX = async () => {
+    if (!filters.project_id) {
+      toast({ title: 'Select project', description: 'Choose a project in the Expenses filter first', variant: 'destructive' });
+      return;
+    }
+    const res = await financeAPI.downloadActivitiesReportXLSX(filters.project_id, buildDateParams());
+    downloadBlob(res.data, `finance_activities_${filters.project_id}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  };
+
+  const downloadAllProjectsReportXLSX = async () => {
+    const res = await financeAPI.downloadAllProjectsReportXLSX(buildDateParams());
+    downloadBlob(res.data, 'finance_all_projects.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   };
 
   return (
