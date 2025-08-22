@@ -651,9 +651,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Enhanced Activity Creation Endpoints (CreateActivityModal Refactor)"
-  stuck_tasks:
-    - "Enhanced Activity Creation Endpoints (CreateActivityModal Refactor)"
+    - "Budget Tracking CSV Reports: project, activities, all projects"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
