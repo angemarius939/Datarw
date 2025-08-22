@@ -354,6 +354,25 @@ const ActivitiesTable = () => {
             </div>
           </div>
         </div>
+
+          {/* Column chooser */}
+          <div className="md:col-span-6">
+            <div className="flex items-center flex-wrap gap-3 p-2 border rounded bg-white">
+              <span className="text-sm text-gray-600 mr-2">Columns:</span>
+              {DEFAULT_COLUMNS.map(col => (
+                <label key={col.key} className="flex items-center space-x-2 text-sm">
+                  <Checkbox
+                    checked={!!visibleCols[col.key]}
+                    onCheckedChange={(checked) => {
+                      const next = { ...visibleCols, [col.key]: !!checked };
+                      persistCols(next);
+                    }}
+                  />
+                  <span>{col.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
       </CardHeader>
       <CardContent>
         {loading ? (
