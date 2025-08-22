@@ -2,7 +2,7 @@ import requests
 import json
 
 # Test the project dashboard endpoint directly
-base_url = "https://datarw-tracker.preview.emergentagent.com/api"
+base_url = "https://expense-master-277.preview.emergentagent.com/api"
 
 def test_auth_and_dashboard():
     # First, let's register a new user
