@@ -221,3 +221,75 @@ class FinanceService:
         async for d in self.db.expenses.aggregate(pipeline):
             items.append({"funding_source": d.get("_id") or "Unknown", "spent": float(d.get("spent", 0))})
         return {"by_funding_source": items}
+
+    # -------------------- CSV Reports (Finance) --------------------
+    async def _csv_sanitize(self, v: Any) -> str:
+        s = str(v or "")
+        if any(c in s for c in ['"', ',', '\n']):
+            s = '"' + s.replace('"','""') + '"'
+        return s
+
+    async def project_report_csv(self, organization_id: str, project_id: str) -> str:
+        # Budget vs Actual for a single project + funding utilization
+        variance = await self.budget_vs_actual(organization_id, project_id)
+        fu = await self.funding_utilization(organization_id)
+        headers = ["Project ID","Planned","Allocated","Actual","Variance Amount","Variance %"]
+        lines = [','.join(headers)]
+        for row in variance.get("by_project", []):
+            if row.get("project_id") != project_id:
+                continue
+            line = [
+                await self._csv_sanitize(row.get("project_id")),
+                await self._csv_sanitize(row.get("planned")),
+                await self._csv_sanitize(row.get("allocated")),
+                await self._csv_sanitize(row.get("actual")),
+                await self._csv_sanitize(row.get("variance_amount")),
+                await self._csv_sanitize(f"{row.get('variance_pct',0):.1f}"),
+            ]
+            lines.append(','.join(line))
+        # Append funding utilization by source
+        lines.append("")
+        lines.append("Funding Source,Spent")
+        for item in fu.get("by_funding_source", []):
+            lines.append(','.join([
+                await self._csv_sanitize(item.get("funding_source")),
+                await self._csv_sanitize(item.get("spent")),
+            ]))
+        return '\n'.join(lines)
+
+    async def activities_report_csv(self, organization_id: str, project_id: str) -> str:
+        # Group expenses by activity for the project
+        match = {"organization_id": organization_id, "project_id": project_id}
+        pipeline = [
+            {"$match": match},
+            {"$group": {"_id": "$activity_id", "spent": {"$sum": "$amount"}, "count": {"$sum": 1}}},
+            {"$sort": {"spent": -1}}
+        ]
+        rows: List[Dict[str, Any]] = []
+        async for d in self.db.expenses.aggregate(pipeline):
+            rows.append({"activity_id": d.get("_id") or "(none)", "spent": float(d.get("spent", 0)), "transactions": int(d.get("count", 0))})
+        headers = ["Activity ID","Transactions","Spent"]
+        lines = [','.join(headers)]
+        for r in rows:
+            lines.append(','.join([
+                await self._csv_sanitize(r.get("activity_id")),
+                await self._csv_sanitize(r.get("transactions")),
+                await self._csv_sanitize(r.get("spent")),
+            ]))
+        return '\n'.join(lines)
+
+    async def all_projects_report_csv(self, organization_id: str) -> str:
+        # Budget vs Actual for all projects
+        variance = await self.budget_vs_actual(organization_id)
+        headers = ["Project ID","Planned","Allocated","Actual","Variance Amount","Variance %"]
+        lines = [','.join(headers)]
+        for row in variance.get("by_project", []):
+            lines.append(','.join([
+                await self._csv_sanitize(row.get("project_id")),
+                await self._csv_sanitize(row.get("planned")),
+                await self._csv_sanitize(row.get("allocated")),
+                await self._csv_sanitize(row.get("actual")),
+                await self._csv_sanitize(row.get("variance_amount")),
+                await self._csv_sanitize(f"{row.get('variance_pct',0):.1f}"),
+            ]))
+        return '\n'.join(lines)

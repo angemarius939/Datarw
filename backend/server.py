@@ -369,6 +369,25 @@ async def export_expenses_csv(
     csv = '\n'.join(lines)
     return PlainTextResponse(content=csv, media_type='text/csv')
 
+# --------------- Finance Reports (CSV) ---------------
+@api.get('/finance/reports/project-csv', response_class=PlainTextResponse)
+async def finance_report_project_csv(project_id: str, organization_id: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    csv = await finance_service.project_report_csv(org, project_id)
+    return PlainTextResponse(content=csv, media_type='text/csv')
+
+@api.get('/finance/reports/activities-csv', response_class=PlainTextResponse)
+async def finance_report_activities_csv(project_id: str, organization_id: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    csv = await finance_service.activities_report_csv(org, project_id)
+    return PlainTextResponse(content=csv, media_type='text/csv')
+
+@api.get('/finance/reports/all-projects-csv', response_class=PlainTextResponse)
+async def finance_report_all_projects_csv(organization_id: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    csv = await finance_service.all_projects_report_csv(org)
+    return PlainTextResponse(content=csv, media_type='text/csv')
+
 # --------------- QuickBooks Online stub endpoints ---------------
 @api.post('/finance/integrations/qbo/connect')
 async def qbo_connect():

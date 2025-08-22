@@ -105,37 +105,22 @@ export const aiAPI = {
 
 // Payment Processing API
 export const paymentsAPI = {
-  // Create invoice for payment
   createInvoice: (invoiceData) => api.post('/payments/create-invoice', invoiceData),
-  
-  // Initiate mobile money payment
   initiatePayment: (paymentData) => api.post('/payments/initiate', paymentData),
-  
-  // Create subscription payment
   createSubscriptionPayment: (subscriptionData) => api.post('/payments/subscription', subscriptionData),
-  
-  // Get payment status
   getPaymentStatus: (invoiceNumber) => api.get(`/payments/status/${invoiceNumber}`),
-  
-  // Get payment history
   getPaymentHistory: (limit = 10, offset = 0) => api.get(`/payments/history?limit=${limit}&offset=${offset}`),
-  
-  // Get pricing plans
   getPricingPlans: () => api.get('/payments/plans'),
-  
-  // Quick subscription payment for plans
   subscribeToBasic: (userData) => paymentsAPI.createSubscriptionPayment({
     ...userData,
     plan_name: 'Basic',
     payment_method: userData.payment_method || 'MTN'
   }),
-  
   subscribeToProfessional: (userData) => paymentsAPI.createSubscriptionPayment({
     ...userData,
     plan_name: 'Professional', 
     payment_method: userData.payment_method || 'MTN'
   }),
-  
   subscribeToEnterprise: (userData) => paymentsAPI.createSubscriptionPayment({
     ...userData,
     plan_name: 'Enterprise',
@@ -151,23 +136,15 @@ export const projectsAPI = {
   getProject: (projectId) => api.get(`/projects/${projectId}`),
   updateProject: (projectId, data) => api.put(`/projects/${projectId}`, data),
   deleteProject: (projectId) => api.delete(`/projects/${projectId}`),
-  
-  // Activities
   getActivities: (projectId) => api.get('/activities', projectId ? { params: { project_id: projectId } } : {}),
   createActivity: (activityData) => api.post('/activities', activityData),
   updateActivity: (activityId, data) => api.put(`/activities/${activityId}`, data),
-  
-  // Budget
   getBudgetItems: (projectId) => api.get('/budget', projectId ? { params: { project_id: projectId } } : {}),
   createBudgetItem: (budgetData) => api.post('/budget', budgetData),
   getBudgetSummary: (projectId) => api.get('/budget/summary', projectId ? { params: { project_id: projectId } } : {}),
-  
-  // KPIs
   getKPIs: (projectId) => api.get('/kpis', projectId ? { params: { project_id: projectId } } : {}),
   createKPI: (kpiData) => api.post('/kpis', kpiData),
   updateKPIValue: (indicatorId, currentValue) => api.put(`/kpis/${indicatorId}/value`, { current_value: currentValue }),
-  
-  // Beneficiaries
   getBeneficiaries: (projectId) => api.get('/beneficiaries', projectId ? { params: { project_id: projectId } } : {}),
   createBeneficiary: (beneficiaryData) => api.post('/beneficiaries', beneficiaryData),
   getBeneficiaryDemographics: (projectId) => api.get('/beneficiaries/demographics', projectId ? { params: { project_id: projectId } } : {}),
@@ -175,41 +152,27 @@ export const projectsAPI = {
 
 // Admin Panel API
 export const adminAPI = {
-  // Advanced User Management
   createUserAdvanced: (userData) => api.post('/admin/users/create-advanced', userData),
   bulkCreateUsers: (usersData, sendEmails = true) => api.post('/admin/users/bulk-create', usersData, {
     params: { send_emails: sendEmails }
   }),
-  
-  // Organization Branding
   getBranding: () => api.get('/admin/branding'),
   updateBranding: (brandingData) => api.put('/admin/branding', brandingData),
-  
-  // Email System
   getEmailLogs: (limit = 50) => api.get('/admin/email-logs', { params: { limit } }),
 };
 
 // AI-Enhanced Automated Reporting API
 export const reportsAPI = {
-  // Report Generation
   generateReport: (reportData) => api.post('/reports/generate', null, {
     params: reportData
   }),
-  
-  // Report Templates
   getTemplates: () => api.get('/reports/templates'),
-  
-  // Generated Reports
   getGeneratedReports: (projectId = null) => api.get('/reports/generated', 
     projectId ? { params: { project_id: projectId } } : {}
   ),
-  
-  // Download Report
   downloadReport: (reportId) => api.get(`/reports/download/${reportId}`, {
     responseType: 'blob'
   }),
-  
-  // Image Management
   uploadImages: (projectId, files) => {
     const formData = new FormData();
     files.forEach(file => {
@@ -221,13 +184,8 @@ export const reportsAPI = {
       },
     });
   },
-  
   getProjectImages: (projectId) => api.get(`/reports/project-images/${projectId}`),
-  
-  // Install Dependencies (Admin only)
   installDependencies: () => api.post('/reports/install-dependencies'),
-  
-  // Quick report generation methods
   generateMonthlyReport: (projectId, year, month) => reportsAPI.generateReport({
     project_id: projectId,
     report_type: 'Monthly Report',
@@ -236,7 +194,6 @@ export const reportsAPI = {
     include_images: true,
     ai_narrative: true
   }),
-  
   generateQuarterlyReport: (projectId, year, quarter) => {
     const quarterStartMonth = (quarter - 1) * 3;
     const quarterEndMonth = quarterStartMonth + 3;
@@ -249,7 +206,6 @@ export const reportsAPI = {
       ai_narrative: true
     });
   },
-  
   generateAnnualReport: (projectId, year) => reportsAPI.generateReport({
     project_id: projectId,
     report_type: 'Annual Report',
@@ -258,7 +214,6 @@ export const reportsAPI = {
     include_images: true,
     ai_narrative: true
   }),
-  
   generateCustomReport: (projectId, reportType, startDate, endDate, options = {}) => reportsAPI.generateReport({
     project_id: projectId,
     report_type: reportType,
@@ -274,8 +229,6 @@ export const partnersAPI = {
   getPartners: (status) => api.get('/admin/partners', status ? { params: { status } } : {}),
   createPartner: (partnerData) => api.post('/admin/partners', partnerData),
   updatePartner: (partnerId, data) => api.put(`/admin/partners/${partnerId}`, data),
-  
-  // Performance Tracking
   createPerformance: (performanceData) => api.post('/admin/partners/performance', performanceData),
   getPerformanceSummary: (partnerId) => api.get('/admin/partners/performance/summary', partnerId ? { params: { partner_id: partnerId } } : {}),
 };
@@ -313,6 +266,11 @@ export const financeAPI = {
   qboConnect: () => api.post('/finance/integrations/qbo/connect'),
   qboStatus: () => api.get('/finance/integrations/qbo/status'),
   qboPushExpenses: () => api.post('/finance/integrations/qbo/push-expenses'),
+
+  // Finance CSV Reports
+  downloadProjectReportCSV: (projectId) => api.get('/finance/reports/project-csv', { params: { project_id: projectId }, responseType: 'blob' }),
+  downloadActivitiesReportCSV: (projectId) => api.get('/finance/reports/activities-csv', { params: { project_id: projectId }, responseType: 'blob' }),
+  downloadAllProjectsReportCSV: () => api.get('/finance/reports/all-projects-csv', { responseType: 'blob' }),
 };
 
 export default api;

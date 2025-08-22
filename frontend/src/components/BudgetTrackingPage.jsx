@@ -231,6 +231,41 @@ const BudgetTrackingPage = () => {
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil((total || 0) / pageSize)), [total, pageSize]);
 
+  const downloadBlob = (data, filename, type = 'text/csv') => {
+    const blob = new Blob([data], { type: `${type};charset=utf-8;` });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadProjectReport = async () => {
+    if (!filters.project_id) {
+      toast({ title: 'Select project', description: 'Choose a project in the Expenses filter first', variant: 'destructive' });
+      return;
+    }
+    const res = await financeAPI.downloadProjectReportCSV(filters.project_id);
+    downloadBlob(res.data, `finance_project_${filters.project_id}.csv`);
+  };
+
+  const downloadActivitiesReport = async () => {
+    if (!filters.project_id) {
+      toast({ title: 'Select project', description: 'Choose a project in the Expenses filter first', variant: 'destructive' });
+      return;
+    }
+    const res = await financeAPI.downloadActivitiesReportCSV(filters.project_id);
+    downloadBlob(res.data, `finance_activities_${filters.project_id}.csv`);
+  };
+
+  const downloadAllProjectsReport = async () => {
+    const res = await financeAPI.downloadAllProjectsReportCSV();
+    downloadBlob(res.data, 'finance_all_projects.csv');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -437,12 +472,17 @@ const BudgetTrackingPage = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Finance Reports</CardTitle>
-                <Button onClick={runReports} disabled={loadingReports}>{loadingReports ? 'Running…' : 'Run Reports'}</Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={downloadProjectReport}><Download className="h-4 w-4 mr-2"/>Project CSV</Button>
+                  <Button variant="outline" onClick={downloadActivitiesReport}><Download className="h-4 w-4 mr-2"/>Activities CSV</Button>
+                  <Button variant="outline" onClick={downloadAllProjectsReport}><Download className="h-4 w-4 mr-2"/>All Projects CSV</Button>
+                  <Button onClick={runReports} disabled={loadingReports}>{loadingReports ? 'Running…' : 'Run Summaries'}</Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
               {!burnRate && !variance && !forecast && !utilization ? (
-                <div className="text-center py-10 text-gray-500">Run reports to see burn rate, variance and projections</div>
+                <div className="text-center py-10 text-gray-500">Run summaries to see burn rate, variance and projections</div>
               ) : (
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
@@ -465,7 +505,7 @@ const BudgetTrackingPage = () => {
                           <span className="text-right">Planned: {row.planned.toLocaleString()}</span>
                           <span className="text-right">Allocated: {row.allocated.toLocaleString()}</span>
                           <span className="text-right">Actual: {row.actual.toLocaleString()}</span>
-                          <span className={`text-right ${row.variance_amount < 0 ? 'text-red-600' : 'text-green-700'}`}>Var: {row.variance_amount.toLocaleString()} ({row.variance_pct.toFixed(1)}%)</span>
+                          <span className={`text-right ${row.variance_amount < 0 ? 'text-red-600' : 'text-green-700'}`}>Var: {row.variance_amount.toLocaleString()} ({Number(row.variance_pct||0).toFixed(1)}%)</span>
                         </div>
                       ))}
                     </div>
