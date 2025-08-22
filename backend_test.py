@@ -200,6 +200,104 @@ class DataRWAPITester:
             self.log_result("Invalid Login", False, f"Request error: {str(e)}")
             return False
     
+    def test_protected_endpoint_no_token(self):
+        """Test protected endpoint without authorization token"""
+        try:
+            # Remove authorization header temporarily
+            original_headers = self.session.headers.copy()
+            if 'Authorization' in self.session.headers:
+                del self.session.headers['Authorization']
+            
+            response = self.session.get(f"{self.base_url}/organizations/me")
+            
+            # Restore headers
+            self.session.headers.update(original_headers)
+            
+            if response.status_code in [401, 403]:
+                self.log_result("Protected Endpoint - No Token", True, 
+                              f"Properly rejected unauthorized access with HTTP {response.status_code}")
+                return True
+            else:
+                self.log_result("Protected Endpoint - No Token", False, 
+                              f"Expected 401/403, got {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Protected Endpoint - No Token", False, f"Request error: {str(e)}")
+            return False
+    
+    def test_protected_endpoint_with_token(self):
+        """Test protected endpoint with valid authorization token"""
+        try:
+            response = self.session.get(f"{self.base_url}/organizations/me")
+            
+            if response.status_code == 200:
+                data = response.json()
+                # Check for either 'id' or '_id' field
+                org_id = data.get("id") or data.get("_id")
+                if org_id and "name" in data:
+                    # Verify the org_id matches what we expect from registration
+                    if self.organization_data:
+                        expected_org_id = self.organization_data.get("id") or self.organization_data.get("_id")
+                        if org_id == expected_org_id:
+                            self.log_result("Protected Endpoint - With Token", True, 
+                                          "Organization data retrieved successfully with matching _id")
+                            return True
+                        else:
+                            self.log_result("Protected Endpoint - With Token", False, 
+                                          f"Organization ID mismatch: expected {expected_org_id}, got {org_id}")
+                            return False
+                    else:
+                        self.log_result("Protected Endpoint - With Token", True, 
+                                      "Organization data retrieved successfully")
+                        return True
+                else:
+                    self.log_result("Protected Endpoint - With Token", False, 
+                                  "Missing required fields in organization response", data)
+                    return False
+            else:
+                self.log_result("Protected Endpoint - With Token", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Protected Endpoint - With Token", False, f"Request error: {str(e)}")
+            return False
+
+    def test_auth_endpoints_comprehensive(self):
+        """Comprehensive test of auth endpoints as requested in review"""
+        print("\n" + "="*60)
+        print("COMPREHENSIVE AUTH ENDPOINTS TESTING")
+        print("="*60)
+        
+        # Test 1: Registration with valid data
+        success_count = 0
+        total_tests = 6
+        
+        if self.test_user_registration():
+            success_count += 1
+        
+        # Test 2: Duplicate registration
+        if self.test_duplicate_registration():
+            success_count += 1
+        
+        # Test 3: Valid login
+        if self.test_user_login_valid():
+            success_count += 1
+        
+        # Test 4: Invalid login
+        if self.test_user_login_invalid():
+            success_count += 1
+        
+        # Test 5: Protected endpoint without token
+        if self.test_protected_endpoint_no_token():
+            success_count += 1
+        
+        # Test 6: Protected endpoint with valid token
+        if self.test_protected_endpoint_with_token():
+            success_count += 1
+        
+        print(f"\nAUTH ENDPOINTS TESTING COMPLETE: {success_count}/{total_tests} tests passed")
+        return success_count == total_tests
+    
     def test_get_organization(self):
         """Test getting organization details"""
         try:
