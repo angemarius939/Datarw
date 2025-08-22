@@ -143,6 +143,17 @@ async def budget_summary(project_id: Optional[str] = None, organization_id: Opti
     org = organization_id or 'org'
     return await project_service.get_budget_summary(org, project_id)
 
+# --------------- Finance: Org Config ---------------
+@api.get('/finance/config')
+async def get_finance_config(organization_id: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    return await finance_service.get_org_config(org)
+
+@api.put('/finance/config')
+async def update_finance_config(payload: Dict[str, Any], organization_id: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    return await finance_service.update_org_config(org, payload)
+
 # --------------- Finance: Expenses & Analytics ---------------
 @api.post('/finance/expenses', response_model=Expense)
 async def create_expense(payload: ExpenseCreate, organization_id: Optional[str] = Query(None)):
