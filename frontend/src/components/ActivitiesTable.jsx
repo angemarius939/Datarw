@@ -374,6 +374,94 @@ const ActivitiesTable = () => {
             <CardDescription>Browse, filter and export your activities</CardDescription>
           </div>
           <div className="flex items-center space-x-2">
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              id="activities-import-csv"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                Papa.parse(file, {
+                  header: true,
+                  skipEmptyLines: true,
+                  complete: async (results) => {
+                    try {
+                      const rows = results.data || [];
+                      // Map CSV columns to activity fields (best-effort)
+                      const toNum = (v) => v === '' || v == null ? null : Number(v);
+                      const toDate = (v) => {
+                        if (!v) return null;
+                        const d = new Date(v);
+                        return isNaN(d.getTime()) ? null : d.toISOString();
+                      };
+                      const mapped = rows.map(r => ({
+                        project_id: r['Project ID'] || r['Project'] || '',
+                        name: r['Activity Name'] || r['Name'] || r['Activity'] || '',
+                        description: r['Description'] || '',
+                        assigned_to: r['Assigned Person ID'] || r['Assigned Person'] || '',
+                        assigned_team: r['Assigned Team'] || '',
+                        start_date: toDate(r['Start Date']) || toDate(r['Start']) || new Date().toISOString(),
+                        end_date: toDate(r['End Date']) || toDate(r['End']) || new Date().toISOString(),
+                        planned_start_date: toDate(r['Planned Start']) || null,
+                        planned_end_date: toDate(r['Planned End']) || null,
+                        budget_allocated: toNum(r['Budget Allocated']) ?? 0,
+                        planned_output: r['Planned Output'] || '',
+                        target_quantity: toNum(r['Target']) ?? null,
+                        achieved_quantity: toNum(r['Achieved']) ?? null,
+                        measurement_unit: r['Unit'] || null,
+                        status_notes: r['Notes'] || r['Status Notes'] || '',
+                        risk_level: (r['Risk'] || r['Risk Level'] || 'low').toLowerCase(),
+                        deliverables: (r['Deliverables'] ? String(r['Deliverables']).split(';').map(s => s.trim()).filter(Boolean) : []),
+                        milestones: (r['Milestones'] ? String(r['Milestones']).split(';').map(s => {
+                          const m = s.trim();
+                          const mName = m.replace(/\(.*\)/, '').trim();
+                          const mDate = (m.match(/\((.*)\)/) || [null, ''])[1];
+                          return { name: mName, target_date: toDate(mDate) };
+                        }).filter(Boolean) : [])
+                      }));
+
+                      // Validate minimal required fields
+                      const valid = mapped.filter(m => m.project_id && m.name && m.assigned_to);
+                      if (valid.length === 0) {
+                        toast({ title: 'Import aborted', description: 'No valid rows found (require Project, Name, Assigned)', variant: 'destructive' });
+                        return;
+                      }
+
+                      // Create activities sequentially or in small batches
+                      let created = 0;
+                      for (const payload of valid) {
+                        try {
+                          await projectsAPI.createActivity(payload);
+                          created += 1;
+                        } catch (err) {
+                          console.warn('Create failed for row', payload, err);
+                        }
+                      }
+                      toast({ title: 'Import complete', description: `${created} activity(ies) created` });
+                      // Refresh table
+                      const actsRes = await projectsAPI.getActivities();
+                      setActivities(actsRes.data || []);
+                    } catch (err) {
+                      console.error('CSV import failed', err);
+                      toast({ title: 'Import failed', description: 'Could not import CSV. Check the format and required fields.', variant: 'destructive' });
+                    } finally {
+                      e.target.value = '';
+                    }
+                  },
+                  error: (err) => {
+                    console.error('Parse error', err);
+                    toast({ title: 'Import failed', description: 'CSV parse error', variant: 'destructive' });
+                    e.target.value = '';
+                  }
+                });
+              }}
+            />
+            <label htmlFor="activities-import-csv">
+              <Button asChild variant="outline">
+                <span><Download className="h-4 w-4 mr-2" /> Import CSV</span>
+              </Button>
+            </label>
             {selectedCount > 0 && (
               <Button variant="default" onClick={() => exportToCSV(true)}>
                 <Download className="h-4 w-4 mr-2" /> Selected to CSV ({selectedCount})
