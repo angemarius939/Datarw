@@ -188,6 +188,34 @@ const EnhancedActivityTracker = ({ dashboardData, onDataRefresh }) => {
     return matchesStatus && matchesSearch;
   });
 
+  // Timeline bounds for simple Gantt bars
+  const getDate = (d) => {
+    try { return d ? new Date(d) : null; } catch { return null; }
+  };
+  const timelineBounds = (() => {
+    if (!filteredActivities.length) return null;
+    let min = null, max = null;
+    filteredActivities.forEach(a => {
+      const s = getDate(a.planned_start_date || a.start_date);
+      const e = getDate(a.planned_end_date || a.end_date);
+      if (s && (!min || s < min)) min = s;
+      if (e && (!max || e > max)) max = e;
+    });
+    if (!min || !max || max <= min) return null;
+    return { min, max, rangeMs: max - min };
+  })();
+
+  const ganttStyleFor = (a) => {
+    if (!timelineBounds) return { left: '0%', width: '0%' };
+    const s = getDate(a.planned_start_date || a.start_date) || timelineBounds.min;
+    const e = getDate(a.planned_end_date || a.end_date) || s;
+    const clamp = (v) => Math.max(0, Math.min(1, v));
+    const startPct = clamp((s - timelineBounds.min) / timelineBounds.rangeMs) * 100;
+    const endPct = clamp((e - timelineBounds.min) / timelineBounds.rangeMs) * 100;
+    const width = Math.max(2, endPct - startPct); // ensure visible
+    return { left: `${startPct}%`, width: `${width}%` };
+  };
+
   const ActivityEditModal = ({ activity, onClose, onSave }) => {
     const [editData, setEditData] = useState({
       progress_percentage: activity.progress_percentage || 0,
