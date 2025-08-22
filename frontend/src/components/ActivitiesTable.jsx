@@ -307,6 +307,12 @@ const ActivitiesTable = () => {
               <div>
                 <Input placeholder="Filter by description" value={descFilter} onChange={e => setDescFilter(e.target.value)} />
               </div>
+              <div>
+                <Input placeholder="Filter by project name" value={projectText} onChange={e => setProjectText(e.target.value)} />
+              </div>
+              <div>
+                <Input placeholder="Filter by team" value={teamText} onChange={e => setTeamText(e.target.value)} />
+              </div>
               <div className="flex items-center space-x-2">
                 <Input placeholder="Min budget" type="number" value={minBudget} onChange={e => setMinBudget(e.target.value)} />
                 <Input placeholder="Max budget" type="number" value={maxBudget} onChange={e => setMaxBudget(e.target.value)} />
