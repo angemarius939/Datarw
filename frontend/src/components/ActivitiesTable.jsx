@@ -825,7 +825,7 @@ const ActivitiesTable = () => {
                         </td>
                       )}
                       {visibleCols.project && (
-                        <td className="p-2">{projectById[a.project_id]?.name || a.project_id}</td>
+                        <td className="p-2">{getProjectName(a)}</td>
                       )}
                       {visibleCols.assigned && (
                         <td className="p-2">{userById[a.assigned_to]?.name || a.assigned_to}</td>
