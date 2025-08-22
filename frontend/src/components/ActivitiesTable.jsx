@@ -129,6 +129,10 @@ const ActivitiesTable = () => {
       if (risk !== 'all' && a.risk_level !== risk) return false;
       if (team !== 'all' && (a.assigned_team || '') !== team) return false;
       if (s && !(`${a.name || ''} ${a.description || ''}`.toLowerCase().includes(s))) return false;
+      if (descFilter && !(a.description || '').toLowerCase().includes(descFilter.toLowerCase())) return false;
+      const budget = Number(a.budget_allocated || 0);
+      if (minBudget !== '' && budget < Number(minBudget)) return false;
+      if (maxBudget !== '' && budget > Number(maxBudget)) return false;
       if (from) {
         const sd = a.start_date ? new Date(a.start_date) : null;
         if (sd && sd < from) return false;
