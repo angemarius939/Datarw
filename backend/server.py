@@ -93,6 +93,11 @@ async def create_project(payload: ProjectCreate, organization_id: Optional[str] 
     creator = 'system'
     return await project_service.create_project(payload, org, creator)
 
+@api.get('/projects/dashboard', response_model=ProjectDashboardData)
+async def get_dashboard(organization_id: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    return await project_service.get_dashboard_data(org)
+
 @api.get('/projects/{project_id}', response_model=Optional[Project])
 async def get_project(project_id: str):
     return await project_service.get_project(project_id)
@@ -105,11 +110,6 @@ async def update_project(project_id: str, payload: ProjectUpdate):
 async def delete_project(project_id: str):
     ok = await project_service.delete_project(project_id)
     return {'success': ok}
-
-@api.get('/projects/dashboard', response_model=ProjectDashboardData)
-async def get_dashboard(organization_id: Optional[str] = Query(None)):
-    org = organization_id or 'org'
-    return await project_service.get_dashboard_data(org)
 
 # --------------- Activities ---------------
 @api.get('/activities')
