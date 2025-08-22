@@ -20,13 +20,35 @@ from models import (
 from project_service import ProjectService
 from finance_service import FinanceService
 
-# Environment
+# Environment loader (fallback to .env file)
+from pathlib import Path
+
+def _load_env_if_needed():
+    if os.environ.get('MONGO_URL'):
+        return
+    env_path = Path(__file__).parent / '.env'
+    if env_path.exists():
+        try:
+            for line in env_path.read_text().splitlines():
+                line = line.strip()
+                if not line or line.startswith('#') or '=' not in line:
+                    continue
+                k, v = line.split('=', 1)
+                k = k.strip()
+                v = v.strip().strip('"').strip("'")
+                os.environ.setdefault(k, v)
+        except Exception:
+            pass
+
+_load_env_if_needed()
+
 MONGO_URL = os.environ.get('MONGO_URL')
 if not MONGO_URL:
     raise RuntimeError('MONGO_URL not configured')
 
 client = AsyncIOMotorClient(MONGO_URL)
-db = client.get_default_database() or client[os.environ.get('MONGO_DB_NAME', 'default')]
+_db_name = os.environ.get('DB_NAME') or os.environ.get('MONGO_DB_NAME') or 'datarw_database'
+db = client[_db_name]
 
 project_service = ProjectService(db)
 finance_service = FinanceService(db)
