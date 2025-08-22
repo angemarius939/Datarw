@@ -381,7 +381,7 @@ const ActivitiesTable = () => {
           <div className="text-center py-10 text-gray-500">No activities found</div>
         ) : (
           <div className="overflow-x-auto border rounded">
-            <table className="min-w-full text-sm">
+            <table className="min-w-full text-sm relative">
               <thead className="bg-gray-50 text-gray-600 sticky top-0 z-10">
                 <tr>
                   {visibleCols.name && <th className="text-left p-2">Activity</th>}
