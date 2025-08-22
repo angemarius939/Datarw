@@ -412,138 +412,140 @@ const ActivitiesTable = () => {
         ) : filtered.length === 0 ? (
           <div className="text-center py-10 text-gray-500">No activities found</div>
         ) : (
-          <div className="overflow-x-auto border rounded">
-            <table className="min-w-full text-sm relative">
-              <thead className="bg-gray-50 text-gray-600 sticky top-0 z-10">
-                <tr>
-                  <th className="text-left p-2 w-12">
-                    <Checkbox
-                      checked={filtered.slice((page-1)*pageSize, page*pageSize).every(a => isRowSelected(a.id))}
-                      onCheckedChange={togglePage}
-                    />
-                  </th>
-                  {visibleCols.name && <th className="text-left p-2">Activity</th>}
-                  {visibleCols.project && <th className="text-left p-2">Project</th>}
-                  {visibleCols.assigned && <th className="text-left p-2">Assigned</th>}
-                  {visibleCols.team && <th className="text-left p-2">Team</th>}
-                  {visibleCols.status && <th className="text-left p-2">Status</th>}
-                  {visibleCols.risk && <th className="text-left p-2">Risk</th>}
-                  {visibleCols.start && <th className="text-left p-2">Start</th>}
-                  {visibleCols.end && <th className="text-left p-2">End</th>}
-                  {visibleCols.progress && <th className="text-right p-2">Progress %</th>}
-                  {visibleCols.target && <th className="text-right p-2">Target</th>}
-                  {visibleCols.achieved && <th className="text-right p-2">Achieved</th>}
-                  {visibleCols.budget && <th className="text-right p-2">Budget</th>}
-                  {visibleCols.schedule_var && <th className="text-right p-2">Sched Var (d)</th>}
-                  {visibleCols.completion_var && <th className="text-right p-2">Compl Var %</th>}
-                  {visibleCols.updated && <th className="text-left p-2">Updated</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.slice((page-1)*pageSize, page*pageSize).map(a => (
-                  <tr key={a.id} className="border-t hover:bg-gray-50">
-                    <td className="p-2">
+          <div className="space-y-3">
+            <div className="overflow-x-auto border rounded">
+              <table className="min-w-full text-sm relative">
+                <thead className="bg-gray-50 text-gray-600 sticky top-0 z-10">
+                  <tr>
+                    <th className="text-left p-2 w-12">
                       <Checkbox
-                        checked={isRowSelected(a.id)}
-                        onCheckedChange={(checked) => toggleRow(a.id, checked)}
+                        checked={filtered.slice((page-1)*pageSize, page*pageSize).every(a => isRowSelected(a.id))}
+                        onCheckedChange={togglePage}
                       />
-                    </td>
-                    {visibleCols.name && (
-                      <td className="p-2">
-                        <div className="font-medium text-gray-900">{a.name}</div>
-                        {a.planned_output && (
-                          <div className="text-xs text-gray-500">{a.planned_output}</div>
-                        )}
-                      </td>
-                    )}
-                    {visibleCols.project && (
-                      <td className="p-2">{projectById[a.project_id]?.name || a.project_id}</td>
-                    )}
-                    {visibleCols.assigned && (
-                      <td className="p-2">{userById[a.assigned_to]?.name || a.assigned_to}</td>
-                    )}
-                    {visibleCols.team && (
-                      <td className="p-2">{a.assigned_team || '-'}</td>
-                    )}
-                    {visibleCols.status && (
-                      <td className="p-2">
-                        <Badge className={statusColors[a.status] || statusColors.not_started}>
-                          {(a.status || '').replace('_', ' ')}
-                        </Badge>
-                      </td>
-                    )}
-                    {visibleCols.risk && (
-                      <td className="p-2">
-                        <Badge className={riskColors[a.risk_level] || 'bg-gray-100 text-gray-800'}>
-                          {a.risk_level || 'low'}
-                        </Badge>
-                      </td>
-                    )}
-                    {visibleCols.start && (
-                      <td className="p-2">{a.start_date ? format(new Date(a.start_date), 'yyyy-MM-dd') : ''}</td>
-                    )}
-                    {visibleCols.end && (
-                      <td className="p-2">{a.end_date ? format(new Date(a.end_date), 'yyyy-MM-dd') : ''}</td>
-                    )}
-                    {visibleCols.progress && (
-                      <td className="p-2 text-right">{Math.round(a.progress_percentage || 0)}</td>
-                    )}
-                    {visibleCols.target && (
-                      <td className="p-2 text-right">{a.target_quantity != null ? `${a.target_quantity}${a.measurement_unit ? ' ' + a.measurement_unit : ''}` : '-'}</td>
-                    )}
-                    {visibleCols.achieved && (
-                      <td className="p-2 text-right">{a.achieved_quantity != null ? `${a.achieved_quantity}${a.measurement_unit ? ' ' + a.measurement_unit : ''}` : '-'}</td>
-                    )}
-                    {visibleCols.budget && (
-                      <td className="p-2 text-right">{(a.budget_allocated ?? 0).toLocaleString()}</td>
-                    )}
-                    {visibleCols.schedule_var && (
-                      <td className="p-2 text-right">{a.schedule_variance_days ?? 0}</td>
-                    )}
-                    {visibleCols.completion_var && (
-                      <td className="p-2 text-right">{Math.round(a.completion_variance ?? 0)}</td>
-                    )}
-                    {visibleCols.updated && (
-                      <td className="p-2">{a.updated_at ? format(new Date(a.updated_at), 'yyyy-MM-dd HH:mm') : ''}</td>
-                    )}
+                    </th>
+                    {visibleCols.name && <th className="text-left p-2">Activity</th>}
+                    {visibleCols.project && <th className="text-left p-2">Project</th>}
+                    {visibleCols.assigned && <th className="text-left p-2">Assigned</th>}
+                    {visibleCols.team && <th className="text-left p-2">Team</th>}
+                    {visibleCols.status && <th className="text-left p-2">Status</th>}
+                    {visibleCols.risk && <th className="text-left p-2">Risk</th>}
+                    {visibleCols.start && <th className="text-left p-2">Start</th>}
+                    {visibleCols.end && <th className="text-left p-2">End</th>}
+                    {visibleCols.progress && <th className="text-right p-2">Progress %</th>}
+                    {visibleCols.target && <th className="text-right p-2">Target</th>}
+                    {visibleCols.achieved && <th className="text-right p-2">Achieved</th>}
+                    {visibleCols.budget && <th className="text-right p-2">Budget</th>}
+                    {visibleCols.schedule_var && <th className="text-right p-2">Sched Var (d)</th>}
+                    {visibleCols.completion_var && <th className="text-right p-2">Compl Var %</th>}
+                    {visibleCols.updated && <th className="text-left p-2">Updated</th>}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-between mt-3">
-            <div className="text-sm text-gray-600">
-              Showing {(page-1)*pageSize + 1} - {Math.min(page*pageSize, filtered.length)} of {filtered.length}
-            </div>
-            <div className="flex items-center space-x-3">
-              <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
-                <SelectTrigger className="w-24">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[10,20,50,100].map(s => (
-                    <SelectItem key={s} value={String(s)}>{s} / page</SelectItem>
+                </thead>
+                <tbody>
+                  {filtered.slice((page-1)*pageSize, page*pageSize).map(a => (
+                    <tr key={a.id} className="border-t hover:bg-gray-50">
+                      <td className="p-2">
+                        <Checkbox
+                          checked={isRowSelected(a.id)}
+                          onCheckedChange={(checked) => toggleRow(a.id, checked)}
+                        />
+                      </td>
+                      {visibleCols.name && (
+                        <td className="p-2">
+                          <div className="font-medium text-gray-900">{a.name}</div>
+                          {a.planned_output && (
+                            <div className="text-xs text-gray-500">{a.planned_output}</div>
+                          )}
+                        </td>
+                      )}
+                      {visibleCols.project && (
+                        <td className="p-2">{projectById[a.project_id]?.name || a.project_id}</td>
+                      )}
+                      {visibleCols.assigned && (
+                        <td className="p-2">{userById[a.assigned_to]?.name || a.assigned_to}</td>
+                      )}
+                      {visibleCols.team && (
+                        <td className="p-2">{a.assigned_team || '-'}</td>
+                      )}
+                      {visibleCols.status && (
+                        <td className="p-2">
+                          <Badge className={statusColors[a.status] || statusColors.not_started}>
+                            {(a.status || '').replace('_', ' ')}
+                          </Badge>
+                        </td>
+                      )}
+                      {visibleCols.risk && (
+                        <td className="p-2">
+                          <Badge className={riskColors[a.risk_level] || 'bg-gray-100 text-gray-800'}>
+                            {a.risk_level || 'low'}
+                          </Badge>
+                        </td>
+                      )}
+                      {visibleCols.start && (
+                        <td className="p-2">{a.start_date ? format(new Date(a.start_date), 'yyyy-MM-dd') : ''}</td>
+                      )}
+                      {visibleCols.end && (
+                        <td className="p-2">{a.end_date ? format(new Date(a.end_date), 'yyyy-MM-dd') : ''}</td>
+                      )}
+                      {visibleCols.progress && (
+                        <td className="p-2 text-right">{Math.round(a.progress_percentage || 0)}</td>
+                      )}
+                      {visibleCols.target && (
+                        <td className="p-2 text-right">{a.target_quantity != null ? `${a.target_quantity}${a.measurement_unit ? ' ' + a.measurement_unit : ''}` : '-'}</td>
+                      )}
+                      {visibleCols.achieved && (
+                        <td className="p-2 text-right">{a.achieved_quantity != null ? `${a.achieved_quantity}${a.measurement_unit ? ' ' + a.measurement_unit : ''}` : '-'}</td>
+                      )}
+                      {visibleCols.budget && (
+                        <td className="p-2 text-right">{(a.budget_allocated ?? 0).toLocaleString()}</td>
+                      )}
+                      {visibleCols.schedule_var && (
+                        <td className="p-2 text-right">{a.schedule_variance_days ?? 0}</td>
+                      )}
+                      {visibleCols.completion_var && (
+                        <td className="p-2 text-right">{Math.round(a.completion_variance ?? 0)}</td>
+                      )}
+                      {visibleCols.updated && (
+                        <td className="p-2">{a.updated_at ? format(new Date(a.updated_at), 'yyyy-MM-dd HH:mm') : ''}</td>
+                      )}
+                    </tr>
                   ))}
-                </SelectContent>
-              </Select>
-              <Pagination>
-                <PaginationContent>
-                  <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setPage(p => Math.max(1, p-1)); }} />
-                  {Array.from({ length: Math.min(5, Math.ceil(filtered.length / pageSize)) }).map((_, idx) => {
-                    const pnum = idx + 1;
-                    return (
-                      <PaginationItem key={pnum}>
-                        <PaginationLink href="#" isActive={pnum === page} onClick={(e) => { e.preventDefault(); setPage(pnum); }}>
-                          {pnum}
-                        </PaginationLink>
-                      </PaginationItem>
-                    );
-                  })}
-                  <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setPage(p => Math.min(Math.ceil(filtered.length / pageSize) || 1, p+1)); }} />
-                </PaginationContent>
-              </Pagination>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing {(page-1)*pageSize + 1} - {Math.min(page*pageSize, filtered.length)} of {filtered.length}
+              </div>
+              <div className="flex items-center space-x-3">
+                <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                  <SelectTrigger className="w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[10,20,50,100].map(s => (
+                      <SelectItem key={s} value={String(s)}>{s} / page</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setPage(p => Math.max(1, p-1)); }} />
+                    {Array.from({ length: Math.min(5, Math.ceil(filtered.length / pageSize)) }).map((_, idx) => {
+                      const pnum = idx + 1;
+                      return (
+                        <PaginationItem key={pnum}>
+                          <PaginationLink href="#" isActive={pnum === page} onClick={(e) => { e.preventDefault(); setPage(pnum); }}>
+                            {pnum}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    })}
+                    <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setPage(p => Math.min(Math.ceil(filtered.length / pageSize) || 1, p+1)); }} />
+                  </PaginationContent>
+                </Pagination>
+              </div>
             </div>
           </div>
         )}
