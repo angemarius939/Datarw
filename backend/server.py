@@ -280,7 +280,7 @@ async def export_expenses_csv(
             sanitize(e.get('id') or e.get('_id')),
             sanitize(e.get('project_id')),
             sanitize(e.get('activity_id')),
-            sanitize((e.get('date') or '')[:10]),
+            sanitize((e.get('date').isoformat() if e.get('date') else '')[:10]),
             sanitize(e.get('vendor')),
             sanitize(e.get('invoice_no')),
             sanitize(e.get('amount')),
