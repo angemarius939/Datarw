@@ -37,6 +37,11 @@ import CreateBudgetItemModal from './CreateBudgetItemModal';
 import ActivitiesTable from './ActivitiesTable';
 import BudgetTrackingPage from './BudgetTrackingPage';
 
+const VALID_TABS = new Set([
+  'overview','surveys','builder','data','users',
+  'projects-overview','projects','budgets','kpis','beneficiaries','documents','reports','admin-panel'
+]);
+
 const Dashboard = ({ onUpgrade }) => {
   const { user, organization, logout, updateOrganization } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
@@ -45,6 +50,33 @@ const Dashboard = ({ onUpgrade }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Initialize tab from URL ?tab=
+  useEffect(() => {
+    try {
+      const usp = new URLSearchParams(window.location.search);
+      const tab = usp.get('tab');
+      if (tab && VALID_TABS.has(tab)) {
+        setActiveTab(tab);
+      }
+    } catch (e) {
+      // ignore URL parse errors
+    }
+  }, []);
+
+  // Sync active tab to URL without reload
+  useEffect(() => {
+    try {
+      const usp = new URLSearchParams(window.location.search);
+      if (activeTab) {
+        usp.set('tab', activeTab);
+        const newUrl = `${window.location.pathname}?${usp.toString()}`;
+        window.history.replaceState({}, '', newUrl);
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -525,7 +557,7 @@ const Dashboard = ({ onUpgrade }) => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-gray-900">Data Management</h1>
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
+                <Button className="bg-gradient-to-r from-blue-600 to purple-600">
                   <Download className="h-4 w-4 mr-2" />
                   Export All Data
                 </Button>
