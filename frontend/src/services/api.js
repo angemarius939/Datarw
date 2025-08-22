@@ -268,7 +268,7 @@ export const financeAPI = {
   qboPushExpenses: () => api.post('/finance/integrations/qbo/push-expenses'),
 
   // Finance CSV Reports
-  downloadProjectReportCSV: (projectId) => api.get('/finance/reports/project-csv', { params: { project_id: projectId }, responseType: 'blob' }),
+  downloadProjectReportCSV: (projectId, params = {}) => api.get('/finance/reports/project-csv', { params: { project_id: projectId, ...params }, responseType: 'blob' }),
   downloadActivitiesReportCSV: (projectId) => api.get('/finance/reports/activities-csv', { params: { project_id: projectId }, responseType: 'blob' }),
   downloadAllProjectsReportCSV: (params = {}) => api.get('/finance/reports/all-projects-csv', { params, responseType: 'blob' }),
 };
