@@ -433,17 +433,26 @@ const ActivitiesTable = () => {
                         return;
                       }
 
-                      // Create activities sequentially or in small batches
-                      let created = 0;
-                      for (const payload of valid) {
+                      // Upsert: create new or update existing rows by Activity ID
+                      let created = 0, updated = 0, failed = 0;
+                      for (const raw of rows) {
                         try {
-                          await projectsAPI.createActivity(payload);
-                          created += 1;
+                          const hasId = !!(raw['Activity ID']);
+                          const payload = mapped.find(m => (m.name === (raw['Activity Name'] || raw['Name'] || raw['Activity'])) && (m.project_id || '').length > 0);
+                          if (!payload) { failed += 1; continue; }
+                          if (hasId) {
+                            await projectsAPI.updateActivity(raw['Activity ID'], payload);
+                            updated += 1;
+                          } else {
+                            await projectsAPI.createActivity(payload);
+                            created += 1;
+                          }
                         } catch (err) {
-                          console.warn('Create failed for row', payload, err);
+                          console.warn('Upsert failed for row', raw, err);
+                          failed += 1;
                         }
                       }
-                      toast({ title: 'Import complete', description: `${created} activity(ies) created` });
+                      toast({ title: 'Import complete', description: `${created} created, ${updated} updated, ${failed} failed` });
                       // Refresh table
                       const actsRes = await projectsAPI.getActivities();
                       setActivities(actsRes.data || []);
