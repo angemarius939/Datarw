@@ -145,6 +145,11 @@ const ActivitiesTable = () => {
     });
   }, [activities, projectId, status, risk, team, search, dateFrom, dateTo]);
 
+  const persistCols = (next) => {
+    setVisibleCols(next);
+    localStorage.setItem('activities_table_columns', JSON.stringify(next));
+  };
+
   const exportToExcel = () => {
     try {
       const rows = filtered.map(a => ({
