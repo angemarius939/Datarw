@@ -4884,6 +4884,8 @@ class DataRWAPITester:
             self.test_csv_import_stub,
             self.test_csv_export,
             self.test_ai_insights,
+            # FINANCE CSV REPORTS TESTS (NEW - PRIORITY)
+            self.test_finance_csv_reports_comprehensive,
             # Cleanup tests
             self.test_delete_user,
             self.test_delete_survey
