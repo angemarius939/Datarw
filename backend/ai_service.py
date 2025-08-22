@@ -551,3 +551,66 @@ Return the translated survey as JSON.
             "description": f"This survey was generated based on your request: {request.description}",
             "questions": questions
         }
+
+# Finance AI functionality
+try:
+    from emergentintegrations import LLMClient
+except Exception:  # graceful import failure
+    LLMClient = None
+
+class FinanceAIInsight(BaseModel):
+    risk_level: str
+    description: str
+    recommendations: List[str]
+    confidence: float
+
+class FinanceAI:
+    def __init__(self):
+        self.key = os.environ.get('EMERGENT_LLM_KEY')
+        self.client = None
+        if self.key and LLMClient:
+            try:
+                self.client = LLMClient(api_key=self.key, provider='openai', model='gpt-4o')
+            except Exception:
+                self.client = None
+
+    async def analyze(self, summary: Dict[str, Any], anomalies: List[Dict[str, Any]]) -> FinanceAIInsight:
+        # Fallback logic if client not available
+        if not self.client:
+            count = len(anomalies)
+            risk = 'low' if count == 0 else 'medium' if count < 5 else 'high'
+            return FinanceAIInsight(
+                risk_level=risk,
+                description='Fallback analysis based on anomaly count',
+                recommendations=['Review high-variance items', 'Adjust disbursements', 'Set alerts for vendor spikes'],
+                confidence=0.6
+            )
+        prompt = (
+            "You are a project finance expert. Given budget vs actuals, burn rates, and detected anomalies, "
+            "identify unusual spending patterns, overall risk level (low/medium/high), and recommend 3-5 concrete actions. "
+            f"Summary: {summary}\nAnomalies: {anomalies[:10]}"
+        )
+        try:
+            resp = await self.client.chat(messages=[
+                {"role": "system", "content": "Be concise and actionable."},
+                {"role": "user", "content": prompt}
+            ])
+            text = resp.get('content') or resp.get('text') or str(resp)
+            # naive parsing
+            recs = []
+            for line in text.split('\n'):
+                if line.strip().startswith(('-', '*')) and len(recs) < 6:
+                    recs.append(line.strip('-* ').strip())
+            return FinanceAIInsight(
+                risk_level='medium',
+                description=text[:400],
+                recommendations=recs[:5] or ['Review cost centers', 'Cut non-critical spend'],
+                confidence=0.75
+            )
+        except Exception:
+            return FinanceAIInsight(
+                risk_level='medium',
+                description='AI service error; using fallback guidance',
+                recommendations=['Review cost centers', 'Cut non-critical spend'],
+                confidence=0.6
+            )
