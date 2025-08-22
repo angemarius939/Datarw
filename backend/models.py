@@ -878,6 +878,7 @@ class ActivityCreate(BaseModel):
     # Output and target specifications
     planned_output: Optional[str] = None
     target_quantity: Optional[float] = None
+    measurement_unit: Optional[str] = None
     
     # Milestones
     milestones: List[Dict[str, Any]] = []
