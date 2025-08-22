@@ -383,7 +383,105 @@ const Dashboard = ({ onUpgrade }) => {
                 </Button>
               </div>
 
-              {/* ... trimmed for brevity ... */}
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard
+                  title="Total Surveys"
+                  value={surveys.length}
+                  icon={<FileText className="h-5 w-5 text-blue-600" />}
+                  trend="up"
+                  trendValue={12}
+                  color="blue"
+                />
+                <StatCard
+                  title="Total Responses"
+                  value={analytics?.total_responses?.toLocaleString() || '0'}
+                  icon={<BarChart3 className="h-5 w-5 text-green-600" />}
+                  trend="up"
+                  trendValue={analytics?.monthly_growth || 0}
+                  color="green"
+                />
+                <StatCard
+                  title="Response Rate"
+                  value={`${analytics?.response_rate?.toFixed(1) || 0}%`}
+                  icon={<TrendingUp className="h-5 w-5 text-purple-600" />}
+                  trend="up"
+                  trendValue={8}
+                  color="purple"
+                />
+                <StatCard
+                  title="Storage Used"
+                  value={`${organization?.storage_used || 0}/${organization?.storage_limit === -1 ? '∞' : organization?.storage_limit} GB`}
+                  icon={<Database className="h-5 w-5 text-orange-600" />}
+                  color="orange"
+                />
+              </div>
+
+              {/* Usage Warnings */}
+              {isAtLimit(surveys.length, organization?.survey_limit) && (
+                <Alert>
+                  <AlertDescription>
+                    You've reached your survey limit. <Button variant="link" className="p-0" onClick={() => onUpgrade && onUpgrade()}>Upgrade your plan</Button> to create more surveys.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Usage Progress */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Survey Usage</CardTitle>
+                    <CardDescription>
+                      {surveys.length} of {organization?.survey_limit === -1 ? 'unlimited' : organization?.survey_limit} surveys used
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Progress 
+                      value={organization?.survey_limit === -1 ? 0 : (surveys.length / organization?.survey_limit) * 100} 
+                      className="h-2"
+                    />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Storage Usage</CardTitle>
+                    <CardDescription>
+                      {organization?.storage_used || 0} GB of {organization?.storage_limit === -1 ? 'unlimited' : `${organization?.storage_limit} GB`} used
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Progress 
+                      value={organization?.storage_limit === -1 ? 0 : ((organization?.storage_used || 0) / organization?.storage_limit) * 100} 
+                      className="h-2"
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Recent Activity */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Surveys</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {surveys.slice(0, 3).map((survey) => (
+                      <div key={survey.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <span className="font-medium">{survey.title}</span>
+                          <span className="text-gray-600 ml-2">{survey.responses_count || 0} responses</span>
+                        </div>
+                        <Badge variant="outline">
+                          {survey.status}
+                        </Badge>
+                      </div>
+                    ))}
+                    {surveys.length === 0 && (
+                      <p className="text-gray-500 text-center py-4">No surveys yet. Create your first survey!</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
 
