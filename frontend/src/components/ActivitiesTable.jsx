@@ -207,7 +207,7 @@ const ActivitiesTable = () => {
         'Activity Name': a.name,
         'Project': projectById[a.project_id]?.name || a.project_id,
         'Assigned Person': userById[a.assigned_to]?.name || a.assigned_to,
-        'Assigned Team': a.assigned_team || '',
+        'Assigned Team': a.assigned_team || '', 'Milestones': (a.milestones || []).map(m => `${m.name || ''} (${m.target_date ? format(new Date(m.target_date), 'yyyy-MM-dd') : ''})`).join('; '), 'Deliverables': (a.deliverables || []).join('; '),
         'Milestones': (a.milestones || []).map(m => `${m.name || ''} (${m.target_date ? format(new Date(m.target_date), 'yyyy-MM-dd') : ''})`).join('; '),
         'Deliverables': (a.deliverables || []).join('; '),
         'Status': (a.status || '').replace('_', ' '),
