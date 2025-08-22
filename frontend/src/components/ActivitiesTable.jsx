@@ -249,7 +249,7 @@ const ActivitiesTable = () => {
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Activities');
-      XLSX.writeFile(wb, 'activities.xlsx');
+      XLSX.writeFile(wb, selectedOnly ? 'selected_activities.xlsx' : 'activities.xlsx');
     } catch (e) {
       console.error('Export error', e);
       toast({ title: 'Export failed', description: 'Unable to export to Excel', variant: 'destructive' });
