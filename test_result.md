@@ -50,6 +50,8 @@
 ## test_plan:
 ##   current_focus:
 ##     - "Task name 1"
+    - "Budget Tracking CSV Reports: project, activities, all projects"
+
 ##     - "Task name 2"
 ##   stuck_tasks:
 ##     - "Task name with persistent issues"
