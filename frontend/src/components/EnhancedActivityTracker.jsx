@@ -589,6 +589,22 @@ const EnhancedActivityTracker = ({ dashboardData, onDataRefresh }) => {
                     </div>
                   </div>
                   
+                  {/* Simple Gantt-style bar visualization */}
+                  {timelineBounds && (
+                    <div className="mt-3">
+                      <div className="h-2 bg-gray-200 rounded relative overflow-hidden">
+                        <div
+                          className={`absolute h-2 rounded ${activity.status === 'completed' ? 'bg-green-500' : activity.status === 'in_progress' ? 'bg-blue-500' : activity.status === 'delayed' ? 'bg-red-500' : 'bg-gray-500'}`}
+                          style={ganttStyleFor(activity)}
+                        />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                        <span>{timelineBounds.min.toLocaleDateString()}</span>
+                        <span>{timelineBounds.max.toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Additional Info Row */}
                   {(activity.actual_output || activity.status_notes) && (
                     <div className="mt-3 pt-3 border-t">
