@@ -125,19 +125,34 @@ class ProjectService:
         return activities
 
     async def update_activity(self, activity_id: str, updates: ActivityUpdate) -> Optional[Activity]:
-        """Update an activity"""
+        """Update an activity. Supports lookup by Mongo _id or UUID id."""
         update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
         update_data["updated_at"] = datetime.utcnow()
-        
-        result = await self.db.activities.update_one(
-            {"_id": ObjectId(activity_id)}, 
-            {"$set": update_data}
-        )
-        
-        if result.modified_count:
-            doc = await self.db.activities.find_one({"_id": ObjectId(activity_id)})
+
+        # Build lookup filter supporting both ObjectId and UUID id
+        lookup_filters = []
+        try:
+            lookup_filters.append({"_id": ObjectId(activity_id)})
+        except Exception:
+            pass
+        lookup_filters.append({"id": activity_id})
+        query = {"$or": lookup_filters} if len(lookup_filters) > 1 else lookup_filters[0]
+
+        result = await self.db.activities.update_one(query, {"$set": update_data})
+
+        if result.matched_count:
+            # Re-fetch using same query
+            doc = await self.db.activities.find_one(query)
             if doc:
-                doc["_id"] = str(doc["_id"])
+                # Normalize fields for Activity model
+                doc["_id"] = str(doc.get("_id", doc.get("id", "")))
+                doc["id"] = doc.get("id") or doc.get("_id") or str(uuid.uuid4())
+                doc["planned_start_date"] = doc.get("planned_start_date") or doc.get("start_date")
+                doc["planned_end_date"] = doc.get("planned_end_date") or doc.get("end_date")
+                doc["last_updated_by"] = doc.get("last_updated_by") or doc.get("assigned_to") or ""
+                doc["progress_percentage"] = doc.get("progress_percentage", 0.0)
+                doc["completion_variance"] = doc.get("completion_variance", 0.0)
+                doc["schedule_variance_days"] = doc.get("schedule_variance_days", 0)
                 return Activity(**doc)
         return None
 
