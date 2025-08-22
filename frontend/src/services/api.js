@@ -270,7 +270,7 @@ export const financeAPI = {
   // Finance CSV Reports
   downloadProjectReportCSV: (projectId) => api.get('/finance/reports/project-csv', { params: { project_id: projectId }, responseType: 'blob' }),
   downloadActivitiesReportCSV: (projectId) => api.get('/finance/reports/activities-csv', { params: { project_id: projectId }, responseType: 'blob' }),
-  downloadAllProjectsReportCSV: () => api.get('/finance/reports/all-projects-csv', { responseType: 'blob' }),
+  downloadAllProjectsReportCSV: (params = {}) => api.get('/finance/reports/all-projects-csv', { params, responseType: 'blob' }),
 };
 
 export default api;
