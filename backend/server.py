@@ -6,6 +6,7 @@ from datetime import datetime
 from fastapi import FastAPI, APIRouter, Depends, HTTPException, UploadFile, File, Query
 from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+from fastapi.responses import PlainTextResponse, JSONResponse
 
 from models import (
     Project, ProjectCreate, ProjectUpdate, ProjectStatus,
@@ -22,6 +23,10 @@ from finance_service import FinanceService
 
 # Environment loader (fallback to .env file)
 from pathlib import Path
+
+# AI Finance insights
+from ai_service import FinanceAI
+
 
 def _load_env_if_needed():
     if os.environ.get('MONGO_URL'):
@@ -75,6 +80,7 @@ db = _db
 
 project_service = ProjectService(db)
 finance_service = FinanceService(db)
+finance_ai = FinanceAI()
 
 app = FastAPI(title='DataRW API', version='1.0.0')
 
@@ -237,23 +243,102 @@ async def funding_utilization(donor: Optional[str] = None, organization_id: Opti
     org = organization_id or 'org'
     return await finance_service.funding_utilization(org, donor)
 
-# --------------- AI Insights (fallback if key missing) ---------------
+# --------------- Finance CSV import/export (stubs/minimal) ---------------
+@api.post('/finance/expenses/import-csv')
+async def import_expenses_csv(file: UploadFile = File(...)):
+    # Phase 1 stub: acknowledge receipt only
+    return {"status": "received", "processed": 0, "message": "CSV import stub in Phase 1"}
+
+@api.get('/finance/expenses/export-csv', response_class=PlainTextResponse)
+async def export_expenses_csv(
+    organization_id: Optional[str] = Query(None),
+    project_id: Optional[str] = None,
+    funding_source: Optional[str] = None,
+    vendor: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+):
+    org = organization_id or 'org'
+    filters: Dict[str, Any] = {k: v for k, v in {
+        'project_id': project_id,
+        'funding_source': funding_source,
+        'vendor': vendor,
+        'date_from': date_from,
+        'date_to': date_to,
+    }.items() if v}
+    data = await finance_service.list_expenses(org, filters, page=1, page_size=1000)
+    rows = data.get('items', [])
+    headers = ['Expense ID','Project ID','Activity ID','Date','Vendor','Invoice','Amount','Currency','Funding Source','Cost Center','Notes']
+    def sanitize(v: Any) -> str:
+        s = str(v or '')
+        if any(c in s for c in ['"', ',', '\n']):
+            s = '"' + s.replace('"','""') + '"'
+        return s
+    lines = [','.join(headers)]
+    for e in rows:
+        line = [
+            sanitize(e.get('id') or e.get('_id')),
+            sanitize(e.get('project_id')),
+            sanitize(e.get('activity_id')),
+            sanitize((e.get('date') or '')[:10]),
+            sanitize(e.get('vendor')),
+            sanitize(e.get('invoice_no')),
+            sanitize(e.get('amount')),
+            sanitize(e.get('currency')),
+            sanitize(e.get('funding_source')),
+            sanitize(e.get('cost_center')),
+            sanitize(e.get('notes')),
+        ]
+        lines.append(','.join(line))
+    csv = '\n'.join(lines)
+    return PlainTextResponse(content=csv, media_type='text/csv')
+
+# --------------- QuickBooks Online stub endpoints ---------------
+@api.post('/finance/integrations/qbo/connect')
+async def qbo_connect():
+    return {"status": "stub", "message": "QBO connect flow not implemented in Phase 1"}
+
+@api.get('/finance/integrations/qbo/status')
+async def qbo_status():
+    return {"connected": False, "message": "QBO not connected (stub)"}
+
+@api.post('/finance/integrations/qbo/push-expenses')
+async def qbo_push_expenses():
+    return {"status": "stub", "pushed": 0, "message": "No expenses pushed in Phase 1"}
+
+# --------------- AI Insights ---------------
 @api.post('/finance/ai/insights')
-async def ai_insights(payload: Dict[str, Any]):
-    # Simple fallback until full emergentintegrations wiring
-    anomalies = payload.get('anomalies', [])
-    count = len(anomalies)
-    risk = 'low' if count == 0 else 'medium' if count < 5 else 'high'
-    return {
-        'ai_used': bool(os.environ.get('EMERGENT_LLM_KEY')),
-        'risk_level': risk,
-        'anomaly_count': count,
-        'recommendations': [
-            'Review high-variance line items',
-            'Adjust disbursement schedule to match burn rate',
-            'Set alerts for vendor spikes > 2x baseline'
-        ],
-        'confidence': 0.6 if count == 0 else 0.7 if count < 5 else 0.8,
-    }
+async def ai_insights(payload: Dict[str, Any], organization_id: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    try:
+      # Summaries to provide richer context
+      variance = await finance_service.budget_vs_actual(org)
+      burn = await finance_service.burn_rate(org, 'monthly')
+      forecast_data = await finance_service.forecast(org)
+      anomalies = payload.get('anomalies', [])
+      summary = { 'variance': variance, 'burn_rate': burn, 'forecast': forecast_data }
+      insight = await finance_ai.analyze(summary, anomalies)
+      return JSONResponse(content={
+          'ai_used': True,
+          'risk_level': insight.risk_level,
+          'description': insight.description,
+          'recommendations': insight.recommendations,
+          'confidence': insight.confidence,
+      })
+    except Exception:
+      anomalies = payload.get('anomalies', [])
+      count = len(anomalies)
+      risk = 'low' if count == 0 else 'medium' if count < 5 else 'high'
+      return {
+          'ai_used': False,
+          'risk_level': risk,
+          'anomaly_count': count,
+          'recommendations': [
+              'Review high-variance line items',
+              'Adjust disbursement schedule to match burn rate',
+              'Set alerts for vendor spikes > 2x baseline'
+          ],
+          'confidence': 0.6 if count == 0 else 0.7 if count < 5 else 0.8,
+      }
 
 app.include_router(api)

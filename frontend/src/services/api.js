@@ -280,4 +280,39 @@ export const partnersAPI = {
   getPerformanceSummary: (partnerId) => api.get('/admin/partners/performance/summary', partnerId ? { params: { partner_id: partnerId } } : {}),
 };
 
+// Finance API (Budget Tracking)
+export const financeAPI = {
+  // Config
+  getFinanceConfig: () => api.get('/finance/config'),
+  updateFinanceConfig: (data) => api.put('/finance/config', data),
+
+  // Expenses
+  listExpenses: (params = {}) => api.get('/finance/expenses', { params }),
+  createExpense: (data) => api.post('/finance/expenses', data),
+  updateExpense: (expenseId, data) => api.put(`/finance/expenses/${expenseId}`, data),
+  deleteExpense: (expenseId) => api.delete(`/finance/expenses/${expenseId}`),
+
+  // CSV Import/Export
+  exportExpensesCSV: (params = {}) => api.get('/finance/expenses/export-csv', { params, responseType: 'blob' }),
+  importExpensesCSV: (file) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post('/finance/expenses/import-csv', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
+
+  // Analytics
+  getBurnRate: (period = 'monthly') => api.get('/finance/burn-rate', { params: { period } }),
+  getVariance: (projectId = null) => api.get('/finance/variance', projectId ? { params: { project_id: projectId } } : {}),
+  getForecast: () => api.get('/finance/forecast'),
+  getFundingUtilization: (donor = null) => api.get('/finance/funding-utilization', donor ? { params: { donor } } : {}),
+
+  // AI Insights
+  getAIInsights: (payload) => api.post('/finance/ai/insights', payload),
+
+  // QuickBooks Online stubs
+  qboConnect: () => api.post('/finance/integrations/qbo/connect'),
+  qboStatus: () => api.get('/finance/integrations/qbo/status'),
+  qboPushExpenses: () => api.post('/finance/integrations/qbo/push-expenses'),
+};
+
 export default api;
