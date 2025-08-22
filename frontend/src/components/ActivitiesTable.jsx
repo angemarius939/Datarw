@@ -238,11 +238,10 @@ const ActivitiesTable = () => {
 
   const exportToCSV = (selectedOnly = false) => {
     try {
-      const headers = [
-        'Activity Name','Project','Assigned Person','Assigned Team','Status','Risk Level','Start Date','End Date','Planned Start','Planned End','Progress %','Target','Achieved','Planned Output','Actual Output','Budget Allocated','Budget Utilized','Schedule Variance (days)','Completion Variance %','Last Updated','Milestones','Deliverables'
-      ];
       const dataToExport = selectedOnly ? filtered.filter(a => selectedRows[a.id]) : filtered;
-      const lines = dataToExport.map(a => {
+      const rows = buildExportRows(dataToExport, false, exportFormat === 'wide');
+      const headers = Object.keys(rows[0] || {});
+      const lines = rows.map(row => {
         const milestones = (a.milestones || []).map(m => `${m.name || ''} (${m.target_date ? format(new Date(m.target_date), 'yyyy-MM-dd') : ''})`).join('; ');
         const deliverables = (a.deliverables || []).join('; ');
         const row = [
