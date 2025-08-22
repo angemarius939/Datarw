@@ -114,6 +114,11 @@ const ActivitiesTable = () => {
     return Array.from(found);
   }, [activities]);
 
+  // Per-column filters
+  const [descFilter, setDescFilter] = useState('');
+  const [minBudget, setMinBudget] = useState('');
+  const [maxBudget, setMaxBudget] = useState('');
+
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
     const from = dateFrom ? new Date(dateFrom) : null;
