@@ -303,7 +303,7 @@ const ActivitiesTable = () => {
           </div>
           <div className="col-span-2">
             {/* Per-column filters row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-3">
               <div>
                 <Input placeholder="Filter by description" value={descFilter} onChange={e => setDescFilter(e.target.value)} />
               </div>
