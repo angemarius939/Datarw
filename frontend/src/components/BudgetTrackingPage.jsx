@@ -90,7 +90,7 @@ const BudgetTrackingPage = () => {
 
   useEffect(() => {
     loadExpenses();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
   }, [page, pageSize]);
 
   const saveConfig = async () => {
