@@ -507,6 +507,14 @@ const ActivitiesTable = () => {
               </SelectContent>
             </Select>
           </div>
+          {/* Date quick range filters */}
+          <div className="md:col-span-6 flex flex-wrap items-center gap-2">
+            <span className="text-sm text-gray-600">Date range:</span>
+            <Button size="sm" variant="outline" onClick={() => { const d = new Date(); const from = new Date(d); from.setDate(d.getDate() - 7); setDateFrom(from.toISOString().slice(0,10)); setDateTo(d.toISOString().slice(0,10)); }}>Last 7 days</Button>
+            <Button size="sm" variant="outline" onClick={() => { const d = new Date(); const from = new Date(d); from.setDate(d.getDate() - 30); setDateFrom(from.toISOString().slice(0,10)); setDateTo(d.toISOString().slice(0,10)); }}>Last 30 days</Button>
+            <Button size="sm" variant="outline" onClick={() => { setDateFrom(''); setDateTo(''); }}>Clear</Button>
+          </div>
+
           <div className="grid grid-cols-2 gap-2 items-center">
             <div className="flex items-center space-x-2">
               <Calendar className="h-4 w-4 text-gray-400" />
