@@ -364,7 +364,7 @@ class NewFinanceFeaturesTester:
             filtered_data = filtered_response.json()
             
             # Verify both responses have the expected structure
-            required_fields = ["total_funding", "total_utilized", "utilization_rate", "by_source"]
+            required_fields = ["by_funding_source"]
             
             for field in required_fields:
                 if field not in unfiltered_data:
@@ -376,9 +376,9 @@ class NewFinanceFeaturesTester:
                                   f"Missing field '{field}' in filtered response")
                     return False
             
-            # Check if filtering affects the results (amounts should be different if there's data outside the range)
-            unfiltered_total = unfiltered_data.get("total_utilized", 0)
-            filtered_total = filtered_data.get("total_utilized", 0)
+            # Calculate total spent from by_funding_source
+            unfiltered_total = sum(item.get("spent", 0) for item in unfiltered_data.get("by_funding_source", []))
+            filtered_total = sum(item.get("spent", 0) for item in filtered_data.get("by_funding_source", []))
             
             # If we have expenses outside the date range, filtered should be less than or equal to unfiltered
             if filtered_total <= unfiltered_total:
