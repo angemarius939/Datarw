@@ -789,6 +789,7 @@ const ActivitiesTable = () => {
                     {visibleCols.schedule_var && <th className="text-right p-2">Sched Var (d)</th>}
                     {visibleCols.completion_var && <th className="text-right p-2">Compl Var %</th>}
                     {visibleCols.updated && <th className="text-left p-2">Updated</th>}
+                    <th className="text-right p-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
