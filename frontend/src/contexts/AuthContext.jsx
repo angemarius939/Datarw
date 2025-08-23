@@ -37,16 +37,8 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const postAuthRedirect = (tab = 'budgets') => {
-    try {
-      // Force page reload to trigger React Router re-evaluation after authentication
-      const usp = new URLSearchParams(window.location.search);
-      usp.set('tab', tab);
-      const newUrl = `${window.location.pathname}?${usp.toString()}`;
-      window.location.href = newUrl;
-    } catch (e) {
-      // fallback: reload without tab parameter
-      window.location.reload();
-    }
+    // Simple page reload to ensure authentication state is properly loaded
+    window.location.reload();
   };
 
   const login = async (credentials) => {
