@@ -394,19 +394,19 @@ const BudgetTrackingPage = () => {
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-medium">Cost Centers</h3>
                     <div className="flex gap-2">
-                      <Input placeholder="Add cost center" value={newCenter} onChange={e =&gt; setNewCenter(e.target.value)} />
-                      <Button variant="outline" onClick={() =&gt; {
+                      <Input placeholder="Add cost center" value={newCenter} onChange={e => setNewCenter(e.target.value)} />
+                      <Button variant="outline" onClick={() => {
                         if (!newCenter.trim()) return;
-                        setConfig(prev =&gt; ({ ...prev, cost_centers: Array.from(new Set([...(prev.cost_centers||[]), newCenter.trim()])) }));
+                        setConfig(prev => ({ ...prev, cost_centers: Array.from(new Set([...(prev.cost_centers||[]), newCenter.trim()])) }));
                         setNewCenter('');
                       }}>Add</Button>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {(config.cost_centers || []).map(cc =&gt; (
+                    {(config.cost_centers || []).map(cc => (
                       <Badge key={cc} className="bg-gray-100 text-gray-800">
                         {cc}
-                        <button className="ml-2 text-red-600" onClick={() =&gt; setConfig(prev =&gt; ({ ...prev, cost_centers: (prev.cost_centers||[]).filter(x =&gt; x !== cc) }))}>×</button>
+                        <button className="ml-2 text-red-600" onClick={() => setConfig(prev => ({ ...prev, cost_centers: (prev.cost_centers||[]).filter(x => x !== cc) }))}>×</button>
                       </Badge>
                     ))}
                   </div>
