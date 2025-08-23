@@ -38,13 +38,14 @@ export const AuthProvider = ({ children }) => {
 
   const postAuthRedirect = (tab = 'budgets') => {
     try {
+      // Force page reload to trigger React Router re-evaluation after authentication
       const usp = new URLSearchParams(window.location.search);
       usp.set('tab', tab);
       const newUrl = `${window.location.pathname}?${usp.toString()}`;
-      window.history.replaceState({}, '', newUrl);
+      window.location.href = newUrl;
     } catch (e) {
-      // fallback: hard redirect
-      try { window.location.href = `/?tab=${tab}`; } catch {}
+      // fallback: reload without tab parameter
+      window.location.reload();
     }
   };
 
