@@ -254,7 +254,17 @@ const ActivitiesTable = () => {
       }
       await projectsAPI.updateActivity(actId, payload);
       const actsRes = await projectsAPI.getActivities();
-      setActivities(actsRes.data || []);
+      
+      // Handle pagination response format
+      const activitiesData = actsRes.data;
+      if (Array.isArray(activitiesData)) {
+        setActivities(activitiesData);
+      } else if (activitiesData && Array.isArray(activitiesData.items)) {
+        setActivities(activitiesData.items);
+      } else {
+        setActivities([]);
+      }
+      
       closeEdit();
       toast({ title: 'Updated', description: 'Activity updated successfully' });
     } catch (e) {
