@@ -5683,19 +5683,246 @@ class DataRWAPITester:
         
         return passed, failed
 
+    def test_review_request_routes(self):
+        """Test the specific routes mentioned in the review request"""
+        print("\n" + "="*80)
+        print("REVIEW REQUEST BACKEND ROUTES TESTING")
+        print("="*80)
+        
+        success_count = 0
+        total_tests = 8
+        
+        # Step 1: GET /api/health
+        try:
+            response = self.session.get(f"{self.base_url}/health")
+            if response.status_code == 200:
+                data = response.json()
+                if "status" in data and data["status"] == "ok":
+                    self.log_result("1. GET /api/health", True, "Health endpoint working")
+                    success_count += 1
+                else:
+                    self.log_result("1. GET /api/health", False, "Invalid health response", data)
+            else:
+                self.log_result("1. GET /api/health", False, f"HTTP {response.status_code}", response.text)
+        except Exception as e:
+            self.log_result("1. GET /api/health", False, f"Request error: {str(e)}")
+        
+        # Step 2: POST /api/auth/register
+        try:
+            registration_data = {
+                "name": f"Review Test User {uuid.uuid4().hex[:8]}",
+                "email": f"review.test.{uuid.uuid4().hex[:8]}@example.com",
+                "password": "SecurePassword123!"
+            }
+            
+            response = self.session.post(f"{self.base_url}/auth/register", json=registration_data)
+            if response.status_code == 200:
+                data = response.json()
+                if "access_token" in data and "user" in data and "organization" in data:
+                    self.auth_token = data["access_token"]
+                    self.user_data = data["user"]
+                    self.organization_data = data["organization"]
+                    self.session.headers.update({"Authorization": f"Bearer {self.auth_token}"})
+                    self.test_email = registration_data["email"]
+                    self.test_password = registration_data["password"]
+                    self.log_result("2. POST /api/auth/register", True, "Registration successful with access_token, user, and organization")
+                    success_count += 1
+                else:
+                    self.log_result("2. POST /api/auth/register", False, "Missing required fields", data)
+            else:
+                self.log_result("2. POST /api/auth/register", False, f"HTTP {response.status_code}", response.text)
+        except Exception as e:
+            self.log_result("2. POST /api/auth/register", False, f"Request error: {str(e)}")
+        
+        # Step 3: POST /api/auth/login
+        try:
+            login_data = {
+                "email": self.test_email,
+                "password": self.test_password
+            }
+            
+            response = self.session.post(f"{self.base_url}/auth/login", json=login_data)
+            if response.status_code == 200:
+                data = response.json()
+                if "access_token" in data and data["token_type"] == "bearer":
+                    self.log_result("3. POST /api/auth/login", True, "Login successful with access_token")
+                    success_count += 1
+                else:
+                    self.log_result("3. POST /api/auth/login", False, "Missing access_token or wrong token_type", data)
+            else:
+                self.log_result("3. POST /api/auth/login", False, f"HTTP {response.status_code}", response.text)
+        except Exception as e:
+            self.log_result("3. POST /api/auth/login", False, f"Request error: {str(e)}")
+        
+        # Step 4: GET /api/organizations/me with Bearer token
+        try:
+            response = self.session.get(f"{self.base_url}/organizations/me")
+            if response.status_code == 200:
+                data = response.json()
+                if "id" in data or "_id" in data:
+                    self.log_result("4. GET /api/organizations/me", True, "Organization data retrieved with Bearer token")
+                    success_count += 1
+                else:
+                    self.log_result("4. GET /api/organizations/me", False, "Missing organization ID", data)
+            else:
+                self.log_result("4. GET /api/organizations/me", False, f"HTTP {response.status_code}", response.text)
+        except Exception as e:
+            self.log_result("4. GET /api/organizations/me", False, f"Request error: {str(e)}")
+        
+        # Step 5: GET /api/users without token (expect 401/403), then with token (expect 200)
+        try:
+            # Test without token
+            original_headers = self.session.headers.copy()
+            if 'Authorization' in self.session.headers:
+                del self.session.headers['Authorization']
+            
+            response = self.session.get(f"{self.base_url}/users")
+            unauthorized_success = response.status_code in [401, 403]
+            
+            # Restore headers and test with token
+            self.session.headers.update(original_headers)
+            response = self.session.get(f"{self.base_url}/users")
+            authorized_success = response.status_code == 200 and isinstance(response.json(), list)
+            
+            if unauthorized_success and authorized_success:
+                self.log_result("5. GET /api/users authorization", True, "Properly rejects without token, returns array with token")
+                success_count += 1
+            else:
+                self.log_result("5. GET /api/users authorization", False, 
+                              f"Without token: {response.status_code}, With token: {response.status_code}")
+        except Exception as e:
+            self.log_result("5. GET /api/users authorization", False, f"Request error: {str(e)}")
+        
+        # Step 6: Finance config endpoints
+        try:
+            # GET /api/finance/config
+            response = self.session.get(f"{self.base_url}/finance/config")
+            if response.status_code == 200:
+                config_data = response.json()
+                if "funding_sources" in config_data and "cost_centers" in config_data:
+                    # Check if USAID is missing and add it
+                    funding_sources = config_data.get("funding_sources", [])
+                    if "USAID" not in funding_sources:
+                        # PUT /api/finance/config to add USAID
+                        updated_config = {
+                            "funding_sources": funding_sources + ["USAID"]
+                        }
+                        put_response = self.session.put(f"{self.base_url}/finance/config", json=updated_config)
+                        
+                        if put_response.status_code == 200:
+                            # GET again to confirm
+                            confirm_response = self.session.get(f"{self.base_url}/finance/config")
+                            if confirm_response.status_code == 200:
+                                confirm_data = confirm_response.json()
+                                if "USAID" in confirm_data.get("funding_sources", []):
+                                    self.log_result("6. Finance config endpoints", True, "Config retrieved, USAID added, confirmed")
+                                    success_count += 1
+                                else:
+                                    self.log_result("6. Finance config endpoints", False, "USAID not found after update")
+                            else:
+                                self.log_result("6. Finance config endpoints", False, "Failed to confirm config update")
+                        else:
+                            self.log_result("6. Finance config endpoints", False, f"PUT failed: {put_response.status_code}")
+                    else:
+                        self.log_result("6. Finance config endpoints", True, "Config retrieved, USAID already present")
+                        success_count += 1
+                else:
+                    self.log_result("6. Finance config endpoints", False, "Missing funding_sources or cost_centers", config_data)
+            else:
+                self.log_result("6. Finance config endpoints", False, f"GET config failed: {response.status_code}")
+        except Exception as e:
+            self.log_result("6. Finance config endpoints", False, f"Request error: {str(e)}")
+        
+        # Step 7: Expenses CRUD
+        try:
+            # POST /api/finance/expenses
+            expense_data = {
+                "project_id": str(uuid.uuid4()),  # Fake project ID as requested
+                "vendor": "Test Vendor Ltd",
+                "amount": 50000.0,
+                "currency": "RWF",
+                "funding_source": "World Bank",
+                "cost_center": "Operations",
+                "date": datetime.now().isoformat(),
+                "notes": "Test expense for review"
+            }
+            
+            post_response = self.session.post(f"{self.base_url}/finance/expenses", json=expense_data)
+            if post_response.status_code == 200:
+                expense_id = post_response.json().get("id")
+                
+                # GET list with pagination
+                get_response = self.session.get(f"{self.base_url}/finance/expenses?page=1&page_size=10")
+                if get_response.status_code == 200:
+                    expenses_data = get_response.json()
+                    
+                    # PUT update amount
+                    update_data = {"amount": 75000.0}
+                    put_response = self.session.put(f"{self.base_url}/finance/expenses/{expense_id}", json=update_data)
+                    
+                    if put_response.status_code == 200:
+                        # DELETE expense
+                        delete_response = self.session.delete(f"{self.base_url}/finance/expenses/{expense_id}")
+                        
+                        if delete_response.status_code == 200:
+                            self.log_result("7. Expenses CRUD", True, "Created, listed, updated, and deleted expense successfully")
+                            success_count += 1
+                        else:
+                            self.log_result("7. Expenses CRUD", False, f"DELETE failed: {delete_response.status_code}")
+                    else:
+                        self.log_result("7. Expenses CRUD", False, f"PUT failed: {put_response.status_code}")
+                else:
+                    self.log_result("7. Expenses CRUD", False, f"GET list failed: {get_response.status_code}")
+            else:
+                self.log_result("7. Expenses CRUD", False, f"POST failed: {post_response.status_code}")
+        except Exception as e:
+            self.log_result("7. Expenses CRUD", False, f"Request error: {str(e)}")
+        
+        # Step 8: CSV/XLSX/PDF report endpoints
+        try:
+            report_success = 0
+            report_total = 3
+            
+            # Test all-projects reports (CSV, XLSX, PDF)
+            for format_type in ["csv", "xlsx", "pdf"]:
+                response = self.session.get(f"{self.base_url}/finance/reports/all-projects-{format_type}")
+                if response.status_code == 200:
+                    # Check content type
+                    content_type = response.headers.get('content-type', '')
+                    expected_types = {
+                        "csv": "text/csv",
+                        "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        "pdf": "application/pdf"
+                    }
+                    
+                    if expected_types[format_type] in content_type:
+                        report_success += 1
+                    else:
+                        self.log_result(f"8. Report {format_type.upper()}", False, f"Wrong content-type: {content_type}")
+                else:
+                    self.log_result(f"8. Report {format_type.upper()}", False, f"HTTP {response.status_code}")
+            
+            if report_success == report_total:
+                self.log_result("8. CSV/XLSX/PDF reports", True, "All report formats working with correct content-types")
+                success_count += 1
+            else:
+                self.log_result("8. CSV/XLSX/PDF reports", False, f"Only {report_success}/{report_total} formats working")
+        except Exception as e:
+            self.log_result("8. CSV/XLSX/PDF reports", False, f"Request error: {str(e)}")
+        
+        print(f"\nREVIEW REQUEST TESTING COMPLETE: {success_count}/{total_tests} tests passed")
+        return success_count == total_tests
+
 def main():
     """Main test execution"""
     tester = DataRWAPITester()
     
-    # Run comprehensive project management tests as requested
-    print("🎯 RUNNING COMPREHENSIVE PROJECT MANAGEMENT SYSTEM TESTS")
-    print("Testing all project management endpoints to identify reported issues")
-    print()
-    
-    passed, failed = tester.run_project_management_comprehensive_tests()
+    # Run the specific review request tests
+    print("Running Review Request Backend Tests...")
+    review_success = tester.test_review_request_routes()
     
     # Exit with appropriate code
-    exit(0 if failed == 0 else 1)
+    exit(0 if review_success else 1)
 
 if __name__ == "__main__":
     main()
