@@ -545,13 +545,13 @@ const BudgetTrackingPage = () => {
                   <Button variant="outline" onClick={downloadProjectReport}><Download className="h-4 w-4 mr-2"/>Project CSV</Button>
                   <Button variant="outline" onClick={downloadActivitiesReport}><Download className="h-4 w-4 mr-2"/>Activities CSV</Button>
                   <Button variant="outline" onClick={downloadAllProjectsReport}><Download className="h-4 w-4 mr-2"/>All Projects CSV</Button>
-                  <Button variant="outline" onClick={() =&gt; downloadProjectReportXLSX()}><Download className="h-4 w-4 mr-2"/>Project XLSX</Button>
-                  <Button variant="outline" onClick={() =&gt; downloadActivitiesReportXLSX()}><Download className="h-4 w-4 mr-2"/>Activities XLSX</Button>
-                  <Button variant="outline" onClick={() =&gt; downloadAllProjectsReportXLSX()}><Download className="h-4 w-4 mr-2"/>All Projects XLSX</Button>
+                  <Button variant="outline" onClick={() => downloadProjectReportXLSX()}><Download className="h-4 w-4 mr-2"/>Project XLSX</Button>
+                  <Button variant="outline" onClick={() => downloadActivitiesReportXLSX()}><Download className="h-4 w-4 mr-2"/>Activities XLSX</Button>
+                  <Button variant="outline" onClick={() => downloadAllProjectsReportXLSX()}><Download className="h-4 w-4 mr-2"/>All Projects XLSX</Button>
                   <Button onClick={runReports} disabled={loadingReports}>{loadingReports ? 'Running…' : 'Run Summaries'}</Button>
-                  <Button variant="outline" onClick={() =&gt; downloadProjectReportPDF()}><Download className="h-4 w-4 mr-2"/>Project PDF</Button>
-                  <Button variant="outline" onClick={() =&gt; downloadActivitiesReportPDF()}><Download className="h-4 w-4 mr-2"/>Activities PDF</Button>
-                  <Button variant="outline" onClick={() =&gt; downloadAllProjectsReportPDF()}><Download className="h-4 w-4 mr-2"/>All Projects PDF</Button>
+                  <Button variant="outline" onClick={() => downloadProjectReportPDF()}><Download className="h-4 w-4 mr-2"/>Project PDF</Button>
+                  <Button variant="outline" onClick={() => downloadActivitiesReportPDF()}><Download className="h-4 w-4 mr-2"/>Activities PDF</Button>
+                  <Button variant="outline" onClick={() => downloadAllProjectsReportPDF()}><Download className="h-4 w-4 mr-2"/>All Projects PDF</Button>
                 </div>
               </div>
             </CardHeader>
