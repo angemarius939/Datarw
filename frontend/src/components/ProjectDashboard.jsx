@@ -254,7 +254,7 @@ const ProjectDashboard = () => {
                       <h4 className="font-medium text-gray-900">{activity.name}</h4>
                       <div className="flex items-center space-x-4 mt-1">
                         <Badge className={getStatusColor(activity.status)}>
-                          {activity.status.replace('_', ' ')}
+                          {(activity.status || '').replace('_', ' ') || 'Unknown'}
                         </Badge>
                         <span className="text-sm text-gray-500">
                           {activity.progress}% complete
