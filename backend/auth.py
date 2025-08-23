@@ -38,6 +38,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 async def get_user_by_email(email: str) -> Optional[User]:
     user_doc = await db.users.find_one({"email": email})
     if user_doc:
+        # Remove MongoDB _id field before serialization
+        user_doc.pop('_id', None)
         return User(**user_doc)
     return None
 
@@ -45,6 +47,8 @@ async def get_user_by_id(user_id: str) -> Optional[User]:
     # Try both id and _id fields for compatibility
     user_doc = await db.users.find_one({"$or": [{"id": user_id}, {"_id": user_id}]})
     if user_doc:
+        # Remove MongoDB _id field before serialization
+        user_doc.pop('_id', None)
         return User(**user_doc)
     return None
 
