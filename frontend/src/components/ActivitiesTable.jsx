@@ -135,7 +135,17 @@ const ActivitiesTable = () => {
           projectsAPI.getProjects(),
           usersAPI.getUsers()
         ]);
-        setActivities(actsRes.data || []);
+        
+        // Handle pagination response format for activities
+        const activitiesData = actsRes.data;
+        if (Array.isArray(activitiesData)) {
+          setActivities(activitiesData);
+        } else if (activitiesData && Array.isArray(activitiesData.items)) {
+          setActivities(activitiesData.items);
+        } else {
+          setActivities([]);
+        }
+        
         setProjects(projsRes.data || []);
         setUsers(usersRes.data || []);
       } catch (e) {
