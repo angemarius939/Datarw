@@ -170,7 +170,7 @@ const BudgetTrackingPage = () => {
   const exportCSV = async () => {
     try {
       const params = { ...filters };
-      Object.keys(params).forEach(k =&gt; { if (!params[k]) delete params[k]; });
+      Object.keys(params).forEach(k => { if (!params[k]) delete params[k]; });
       const res = await financeAPI.exportExpensesCSV(params);
       const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
