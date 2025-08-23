@@ -224,8 +224,8 @@ const BudgetTrackingPage = () => {
     }
   };
 
-  const getProjectName = (id) =&gt; {
-    const p = (projects || []).find(x =&gt; (x.id || x._id) === id);
+  const getProjectName = (id) => {
+    const p = (projects || []).find(x => (x.id || x._id) === id);
     return p ? p.name : id;
   };
 
