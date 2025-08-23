@@ -110,6 +110,383 @@ app.add_middleware(
 
 api = APIRouter(prefix='/api')
 
+# ---------------- Auth & Users Routes ----------------
+from pydantic import BaseModel
+from models import Organization as OrgModel, OrganizationCreate, OrganizationUpdate, User as UserModel, UserCreate, UserUpdate
+
+class RegisterRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+@api.post('/auth/register')
+async def register_user(payload: RegisterRequest):
+    # Create org if not exists for this email domain (simple default org per user)
+    org_name = f"{payload.name.split(' ')[0]}'s Organization"
+    org_doc = {
+        'id': str(uuid.uuid4()),
+        'name': org_name,
+        'plan': 'Basic',
+        'created_at': datetime.utcnow(),
+        'updated_at': datetime.utcnow(),
+    }
+    await db.organizations.insert_one(org_doc)
+
+    # Create user
+    password_hash = auth_util.get_password_hash(payload.password)
+    user_doc = {
+        'id': str(uuid.uuid4()),
+        'name': payload.name,
+        'email': payload.email.lower(),
+        'organization_id': org_doc['id'],
+        'role': UserRole.ADMIN,
+        'status': 'active',
+        'password_hash': password_hash,
+        'created_at': datetime.utcnow(),
+        'updated_at': datetime.utcnow(),
+        'last_login': None,
+    }
+    await db.users.insert_one(user_doc)
+
+    # Token
+    token = auth_util.create_access_token({
+        'sub': user_doc['id'],
+        'org_id': user_doc['organization_id'],
+        'role': user_doc['role'],
+    })
+    return {
+        'access_token': token,
+        'token_type': 'bearer',
+        'user': UserModel(**user_doc),
+        'organization': OrgModel(**org_doc)
+    }
+
+@api.post('/auth/login')
+async def login_user(payload: LoginRequest):
+    user = await auth_util.get_user_by_email(payload.email.lower())
+    if not user or not auth_util.verify_password(payload.password, user.password_hash or ''):
+        raise HTTPException(status_code=401, detail='Invalid credentials')
+    # get org
+    org = await db.organizations.find_one({'id': user.organization_id})
+    if not org:
+        # create minimal org if missing
+        org = {
+            'id': user.organization_id,
+            'name': 'Organization',
+            'plan': 'Basic',
+            'created_at': datetime.utcnow(),
+            'updated_at': datetime.utcnow(),
+        }
+        await db.organizations.insert_one(org)
+    token = auth_util.create_access_token({
+        'sub': user.id,
+        'org_id': user.organization_id,
+        'role': user.role,
+    })
+    return {
+        'access_token': token,
+        'token_type': 'bearer',
+        'user': user,
+        'organization': OrgModel(**org)
+    }
+
+@api.get('/organizations/me')
+async def get_my_org(current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    org = await db.organizations.find_one({'id': current_user.organization_id})
+    if not org:
+        raise HTTPException(status_code=404, detail='Organization not found')
+    return OrgModel(**org)
+
+@api.get('/users')
+async def list_users(current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    # Protected endpoint as requested
+    cursor = db.users.find({'organization_id': current_user.organization_id})
+    users = []
+    async for doc in cursor:
+        users.append(UserModel(**doc))
+    return users
+
+# ---------------- Finance Routes (Config, Expenses, Analytics, AI, Exports) ----------------
+from fastapi import Body
+
+@api.get('/finance/config')
+async def get_fin_config(current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    return await finance_service.get_org_config(current_user.organization_id)
+
+@api.put('/finance/config')
+async def put_fin_config(updates: Dict[str, Any], current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    return await finance_service.update_org_config(current_user.organization_id, updates)
+
+@api.post('/finance/expenses')
+async def create_fin_expense(exp: Expense, current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    create_data = Expense.model_validate(exp).model_dump()
+    # Normalize date
+    if isinstance(create_data.get('date'), str):
+        try:
+            create_data['date'] = datetime.fromisoformat(create_data['date'])
+        except Exception:
+            create_data['date'] = datetime.utcnow()
+    return await finance_service.create_expense(Expense(**create_data), current_user.organization_id, current_user.id)
+
+@api.get('/finance/expenses')
+async def list_fin_expenses(
+    project_id: Optional[str] = None,
+    activity_id: Optional[str] = None,
+    funding_source: Optional[str] = None,
+    vendor: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 20,
+    current_user: UserModel = Depends(auth_util.get_current_active_user)
+):
+    filters = {
+        'project_id': project_id,
+        'activity_id': activity_id,
+        'funding_source': funding_source,
+        'vendor': vendor,
+        'date_from': date_from,
+        'date_to': date_to,
+    }
+    filters = {k: v for k, v in filters.items() if v not in (None, '', [])}
+    return await finance_service.list_expenses(current_user.organization_id, filters, page, page_size)
+
+@api.put('/finance/expenses/{expense_id}')
+async def update_fin_expense(expense_id: str, updates: ExpenseUpdate, current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    return await finance_service.update_expense(current_user.organization_id, expense_id, updates, current_user.id)
+
+@api.delete('/finance/expenses/{expense_id}')
+async def delete_fin_expense(expense_id: str, current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    ok = await finance_service.delete_expense(current_user.organization_id, expense_id)
+    return {'success': ok}
+
+# Analytics
+@api.get('/finance/burn-rate')
+async def fin_burn_rate(period: str = 'monthly', project_id: Optional[str] = None, date_from: Optional[str] = None, date_to: Optional[str] = None, current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    return await finance_service.burn_rate(current_user.organization_id, period, project_id, date_from, date_to)
+
+@api.get('/finance/variance')
+async def fin_variance(project_id: Optional[str] = None, date_from: Optional[str] = None, date_to: Optional[str] = None, current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    return await finance_service.budget_vs_actual(current_user.organization_id, project_id, date_from, date_to)
+
+@api.get('/finance/forecast')
+async def fin_forecast(current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    return await finance_service.forecast(current_user.organization_id)
+
+@api.get('/finance/funding-utilization')
+async def fin_funding_util(donor: Optional[str] = None, project_id: Optional[str] = None, date_from: Optional[str] = None, date_to: Optional[str] = None, current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    return await finance_service.funding_utilization(current_user.organization_id, donor, date_from, date_to, project_id)
+
+# AI Insights
+@api.post('/finance/ai/insights')
+async def fin_ai_insights(payload: Dict[str, Any] = Body({}), current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    try:
+        result = await finance_ai.finance_insights(payload)
+        return result
+    except Exception:
+        # Fallback basic insights
+        anomalies = payload.get('anomalies') or []
+        return {
+            'ai_used': False,
+            'risk_level': 'low' if len(anomalies) < 3 else 'medium',
+            'confidence': 0.5,
+            'description': 'Basic heuristic insights generated. AI not available.',
+            'recommendations': [
+                'Review high-value expenses for compliance.',
+                'Ensure funding tags are applied consistently.',
+            ]
+        }
+
+# Expenses CSV export/import (basic)
+import csv
+@api.get('/finance/expenses/export-csv')
+async def fin_expenses_export_csv(project_id: Optional[str] = None, funding_source: Optional[str] = None, vendor: Optional[str] = None, date_from: Optional[str] = None, date_to: Optional[str] = None, current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    data = await finance_service.list_expenses(current_user.organization_id, {k:v for k,v in {'project_id':project_id,'funding_source':funding_source,'vendor':vendor,'date_from':date_from,'date_to':date_to}.items() if v}, page=1, page_size=10000)
+    buf = BytesIO()
+    writer = csv.writer(buf)
+    writer.writerow(['date','project_id','vendor','amount','currency','funding_source','cost_center','invoice_no','notes'])
+    for it in data['items']:
+        writer.writerow([
+            (it.get('date') or datetime.utcnow()).isoformat() if hasattr(it.get('date'), 'isoformat') else it.get('date'),
+            it.get('project_id') or '',
+            it.get('vendor') or '',
+            it.get('amount') or 0,
+            it.get('currency') or '',
+            it.get('funding_source') or '',
+            it.get('cost_center') or '',
+            it.get('invoice_no') or '',
+            it.get('notes') or ''
+        ])
+    buf.seek(0)
+    return StreamingResponse(buf, media_type='text/csv', headers={"Content-Disposition": "attachment; filename=expenses.csv"})
+
+from fastapi import UploadFile
+@api.post('/finance/expenses/import-csv')
+async def fin_expenses_import_csv(file: UploadFile, current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    # Stub: accept file and return success without processing
+    return {'success': True, 'message': 'Import received (stub)'}
+
+# XLSX Reports (refined with multiple sheets and formatting)
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
+from openpyxl.utils import get_column_letter
+
+
+def _apply_header(ws, row=1):
+    for cell in ws[row]:
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color='FFEFF6FF', end_color='FFEFF6FF', fill_type='solid')
+        cell.alignment = Alignment(horizontal='center')
+
+def _autosize(ws):
+    for col in ws.columns:
+        max_length = 0
+        col_letter = get_column_letter(col[0].column)
+        for cell in col:
+            try:
+                val = str(cell.value) if cell.value is not None else ''
+                if len(val) > max_length:
+                    max_length = len(val)
+            except Exception:
+                pass
+        ws.column_dimensions[col_letter].width = min(50, max(12, max_length + 2))
+
+@api.get('/finance/reports/project-xlsx')
+async def finance_report_project_xlsx(project_id: str, organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    details = await finance_service.project_budget_details(org, project_id, date_from, date_to)
+    wb = Workbook()
+    ws1 = wb.active
+    ws1.title = 'Overview'
+    ws1.append(['Metric','Value'])
+    ws1.append(['Total Budgeted', details['total_budgeted']])
+    ws1.append(['Total Allocated', details['total_allocated']])
+    ws1.append(['Total Spent', details['total_spent']])
+    ws1.append(['Variance Amount', details['variance_amount']])
+    ws1.append(['Variance %', details['variance_pct']/100])
+    _apply_header(ws1)
+    for r in ws1.iter_rows(min_row=2, min_col=2, max_col=2):
+        for cell in r:
+            if isinstance(cell.value, float):
+                cell.number_format = '#,##0.00'
+    ws1['B6'].number_format = '0.0%'
+    _autosize(ws1)
+
+    ws2 = wb.create_sheet('BudgetLines')
+    ws2.append(['Category','Activity ID','Budgeted','Allocated','Utilized (PI)'])
+    for bl in details['budget_lines']:
+        ws2.append([bl['category'], bl['activity_id'], bl['budgeted'], bl['allocated'], bl['utilized_pi']])
+    _apply_header(ws2)
+    for row in ws2.iter_rows(min_row=2, min_col=3, max_col=5):
+        for cell in row:
+            cell.number_format = '#,##0.00'
+    _autosize(ws2)
+
+    ws3 = wb.create_sheet('ExpensesByActivity')
+    ws3.append(['Activity ID','Transactions','Spent'])
+    for aid, row in details['spent_by_activity'].items():
+        ws3.append([aid, row['transactions'], row['spent']])
+    _apply_header(ws3)
+    for row in ws3.iter_rows(min_row=2, min_col=3, max_col=3):
+        for cell in row:
+            cell.number_format = '#,##0.00'
+    _autosize(ws3)
+
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return StreamingResponse(buf, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={"Content-Disposition": f"attachment; filename=finance_project_{project_id}.xlsx"})
+
+@api.get('/finance/reports/activities-xlsx')
+async def finance_report_activities_xlsx(project_id: str, organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    details = await finance_service.project_budget_details(org, project_id, date_from, date_to)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'ExpensesByActivity'
+    ws.append(['Activity ID','Transactions','Spent'])
+    for aid, row in details['spent_by_activity'].items():
+        ws.append([aid, row['transactions'], row['spent']])
+    _apply_header(ws)
+    for row in ws.iter_rows(min_row=2, min_col=3, max_col=3):
+        for cell in row:
+            cell.number_format = '#,##0.00'
+    _autosize(ws)
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return StreamingResponse(buf, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={"Content-Disposition": f"attachment; filename=finance_activities_{project_id}.xlsx"})
+
+@api.get('/finance/reports/all-projects-xlsx')
+async def finance_report_all_projects_xlsx(organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    var = await finance_service.budget_vs_actual(org, None, date_from, date_to)
+    rows = var.get('by_project', [])
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'ByProject'
+    ws.append(['Project ID','Planned','Allocated','Actual','Variance','Variance %'])
+    for r in rows:
+        ws.append([r['project_id'], r['planned'], r['allocated'], r['actual'], r['variance_amount'], r['variance_pct']/100])
+    _apply_header(ws)
+    for row in ws.iter_rows(min_row=2, min_col=2, max_col=5):
+        for cell in row:
+            cell.number_format = '#,##0.00'
+    for cell in ws.iter_rows(min_row=2, min_col=6, max_col=6):
+        for c in cell:
+            c.number_format = '0.0%'
+    _autosize(ws)
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return StreamingResponse(buf, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={"Content-Disposition": "attachment; filename=finance_all_projects.xlsx"})
+
+# CSV Reports (simple)
+@api.get('/finance/reports/project-csv')
+async def finance_report_project_csv(project_id: str, organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    details = await finance_service.project_budget_details(org, project_id, date_from, date_to)
+    buf = BytesIO()
+    writer = csv.writer(buf)
+    writer.writerow(['Metric','Value'])
+    writer.writerow(['Total Budgeted', details['total_budgeted']])
+    writer.writerow(['Total Allocated', details['total_allocated']])
+    writer.writerow(['Total Spent', details['total_spent']])
+    writer.writerow(['Variance Amount', details['variance_amount']])
+    writer.writerow(['Variance %', details['variance_pct']])
+    buf.seek(0)
+    return StreamingResponse(buf, media_type='text/csv', headers={"Content-Disposition": f"attachment; filename=finance_project_{project_id}.csv"})
+
+@api.get('/finance/reports/activities-csv')
+async def finance_report_activities_csv(project_id: str, organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    details = await finance_service.project_budget_details(org, project_id, date_from, date_to)
+    buf = BytesIO()
+    writer = csv.writer(buf)
+    writer.writerow(['Activity ID','Transactions','Spent'])
+    for aid, row in details['spent_by_activity'].items():
+        writer.writerow([aid, row['transactions'], row['spent']])
+    buf.seek(0)
+    return StreamingResponse(buf, media_type='text/csv', headers={"Content-Disposition": f"attachment; filename=finance_activities_{project_id}.csv"})
+
+@api.get('/finance/reports/all-projects-csv')
+async def finance_report_all_projects_csv(organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
+    org = organization_id or 'org'
+    var = await finance_service.budget_vs_actual(org, None, date_from, date_to)
+    rows = var.get('by_project', [])
+    buf = BytesIO()
+    writer = csv.writer(buf)
+    writer.writerow(['Project ID','Planned','Allocated','Actual','Variance','Variance %'])
+    for r in rows:
+        writer.writerow([r['project_id'], r['planned'], r['allocated'], r['actual'], r['variance_amount'], r['variance_pct']])
+    buf.seek(0)
+    return StreamingResponse(buf, media_type='text/csv', headers={"Content-Disposition": "attachment; filename=finance_all_projects.csv"})
+
+
 @api.get('/health')
 async def health():
     return {'status': 'ok', 'time': datetime.utcnow().isoformat()}
