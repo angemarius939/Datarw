@@ -580,7 +580,7 @@ const BudgetTrackingPage = () => {
                           <span className="text-right">Planned: {row.planned.toLocaleString()}</span>
                           <span className="text-right">Allocated: {row.allocated.toLocaleString()}</span>
                           <span className="text-right">Actual: {row.actual.toLocaleString()}</span>
-                          <span className={`text-right ${row.variance_amount &lt; 0 ? 'text-red-600' : 'text-green-700'}`}>Var: {row.variance_amount.toLocaleString()} ({Number(row.variance_pct||0).toFixed(1)}%)</span>
+                          <span className={`text-right ${row.variance_amount < 0 ? 'text-red-600' : 'text-green-700'}`}>Var: {row.variance_amount.toLocaleString()} ({Number(row.variance_pct||0).toFixed(1)}%)</span>
                         </div>
                       ))}
                     </div>
@@ -596,7 +596,7 @@ const BudgetTrackingPage = () => {
                   <div>
                     <h3 className="font-medium mb-2">Funding Utilization</h3>
                     <div className="border rounded p-2 bg-white max-h-64 overflow-auto">
-                      {(utilization?.by_funding_source || []).map(u =&gt; (
+                      {(utilization?.by_funding_source || []).map(u => (
                         <div key={u.funding_source} className="flex items-center justify-between py-1 text-sm">
                           <span>{u.funding_source}</span>
                           <span>{u.spent.toLocaleString()}</span>
