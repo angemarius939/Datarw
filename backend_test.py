@@ -6306,6 +6306,120 @@ class DataRWAPITester:
             self.log_result("Get Pending Approvals", False, f"Request error: {str(e)}")
             return False
 
+    def test_dashboard_endpoints_for_500_errors(self):
+        """Test specific dashboard endpoints that might be causing 500 errors in frontend"""
+        print("\n" + "="*80)
+        print("URGENT: TESTING DASHBOARD ENDPOINTS FOR 500 ERRORS")
+        print("="*80)
+        
+        endpoints_to_test = [
+            ("GET /api/projects/dashboard", f"{self.base_url}/projects/dashboard"),
+            ("GET /api/surveys", f"{self.base_url}/surveys"),
+            ("GET /api/analytics", f"{self.base_url}/analytics"),
+            ("GET /api/projects", f"{self.base_url}/projects"),
+            ("GET /api/activities", f"{self.base_url}/activities"),
+            ("GET /api/beneficiaries", f"{self.base_url}/beneficiaries")
+        ]
+        
+        error_endpoints = []
+        success_count = 0
+        
+        for endpoint_name, url in endpoints_to_test:
+            try:
+                print(f"\n🔍 Testing {endpoint_name}...")
+                response = self.session.get(url)
+                
+                if response.status_code == 500:
+                    print(f"❌ {endpoint_name} - HTTP 500 ERROR FOUND!")
+                    error_text = response.text
+                    print(f"   Error Details: {error_text[:500]}...")
+                    
+                    # Try to extract specific error information
+                    if "detail" in error_text:
+                        try:
+                            error_data = response.json()
+                            print(f"   Error Detail: {error_data.get('detail', 'No detail available')}")
+                        except:
+                            pass
+                    
+                    error_endpoints.append({
+                        'endpoint': endpoint_name,
+                        'url': url,
+                        'status_code': response.status_code,
+                        'error': error_text[:1000]  # First 1000 chars of error
+                    })
+                    
+                    self.log_result(f"500 Error Check - {endpoint_name}", False, 
+                                  f"HTTP 500 Server Error", error_text[:500])
+                
+                elif response.status_code == 200:
+                    print(f"✅ {endpoint_name} - Working correctly (HTTP 200)")
+                    success_count += 1
+                    self.log_result(f"500 Error Check - {endpoint_name}", True, 
+                                  "Endpoint working correctly")
+                    
+                    # Validate response structure for key endpoints
+                    try:
+                        data = response.json()
+                        if endpoint_name == "GET /api/projects/dashboard":
+                            required_fields = ['total_projects', 'active_projects', 'completed_projects']
+                            missing = [f for f in required_fields if f not in data]
+                            if missing:
+                                print(f"   ⚠️  Missing fields in dashboard: {missing}")
+                        elif endpoint_name == "GET /api/surveys":
+                            if 'items' in data:
+                                print(f"   📊 Surveys pagination working: {len(data['items'])} items")
+                            elif isinstance(data, list):
+                                print(f"   📊 Surveys list: {len(data)} items")
+                        elif endpoint_name == "GET /api/analytics":
+                            required_fields = ['total_responses', 'monthly_growth', 'response_rate']
+                            missing = [f for f in required_fields if f not in data]
+                            if missing:
+                                print(f"   ⚠️  Missing fields in analytics: {missing}")
+                    except Exception as e:
+                        print(f"   ⚠️  Response validation error: {str(e)}")
+                
+                else:
+                    print(f"⚠️  {endpoint_name} - HTTP {response.status_code}")
+                    if response.status_code in [401, 403]:
+                        print(f"   Authentication issue - this might be expected")
+                    else:
+                        print(f"   Response: {response.text[:200]}...")
+                    
+                    self.log_result(f"500 Error Check - {endpoint_name}", False, 
+                                  f"HTTP {response.status_code}", response.text[:200])
+                    
+            except Exception as e:
+                print(f"❌ {endpoint_name} - Connection/Request Error: {str(e)}")
+                error_endpoints.append({
+                    'endpoint': endpoint_name,
+                    'url': url,
+                    'status_code': 'CONNECTION_ERROR',
+                    'error': str(e)
+                })
+                self.log_result(f"500 Error Check - {endpoint_name}", False, 
+                              f"Connection error: {str(e)}")
+        
+        # Summary
+        print(f"\n" + "="*80)
+        print("500 ERROR ANALYSIS SUMMARY")
+        print("="*80)
+        print(f"✅ Working endpoints: {success_count}/{len(endpoints_to_test)}")
+        print(f"❌ Failing endpoints: {len(error_endpoints)}")
+        
+        if error_endpoints:
+            print(f"\n🚨 ENDPOINTS CAUSING 500 ERRORS:")
+            for error in error_endpoints:
+                print(f"   • {error['endpoint']} - Status: {error['status_code']}")
+                if len(error['error']) > 100:
+                    print(f"     Error: {error['error'][:100]}...")
+                else:
+                    print(f"     Error: {error['error']}")
+        else:
+            print(f"\n✅ NO 500 ERRORS FOUND - All endpoints working or returning expected status codes")
+        
+        return error_endpoints
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print(f"🚀 Starting DataRW Backend API Tests")
