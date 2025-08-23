@@ -5357,6 +5357,124 @@ class DataRWAPITester:
             self.log_result("Funding Utilization Date Range", False, f"Request error: {str(e)}")
             return False
 
+    def test_projects_dashboard_endpoint_fix(self):
+        """Test the newly added /api/projects/dashboard endpoint that was just implemented to fix dashboard loading issues"""
+        try:
+            print("\n" + "="*60)
+            print("TESTING NEWLY ADDED /api/projects/dashboard ENDPOINT")
+            print("="*60)
+            
+            # Test 1: GET /api/projects/dashboard with valid authentication
+            response = self.session.get(f"{self.base_url}/projects/dashboard")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify the response structure matches what Dashboard.jsx expects
+                required_fields = [
+                    "total_projects", "active_projects", "completed_projects",
+                    "overdue_activities", "budget_utilization", "kpi_performance", 
+                    "recent_activities", "projects_by_status", "budget_by_category"
+                ]
+                
+                missing_fields = [field for field in required_fields if field not in data]
+                if missing_fields:
+                    self.log_result("Dashboard Endpoint - Structure", False, 
+                                  f"Missing required fields: {missing_fields}", data)
+                    return False
+                
+                # Verify data types are correct
+                if not isinstance(data.get("total_projects"), int):
+                    self.log_result("Dashboard Endpoint - Data Types", False, 
+                                  f"total_projects should be int, got {type(data.get('total_projects'))}")
+                    return False
+                
+                if not isinstance(data.get("active_projects"), int):
+                    self.log_result("Dashboard Endpoint - Data Types", False, 
+                                  f"active_projects should be int, got {type(data.get('active_projects'))}")
+                    return False
+                
+                if not isinstance(data.get("completed_projects"), int):
+                    self.log_result("Dashboard Endpoint - Data Types", False, 
+                                  f"completed_projects should be int, got {type(data.get('completed_projects'))}")
+                    return False
+                
+                if not isinstance(data.get("recent_activities"), list):
+                    self.log_result("Dashboard Endpoint - Data Types", False, 
+                                  f"recent_activities should be list, got {type(data.get('recent_activities'))}")
+                    return False
+                
+                if not isinstance(data.get("projects_by_status"), dict):
+                    self.log_result("Dashboard Endpoint - Data Types", False, 
+                                  f"projects_by_status should be dict, got {type(data.get('projects_by_status'))}")
+                    return False
+                
+                if not isinstance(data.get("budget_by_category"), dict):
+                    self.log_result("Dashboard Endpoint - Data Types", False, 
+                                  f"budget_by_category should be dict, got {type(data.get('budget_by_category'))}")
+                    return False
+                
+                # Verify projects_by_status has string keys (not None) - this was the original issue
+                projects_by_status = data.get("projects_by_status", {})
+                for key in projects_by_status.keys():
+                    if not isinstance(key, str):
+                        self.log_result("Dashboard Endpoint - String Keys", False, 
+                                      f"projects_by_status contains non-string key: {key} (type: {type(key)})")
+                        return False
+                
+                # Verify budget_by_category has string keys (not None) - this was the original issue
+                budget_by_category = data.get("budget_by_category", {})
+                for key in budget_by_category.keys():
+                    if not isinstance(key, str):
+                        self.log_result("Dashboard Endpoint - String Keys", False, 
+                                      f"budget_by_category contains non-string key: {key} (type: {type(key)})")
+                        return False
+                
+                self.log_result("Dashboard Endpoint - Valid Auth", True, 
+                              "Dashboard endpoint returns proper structure with valid authentication")
+                
+                # Test 2: Authentication protection - test without token
+                original_headers = self.session.headers.copy()
+                if 'Authorization' in self.session.headers:
+                    del self.session.headers['Authorization']
+                
+                unauth_response = self.session.get(f"{self.base_url}/projects/dashboard")
+                
+                # Restore headers
+                self.session.headers.update(original_headers)
+                
+                if unauth_response.status_code in [401, 403]:
+                    self.log_result("Dashboard Endpoint - Auth Protection", True, 
+                                  f"Properly rejects unauthorized access with HTTP {unauth_response.status_code}")
+                else:
+                    self.log_result("Dashboard Endpoint - Auth Protection", False, 
+                                  f"Expected 401/403 for unauthorized access, got {unauth_response.status_code}")
+                    return False
+                
+                # Test 3: Verify the fix resolves the original 404 error
+                # The original issue was "Failed to load dashboard data" 404 errors
+                # Now we should get 200 with proper data structure
+                self.log_result("Dashboard Loading Fix", True, 
+                              "Dashboard endpoint successfully resolves the original 'Failed to load dashboard data' 404 errors")
+                
+                print(f"✅ Dashboard endpoint testing completed successfully")
+                print(f"   - Returns HTTP 200 with proper JSON structure")
+                print(f"   - All required fields present: {', '.join(required_fields)}")
+                print(f"   - Proper authentication protection (401/403 without token)")
+                print(f"   - String keys in projects_by_status and budget_by_category (Pydantic validation fix)")
+                print(f"   - Resolves original 'Failed to load dashboard data' 404 errors")
+                
+                return True
+                
+            else:
+                self.log_result("Dashboard Endpoint - Valid Auth", False, 
+                              f"Expected HTTP 200, got {response.status_code}", response.text)
+                return False
+                
+        except Exception as e:
+            self.log_result("Dashboard Endpoint Test", False, f"Request error: {str(e)}")
+            return False
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print(f"🚀 Starting DataRW Backend API Tests")
