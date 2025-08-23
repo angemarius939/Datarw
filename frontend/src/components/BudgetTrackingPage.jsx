@@ -712,7 +712,7 @@ const BudgetTrackingPage = () => {
             </div>
             <div className="col-span-2">
               <label className="text-sm font-medium">Notes</label>
-              <Input value={expenseData.notes} onChange={e =&gt; setExpenseData(prev =&gt; ({ ...prev, notes: e.target.value }))} />
+              <Input value={expenseData.notes} onChange={e => setExpenseData(prev => ({ ...prev, notes: e.target.value }))} />
             </div>
           </div>
           <DialogFooter>
