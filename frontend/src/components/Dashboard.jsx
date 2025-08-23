@@ -355,8 +355,8 @@ const Dashboard = ({ onUpgrade }) => {
               Budget Tracking
             </Button>
             <Button
-              variant={activeTab === 'kpis' ? 'default' : 'ghost'}
-              onClick={() => setActiveTab('kpis')}
+              variant={activeTab === 'kpi-dashboard' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('kpi-dashboard')}
               className="w-full justify-start"
             >
               <TrendingUp className="h-4 w-4 mr-3" />
