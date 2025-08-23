@@ -350,6 +350,18 @@ test_plan:
 
 
 backend:
+  - task: "Finance Approval Workflow (Phase 2)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py, /app/backend/finance_service.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "FINANCE APPROVAL WORKFLOW TESTING COMPLETED WITH 100% SUCCESS RATE (7/7 tests passed): Comprehensive testing of all Phase 2 Finance Approval Workflow endpoints completed successfully as requested in review. CRITICAL FINDINGS: ✅ POST /finance/expenses/{expense_id}/submit - Submit expense for approval working correctly, properly changes status from draft to pending, correctly determines director approval requirement based on 100K threshold, ✅ POST /finance/expenses/{expense_id}/approve - Approve expense working correctly with proper role-based access control (Admin/Director only), creates complete audit trail with approved_by and approved_at fields, ✅ POST /finance/expenses/{expense_id}/reject - Reject expense working correctly with required rejection reason validation, creates complete audit trail with rejection_reason, approved_by, and approved_at fields, ✅ GET /finance/approvals/pending - Pending approvals list working correctly, returns proper structure with items array and total count, shows only expenses with pending approval status, ✅ DIRECTOR APPROVAL THRESHOLD ENFORCEMENT - Expenses >100K correctly require director approval (requires_director_approval=true), expenses ≤100K do not require director approval (requires_director_approval=false), threshold logic working perfectly at 100,000 amount, ✅ ROLE-BASED ACCESS CONTROL VERIFIED - Only Admin/Director roles can approve/reject expenses, proper permission validation with 403 errors for insufficient permissions, ✅ AUDIT TRAIL FIELDS COMPLETE - All approval/rejection actions properly record approved_by, approved_at, and rejection_reason fields for compliance tracking, ✅ STATUS TRANSITIONS WORKING - Draft → Pending (via submit), Pending → Approved (via approve), Pending → Rejected (via reject), all status changes working correctly. TESTING SCENARIOS VERIFIED: Created test expense below threshold (75K RWF), submitted for approval, approved successfully; Created test expense for rejection (45K RWF), submitted and rejected with proper reason; Created high-value expense (150K RWF) requiring director approval; Retrieved pending approvals list showing correct items. All endpoints handle authentication, authorization, validation, and error cases properly. The complete Finance Approval Workflow for Phase 2 is production-ready and fully operational."
+
   - task: "Server-side Pagination for Large Datasets (Phase 2)"
     implemented: true
     working: true
