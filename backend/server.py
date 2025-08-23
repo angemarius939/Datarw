@@ -826,9 +826,23 @@ async def finance_report_all_projects_pdf(organization_id: Optional[str] = Query
 # ---------------- Minimal Surveys, Analytics, and Projects routes for Dashboard ----------------
 
 @api.get('/surveys')
-async def list_surveys(current_user: User = Depends(auth_util.get_current_active_user)):
+async def list_surveys(
+    page: int = 1,
+    page_size: int = 20,
+    status: Optional[str] = None,
+    current_user: User = Depends(auth_util.get_current_active_user)
+):
+    """Get surveys with server-side pagination and filtering"""
+    query = {'organization_id': current_user.organization_id}
+    if status:
+        query['status'] = status
+    
+    # Count total for pagination metadata
+    total = await db.surveys.count_documents(query)
+    
+    # Apply pagination
+    cursor = db.surveys.find(query).sort('updated_at', -1).skip((page - 1) * page_size).limit(page_size)
     items = []
-    cursor = db.surveys.find({'organization_id': current_user.organization_id})
     async for doc in cursor:
         doc.pop('_id', None)
         # Ensure required fields exist
@@ -838,7 +852,14 @@ async def list_surveys(current_user: User = Depends(auth_util.get_current_active
         doc.setdefault('responses_count', doc.get('responses_count') or 0)
         doc.setdefault('updated_at', doc.get('updated_at') or datetime.utcnow())
         items.append(doc)
-    return items
+    
+    return {
+        'items': items,
+        'total': total,
+        'page': page,
+        'page_size': page_size,
+        'total_pages': (total + page_size - 1) // page_size
+    }
 
 @api.get('/analytics')
 async def get_analytics(current_user: User = Depends(auth_util.get_current_active_user)):
