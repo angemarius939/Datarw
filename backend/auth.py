@@ -42,7 +42,8 @@ async def get_user_by_email(email: str) -> Optional[User]:
     return None
 
 async def get_user_by_id(user_id: str) -> Optional[User]:
-    user_doc = await db.users.find_one({"_id": user_id})
+    # Try both id and _id fields for compatibility
+    user_doc = await db.users.find_one({"$or": [{"id": user_id}, {"_id": user_id}]})
     if user_doc:
         return User(**user_doc)
     return None
