@@ -285,7 +285,7 @@ const BudgetTrackingPage = () => {
     return params;
   };
 
-  const downloadProjectReportXLSX = async () =&gt; {
+  const downloadProjectReportXLSX = async () => {
     if (!filters.project_id) {
       toast({ title: 'Select project', description: 'Choose a project in the Expenses filter first', variant: 'destructive' });
       return;
@@ -294,7 +294,7 @@ const BudgetTrackingPage = () => {
     downloadBlob(res.data, `finance_project_${filters.project_id}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   };
 
-  const downloadActivitiesReportXLSX = async () =&gt; {
+  const downloadActivitiesReportXLSX = async () => {
     if (!filters.project_id) {
       toast({ title: 'Select project', description: 'Choose a project in the Expenses filter first', variant: 'destructive' });
       return;
@@ -303,7 +303,7 @@ const BudgetTrackingPage = () => {
     downloadBlob(res.data, `finance_activities_${filters.project_id}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   };
 
-  const downloadAllProjectsReportXLSX = async () =&gt; {
+  const downloadAllProjectsReportXLSX = async () => {
     const res = await financeAPI.downloadAllProjectsReportXLSX(buildDateParams());
     downloadBlob(res.data, 'finance_all_projects.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   };
