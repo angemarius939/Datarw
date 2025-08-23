@@ -385,7 +385,7 @@ const BudgetTrackingPage = () => {
                     {(config.funding_sources || []).map(fs => (
                       <Badge key={fs} className="bg-gray-100 text-gray-800">
                         {fs}
-                        <button className="ml-2 text-red-600" onClick={() =&gt; setConfig(prev =&gt; ({ ...prev, funding_sources: (prev.funding_sources||[]).filter(x =&gt; x !== fs) }))}>×</button>
+                        <button className="ml-2 text-red-600" onClick={() => setConfig(prev => ({ ...prev, funding_sources: (prev.funding_sources||[]).filter(x => x !== fs) }))}>×</button>
                       </Badge>
                     ))}
                   </div>
