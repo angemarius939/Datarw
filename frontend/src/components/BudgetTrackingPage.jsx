@@ -255,7 +255,7 @@ const BudgetTrackingPage = () => {
     URL.revokeObjectURL(url);
   };
 
-  const downloadProjectReport = async () =&gt; {
+  const downloadProjectReport = async () => {
     if (!filters.project_id) {
       toast({ title: 'Select project', description: 'Choose a project in the Expenses filter first', variant: 'destructive' });
       return;
