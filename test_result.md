@@ -343,7 +343,6 @@ metadata:
 test_plan:
   current_focus:
   - "Phase 2: UI Testing for Project Creation and Beneficiary Saving"
-  - "Phase 2: Server-side pagination for finance lists"
   - "Phase 2: Approvals workflow for finance edits (Admin + Director)"
   stuck_tasks: []
   test_all: false
