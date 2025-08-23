@@ -427,6 +427,16 @@ class ExpenseUpdate(SafeModel):
     funding_source: Optional[str] = None
     cost_center: Optional[str] = None
     notes: Optional[str] = None
+    approval_status: Optional[ApprovalStatus] = None
+    rejection_reason: Optional[str] = None
+
+class ExpenseApprovalRequest(SafeModel):
+    action: str  # 'approve' or 'reject'
+    rejection_reason: Optional[str] = None
+
+class ExpenseSubmitRequest(SafeModel):
+    """Request to submit expense for approval"""
+    pass
 
 # -------------------- AI Service Models --------------------
 class QuestionType(str, Enum):
