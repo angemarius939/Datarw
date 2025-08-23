@@ -5594,6 +5594,12 @@ class DataRWAPITester:
             self.test_finance_xlsx_all_projects_report,
             self.test_csv_date_range_filtering,
             self.test_funding_utilization_date_range,
+            # SERVER-SIDE PAGINATION TESTS (PHASE 2 - PRIORITY)
+            self.test_server_side_pagination_surveys,
+            self.test_server_side_pagination_activities,
+            self.test_server_side_pagination_beneficiaries,
+            self.test_server_side_pagination_finance_expenses,
+            self.test_pagination_authentication_protection,
             # Cleanup tests
             self.test_delete_user,
             self.test_delete_survey
