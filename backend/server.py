@@ -823,4 +823,46 @@ async def finance_report_all_projects_pdf(organization_id: Optional[str] = Query
     c.save()
     return StreamingResponse(BytesIO(buf.getvalue()), media_type='application/pdf', headers={"Content-Disposition": f"attachment; filename=finance_all_projects.pdf"})
 
+# ---------------- Minimal Surveys, Analytics, and Projects routes for Dashboard ----------------
+
+@api.get('/surveys')
+async def list_surveys(current_user: User = Depends(auth_util.get_current_active_user)):
+    items = []
+    cursor = db.surveys.find({'organization_id': current_user.organization_id})
+    async for doc in cursor:
+        doc.pop('_id', None)
+        # Ensure required fields exist
+        doc.setdefault('id', doc.get('id') or str(uuid.uuid4()))
+        doc.setdefault('title', doc.get('title') or 'Untitled Survey')
+        doc.setdefault('status', doc.get('status') or 'draft')
+        doc.setdefault('responses_count', doc.get('responses_count') or 0)
+        doc.setdefault('updated_at', doc.get('updated_at') or datetime.utcnow())
+        items.append(doc)
+    return items
+
+@api.get('/analytics')
+async def get_analytics(current_user: User = Depends(auth_util.get_current_active_user)):
+    # Basic analytics summary for dashboard
+    total_responses = await db.survey_responses.count_documents({'organization_id': current_user.organization_id}) if hasattr(db, 'survey_responses') else 0
+    # Placeholder metrics
+    monthly_growth = 0
+    response_rate = 0.0
+    return {
+        'total_responses': total_responses,
+        'monthly_growth': monthly_growth,
+        'response_rate': response_rate,
+    }
+
+@api.get('/projects')
+async def get_projects(status: Optional[str] = None, current_user: User = Depends(auth_util.get_current_active_user)):
+    query = {'organization_id': current_user.organization_id}
+    if status:
+        query['status'] = status
+    items = []
+    cursor = db.projects.find(query).sort('name', 1)
+    async for doc in cursor:
+        doc.pop('_id', None)
+        items.append(doc)
+    return items
+
 app.include_router(api)
