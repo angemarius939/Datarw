@@ -337,8 +337,8 @@ const BudgetTrackingPage = () => {
         <h1 className="text-3xl font-bold text-gray-900">Budget Tracking</h1>
         <div className="flex gap-2">
           <Button variant="outline" onClick={exportCSV}><Download className="h-4 w-4 mr-2"/>Export CSV</Button>
-          <Button variant="outline" onClick={() =&gt; document.getElementById('expenses-import').click()}><Upload className="h-4 w-4 mr-2"/>Import CSV (stub)</Button>
-          <input id="expenses-import" type="file" className="hidden" accept=".csv,text/csv" onChange={async (e) =&gt; {
+          <Button variant="outline" onClick={() => document.getElementById('expenses-import').click()}><Upload className="h-4 w-4 mr-2"/>Import CSV (stub)</Button>
+          <input id="expenses-import" type="file" className="hidden" accept=".csv,text/csv" onChange={async (e) => {
             const file = e.target.files?.[0];
             if (!file) return;
             try {
