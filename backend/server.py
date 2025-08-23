@@ -197,6 +197,10 @@ async def login_user(payload: LoginRequest):
         'org_id': user.organization_id,
         'role': user.role,
     })
+    
+    # Remove MongoDB _id field before serialization
+    org.pop('_id', None)
+    
     return {
         'access_token': token,
         'token_type': 'bearer',
