@@ -306,7 +306,10 @@ import csv
 @api.get('/finance/expenses/export-csv')
 async def fin_expenses_export_csv(project_id: Optional[str] = None, funding_source: Optional[str] = None, vendor: Optional[str] = None, date_from: Optional[str] = None, date_to: Optional[str] = None, current_user: UserModel = Depends(auth_util.get_current_active_user)):
     data = await finance_service.list_expenses(current_user.organization_id, {k:v for k,v in {'project_id':project_id,'funding_source':funding_source,'vendor':vendor,'date_from':date_from,'date_to':date_to}.items() if v}, page=1, page_size=10000)
-    buf = BytesIO()
+    
+    # Use StringIO for CSV text content
+    from io import StringIO
+    buf = StringIO()
     writer = csv.writer(buf)
     writer.writerow(['date','project_id','vendor','amount','currency','funding_source','cost_center','invoice_no','notes'])
     for it in data['items']:
@@ -321,8 +324,16 @@ async def fin_expenses_export_csv(project_id: Optional[str] = None, funding_sour
             it.get('invoice_no') or '',
             it.get('notes') or ''
         ])
-    buf.seek(0)
-    return StreamingResponse(buf, media_type='text/csv', headers={"Content-Disposition": "attachment; filename=expenses.csv"})
+    
+    # Convert to bytes for streaming
+    csv_content = buf.getvalue()
+    buf.close()
+    
+    return StreamingResponse(
+        BytesIO(csv_content.encode('utf-8')), 
+        media_type='text/csv', 
+        headers={"Content-Disposition": "attachment; filename=expenses.csv"}
+    )
 
 from fastapi import UploadFile
 @api.post('/finance/expenses/import-csv')
