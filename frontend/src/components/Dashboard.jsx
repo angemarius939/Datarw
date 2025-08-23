@@ -40,7 +40,7 @@ import KPIDashboard from './KPIDashboard';
 
 const VALID_TABS = new Set([
   'overview','surveys','builder','data','users',
-  'projects-overview','projects','budgets','kpis','beneficiaries','documents','reports','admin-panel'
+  'projects-overview','projects','budgets','kpis','beneficiaries','documents','reports','admin-panel','kpi-dashboard'
 ]);
 
 const Dashboard = ({ onUpgrade }) => {
