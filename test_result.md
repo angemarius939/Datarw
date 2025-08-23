@@ -350,6 +350,18 @@ test_plan:
 
 
 backend:
+  - task: "Dashboard Endpoints for Data Loading Fix"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "DASHBOARD ENDPOINTS TESTING COMPLETED WITH 100% SUCCESS RATE: Comprehensive testing of the recently added dashboard endpoints that were implemented to fix the 'Failed to load dashboard data' 404 errors completed successfully. CRITICAL FINDINGS: ✅ GET /api/surveys - Working correctly, returns list of surveys with all required fields (id, title, status, responses_count, updated_at) for dashboard data loading, proper JSON response format confirmed, ✅ GET /api/analytics - Working correctly, returns key analytics data with all required fields (total_responses, monthly_growth, response_rate) with proper data types (int for total_responses, numeric for growth/rate), ✅ GET /api/projects - Working correctly, returns list of projects with proper structure for pickers and dashboard pages, includes required id and name fields for project selection dropdowns, ✅ AUTHENTICATION PROTECTION VERIFIED - All three endpoints properly protected by Bearer token authentication, correctly reject unauthorized access with HTTP 403 when no token provided, require valid JWT token for access as expected, ✅ RESPONSE STRUCTURE VALIDATION - All endpoints return expected JSON response formats that match what Dashboard.jsx expects, no serialization issues or malformed responses detected, proper array/object structures maintained. TESTING METHODOLOGY: Conducted authentication flow setup, tested each endpoint with valid JWT tokens, verified response structures and data types, tested authentication protection by removing tokens, confirmed all endpoints handle empty data scenarios correctly (0 surveys, 0 projects). The dashboard data loading fix is production-ready and resolves the user-reported 404 errors. All three endpoints are working correctly and provide the necessary data structure for Dashboard.jsx component integration."
+
   - task: "Finance Phase 1 - Org Config, Expenses CRUD, CSV stubs, Analytics, AI Insights"
     implemented: true
     working: true
