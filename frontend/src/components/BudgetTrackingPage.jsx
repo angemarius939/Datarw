@@ -264,7 +264,7 @@ const BudgetTrackingPage = () => {
     downloadBlob(res.data, `finance_project_${filters.project_id}.csv`);
   };
 
-  const downloadActivitiesReport = async () =&gt; {
+  const downloadActivitiesReport = async () => {
     if (!filters.project_id) {
       toast({ title: 'Select project', description: 'Choose a project in the Expenses filter first', variant: 'destructive' });
       return;
@@ -273,12 +273,12 @@ const BudgetTrackingPage = () => {
     downloadBlob(res.data, `finance_activities_${filters.project_id}.csv`);
   };
 
-  const downloadAllProjectsReport = async () =&gt; {
+  const downloadAllProjectsReport = async () => {
     const res = await financeAPI.downloadAllProjectsReportCSV(buildDateParams());
     downloadBlob(res.data, 'finance_all_projects.csv');
   };
 
-  const buildDateParams = () =&gt; {
+  const buildDateParams = () => {
     const params = {};
     if (filters.date_from) params.date_from = filters.date_from;
     if (filters.date_to) params.date_to = filters.date_to;
