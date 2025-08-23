@@ -394,7 +394,7 @@ const ProjectDashboard = () => {
                   <div key={status} className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Badge className={getStatusColor(status)}>
-                        {status.replace('_', ' ')}
+                        {(status || '').replace('_', ' ') || 'Unknown'}
                       </Badge>
                       <span className="text-sm text-gray-600">{data.count} activities</span>
                     </div>
