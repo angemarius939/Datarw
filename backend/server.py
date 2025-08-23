@@ -352,6 +352,46 @@ async def get_pending_approvals(current_user: UserModel = Depends(auth_util.get_
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+# -------------------- KPI Dashboard Routes --------------------
+@api.get('/kpi/indicators')
+async def get_indicator_kpis(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    current_user: UserModel = Depends(auth_util.get_current_active_user)
+):
+    """Get organization-level indicator KPIs"""
+    try:
+        kpis = await kpi_service.get_indicator_kpis(current_user.organization_id, date_from, date_to)
+        return kpis
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api.get('/kpi/activities')
+async def get_activity_kpis(
+    project_id: Optional[str] = None,
+    current_user: UserModel = Depends(auth_util.get_current_active_user)
+):
+    """Get activity-level KPIs with drill-down capabilities"""
+    try:
+        kpis = await kpi_service.get_activity_kpis(current_user.organization_id, project_id)
+        return kpis
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api.get('/kpi/projects')
+async def get_project_kpis(
+    project_id: Optional[str] = None,
+    current_user: UserModel = Depends(auth_util.get_current_active_user)
+):
+    """Get project-level KPIs with drill-down capabilities"""
+    try:
+        kpis = await kpi_service.get_project_kpis(current_user.organization_id, project_id)
+        return kpis
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# -------------------- Basic Routes --------------------
+
 # Analytics
 @api.get('/finance/burn-rate')
 async def fin_burn_rate(period: str = 'monthly', project_id: Optional[str] = None, date_from: Optional[str] = None, date_to: Optional[str] = None, current_user: UserModel = Depends(auth_util.get_current_active_user)):
