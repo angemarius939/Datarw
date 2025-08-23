@@ -478,13 +478,24 @@ async def finance_report_all_projects_csv(organization_id: Optional[str] = Query
     org = organization_id or 'org'
     var = await finance_service.budget_vs_actual(org, None, date_from, date_to)
     rows = var.get('by_project', [])
-    buf = BytesIO()
+    
+    # Use StringIO for CSV text content
+    from io import StringIO
+    buf = StringIO()
     writer = csv.writer(buf)
     writer.writerow(['Project ID','Planned','Allocated','Actual','Variance','Variance %'])
     for r in rows:
         writer.writerow([r['project_id'], r['planned'], r['allocated'], r['actual'], r['variance_amount'], r['variance_pct']])
-    buf.seek(0)
-    return StreamingResponse(buf, media_type='text/csv', headers={"Content-Disposition": "attachment; filename=finance_all_projects.csv"})
+    
+    # Convert to bytes for streaming
+    csv_content = buf.getvalue()
+    buf.close()
+    
+    return StreamingResponse(
+        BytesIO(csv_content.encode('utf-8')), 
+        media_type='text/csv', 
+        headers={"Content-Disposition": "attachment; filename=finance_all_projects.csv"}
+    )
 
 
 @api.get('/health')
