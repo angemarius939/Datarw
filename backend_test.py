@@ -5917,6 +5917,395 @@ class DataRWAPITester:
             self.log_result("Dashboard Endpoint Test", False, f"Request error: {str(e)}")
             return False
 
+    def test_finance_approval_workflow_comprehensive(self):
+        """Test Finance Approval Workflow endpoints as requested in review"""
+        print("\n" + "="*60)
+        print("FINANCE APPROVAL WORKFLOW TESTING (PHASE 2)")
+        print("="*60)
+        
+        success_count = 0
+        total_tests = 7
+        
+        # Test 1: Create a test expense in draft status
+        if self.test_create_expense_for_approval():
+            success_count += 1
+        
+        # Test 2: Submit expense for approval
+        if self.test_submit_expense_for_approval():
+            success_count += 1
+        
+        # Test 3: Test approval by Admin/Director role
+        if self.test_approve_expense():
+            success_count += 1
+        
+        # Test 4: Create another expense and test rejection
+        if self.test_create_expense_for_rejection():
+            success_count += 1
+        
+        # Test 5: Test rejection with reason
+        if self.test_reject_expense():
+            success_count += 1
+        
+        # Test 6: Test director approval threshold (>100K)
+        if self.test_director_approval_threshold():
+            success_count += 1
+        
+        # Test 7: Test pending approvals list
+        if self.test_get_pending_approvals():
+            success_count += 1
+        
+        print(f"\nFINANCE APPROVAL WORKFLOW TESTING COMPLETE: {success_count}/{total_tests} tests passed")
+        return success_count == total_tests
+
+    def test_create_expense_for_approval(self):
+        """Create a test expense in draft status for approval testing"""
+        try:
+            expense_data = {
+                "project_id": "test-project-001",
+                "activity_id": "test-activity-001",
+                "vendor": "Rwanda Digital Solutions Ltd",
+                "amount": 75000.0,  # Below director threshold
+                "currency": "RWF",
+                "date": datetime.now().isoformat(),
+                "funding_source": "World Bank",
+                "cost_center": "Operations",
+                "invoice_no": f"INV-{uuid.uuid4().hex[:8].upper()}",
+                "notes": "Digital literacy training materials and equipment procurement",
+                "approval_status": "draft"
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/finance/expenses",
+                json=expense_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                expense_id = data.get("id") or data.get("_id")
+                if expense_id and data.get("vendor") == expense_data["vendor"]:
+                    self.test_expense_id = expense_id
+                    self.log_result("Create Expense for Approval", True, 
+                                  f"Test expense created successfully with ID: {expense_id}")
+                    return True
+                else:
+                    self.log_result("Create Expense for Approval", False, "Expense data mismatch", data)
+                    return False
+            else:
+                self.log_result("Create Expense for Approval", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Create Expense for Approval", False, f"Request error: {str(e)}")
+            return False
+
+    def test_submit_expense_for_approval(self):
+        """Test submitting expense for approval"""
+        if not hasattr(self, 'test_expense_id'):
+            self.log_result("Submit Expense for Approval", False, "No test expense ID available")
+            return False
+        
+        try:
+            response = self.session.post(
+                f"{self.base_url}/finance/expenses/{self.test_expense_id}/submit"
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("success") and 
+                    "expense" in data and 
+                    data["expense"].get("approval_status") == "pending"):
+                    
+                    # Check if requires_director_approval is set correctly
+                    requires_director = data["expense"].get("requires_director_approval", False)
+                    amount = data["expense"].get("amount", 0)
+                    expected_director = amount > 100000.0
+                    
+                    if requires_director == expected_director:
+                        self.log_result("Submit Expense for Approval", True, 
+                                      f"Expense submitted for approval successfully, status changed to pending, director approval requirement: {requires_director}")
+                        return True
+                    else:
+                        self.log_result("Submit Expense for Approval", False, 
+                                      f"Director approval requirement incorrect: expected {expected_director}, got {requires_director}")
+                        return False
+                else:
+                    self.log_result("Submit Expense for Approval", False, "Missing required fields or wrong status", data)
+                    return False
+            else:
+                self.log_result("Submit Expense for Approval", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Submit Expense for Approval", False, f"Request error: {str(e)}")
+            return False
+
+    def test_approve_expense(self):
+        """Test approving expense by Admin/Director role"""
+        if not hasattr(self, 'test_expense_id'):
+            self.log_result("Approve Expense", False, "No test expense ID available")
+            return False
+        
+        try:
+            response = self.session.post(
+                f"{self.base_url}/finance/expenses/{self.test_expense_id}/approve"
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("success") and 
+                    "expense" in data and 
+                    data["expense"].get("approval_status") == "approved"):
+                    
+                    # Check audit trail fields
+                    expense = data["expense"]
+                    if ("approved_by" in expense and 
+                        "approved_at" in expense and
+                        expense.get("approved_by") == self.user_data["id"]):
+                        
+                        self.log_result("Approve Expense", True, 
+                                      "Expense approved successfully with proper audit trail (approved_by, approved_at)")
+                        return True
+                    else:
+                        self.log_result("Approve Expense", False, "Missing audit trail fields", data)
+                        return False
+                else:
+                    self.log_result("Approve Expense", False, "Missing required fields or wrong status", data)
+                    return False
+            elif response.status_code == 403:
+                data = response.json()
+                if "Insufficient permissions" in data.get("detail", ""):
+                    self.log_result("Approve Expense", True, 
+                                  "Permission validation working - insufficient permissions properly rejected")
+                    return True
+                else:
+                    self.log_result("Approve Expense", False, "Wrong error message for permissions", data)
+                    return False
+            else:
+                self.log_result("Approve Expense", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Approve Expense", False, f"Request error: {str(e)}")
+            return False
+
+    def test_create_expense_for_rejection(self):
+        """Create another test expense for rejection testing"""
+        try:
+            expense_data = {
+                "project_id": "test-project-002",
+                "activity_id": "test-activity-002",
+                "vendor": "Tech Solutions Rwanda",
+                "amount": 45000.0,
+                "currency": "RWF",
+                "date": datetime.now().isoformat(),
+                "funding_source": "USAID",
+                "cost_center": "Field Work",
+                "invoice_no": f"INV-{uuid.uuid4().hex[:8].upper()}",
+                "notes": "Software licensing for project management tools",
+                "approval_status": "draft"
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/finance/expenses",
+                json=expense_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                expense_id = data.get("id") or data.get("_id")
+                if expense_id:
+                    self.rejection_expense_id = expense_id
+                    
+                    # Submit for approval immediately
+                    submit_response = self.session.post(
+                        f"{self.base_url}/finance/expenses/{expense_id}/submit"
+                    )
+                    
+                    if submit_response.status_code == 200:
+                        self.log_result("Create Expense for Rejection", True, 
+                                      f"Test expense for rejection created and submitted: {expense_id}")
+                        return True
+                    else:
+                        self.log_result("Create Expense for Rejection", False, 
+                                      f"Failed to submit expense for approval: {submit_response.status_code}")
+                        return False
+                else:
+                    self.log_result("Create Expense for Rejection", False, "No expense ID returned", data)
+                    return False
+            else:
+                self.log_result("Create Expense for Rejection", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Create Expense for Rejection", False, f"Request error: {str(e)}")
+            return False
+
+    def test_reject_expense(self):
+        """Test rejecting expense with reason"""
+        if not hasattr(self, 'rejection_expense_id'):
+            self.log_result("Reject Expense", False, "No rejection expense ID available")
+            return False
+        
+        try:
+            rejection_data = {
+                "rejection_reason": "Insufficient documentation provided. Please attach proper invoices and receipts before resubmission."
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/finance/expenses/{self.rejection_expense_id}/reject",
+                json=rejection_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("success") and 
+                    "expense" in data and 
+                    data["expense"].get("approval_status") == "rejected"):
+                    
+                    # Check audit trail fields for rejection
+                    expense = data["expense"]
+                    if ("rejection_reason" in expense and 
+                        "approved_by" in expense and 
+                        "approved_at" in expense and
+                        expense.get("rejection_reason") == rejection_data["rejection_reason"]):
+                        
+                        self.log_result("Reject Expense", True, 
+                                      "Expense rejected successfully with proper audit trail (rejection_reason, approved_by, approved_at)")
+                        return True
+                    else:
+                        self.log_result("Reject Expense", False, "Missing audit trail fields for rejection", data)
+                        return False
+                else:
+                    self.log_result("Reject Expense", False, "Missing required fields or wrong status", data)
+                    return False
+            elif response.status_code == 400:
+                data = response.json()
+                if "Rejection reason is required" in data.get("detail", ""):
+                    self.log_result("Reject Expense", True, 
+                                  "Rejection reason validation working properly")
+                    return True
+                else:
+                    self.log_result("Reject Expense", False, "Wrong validation error message", data)
+                    return False
+            elif response.status_code == 403:
+                data = response.json()
+                if "Insufficient permissions" in data.get("detail", ""):
+                    self.log_result("Reject Expense", True, 
+                                  "Permission validation working - insufficient permissions properly rejected")
+                    return True
+                else:
+                    self.log_result("Reject Expense", False, "Wrong error message for permissions", data)
+                    return False
+            else:
+                self.log_result("Reject Expense", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Reject Expense", False, f"Request error: {str(e)}")
+            return False
+
+    def test_director_approval_threshold(self):
+        """Test director approval threshold for expenses >100K"""
+        try:
+            # Create high-value expense requiring director approval
+            expense_data = {
+                "project_id": "test-project-003",
+                "activity_id": "test-activity-003",
+                "vendor": "Major Infrastructure Corp",
+                "amount": 150000.0,  # Above director threshold (100K)
+                "currency": "RWF",
+                "date": datetime.now().isoformat(),
+                "funding_source": "World Bank",
+                "cost_center": "Operations",
+                "invoice_no": f"INV-{uuid.uuid4().hex[:8].upper()}",
+                "notes": "Major equipment procurement requiring director approval",
+                "approval_status": "draft"
+            }
+            
+            # Create expense
+            create_response = self.session.post(
+                f"{self.base_url}/finance/expenses",
+                json=expense_data
+            )
+            
+            if create_response.status_code != 200:
+                self.log_result("Director Approval Threshold", False, 
+                              f"Failed to create high-value expense: {create_response.status_code}")
+                return False
+            
+            expense_id = create_response.json().get("id") or create_response.json().get("_id")
+            if not expense_id:
+                self.log_result("Director Approval Threshold", False, "No expense ID returned")
+                return False
+            
+            # Submit for approval
+            submit_response = self.session.post(
+                f"{self.base_url}/finance/expenses/{expense_id}/submit"
+            )
+            
+            if submit_response.status_code == 200:
+                data = submit_response.json()
+                if (data.get("success") and 
+                    "expense" in data and 
+                    data["expense"].get("requires_director_approval") == True):
+                    
+                    self.director_expense_id = expense_id
+                    self.log_result("Director Approval Threshold", True, 
+                                  "Director approval threshold working correctly - high-value expense requires director approval")
+                    return True
+                else:
+                    self.log_result("Director Approval Threshold", False, 
+                                  "Director approval not required for high-value expense", data)
+                    return False
+            else:
+                self.log_result("Director Approval Threshold", False, 
+                              f"Failed to submit high-value expense: {submit_response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_result("Director Approval Threshold", False, f"Request error: {str(e)}")
+            return False
+
+    def test_get_pending_approvals(self):
+        """Test getting expenses pending approval"""
+        try:
+            response = self.session.get(f"{self.base_url}/finance/approvals/pending")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "items" in data and "total" in data:
+                    items = data["items"]
+                    total = data["total"]
+                    
+                    # Verify structure and content
+                    if isinstance(items, list) and isinstance(total, int):
+                        # Check if our test expenses are in the pending list
+                        pending_ids = [item.get("id") or item.get("_id") for item in items]
+                        
+                        # Look for expenses with pending status
+                        pending_count = len([item for item in items if item.get("approval_status") == "pending"])
+                        
+                        self.log_result("Get Pending Approvals", True, 
+                                      f"Pending approvals retrieved successfully: {total} total, {pending_count} pending items")
+                        return True
+                    else:
+                        self.log_result("Get Pending Approvals", False, 
+                                      f"Invalid data types: items={type(items)}, total={type(total)}", data)
+                        return False
+                else:
+                    self.log_result("Get Pending Approvals", False, "Missing required fields (items, total)", data)
+                    return False
+            elif response.status_code == 403:
+                data = response.json()
+                if "Insufficient permissions" in data.get("detail", ""):
+                    self.log_result("Get Pending Approvals", True, 
+                                  "Permission validation working - insufficient permissions properly rejected")
+                    return True
+                else:
+                    self.log_result("Get Pending Approvals", False, "Wrong error message for permissions", data)
+                    return False
+            else:
+                self.log_result("Get Pending Approvals", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Get Pending Approvals", False, f"Request error: {str(e)}")
+            return False
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print(f"🚀 Starting DataRW Backend API Tests")
