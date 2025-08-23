@@ -563,7 +563,7 @@ const BudgetTrackingPage = () => {
                   <div>
                     <h3 className="font-medium mb-2">Burn Rate ({burnRate?.period})</h3>
                     <div className="border rounded p-2 bg-white max-h-64 overflow-auto">
-                      {(burnRate?.series || []).map((s) =&gt; (
+                      {(burnRate?.series || []).map((s) => (
                         <div key={s.period} className="flex items-center justify-between py-1 text-sm">
                           <span>{s.period}</span>
                           <span>{s.spent.toLocaleString()}</span>
@@ -574,7 +574,7 @@ const BudgetTrackingPage = () => {
                   <div>
                     <h3 className="font-medium mb-2">Budget vs Actual (by project)</h3>
                     <div className="border rounded p-2 bg-white max-h-64 overflow-auto">
-                      {(variance?.by_project || []).map((row) =&gt; (
+                      {(variance?.by_project || []).map((row) => (
                         <div key={row.project_id} className="grid grid-cols-5 gap-2 text-sm py-1">
                           <span className="truncate" title={getProjectName(row.project_id)}>{getProjectName(row.project_id)}</span>
                           <span className="text-right">Planned: {row.planned.toLocaleString()}</span>
