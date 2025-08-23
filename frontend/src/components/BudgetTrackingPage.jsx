@@ -212,7 +212,7 @@ const BudgetTrackingPage = () => {
     try {
       setAiLoading(true);
       // Build a simple anomalies list from current page
-      const anomalies = (expenses || []).filter(e =&gt; (e.amount || 0) &gt; 1000000).map(e =&gt; ({ id: e.id, vendor: e.vendor, amount: e.amount }));
+      const anomalies = (expenses || []).filter(e => (e.amount || 0) > 1000000).map(e => ({ id: e.id, vendor: e.vendor, amount: e.amount }));
       const summary = { page, total, filters };
       const res = await financeAPI.getAIInsights({ anomalies, summary });
       setAiResult(res.data);
