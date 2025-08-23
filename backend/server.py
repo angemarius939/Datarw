@@ -487,13 +487,24 @@ async def finance_report_project_csv(project_id: str, organization_id: Optional[
 async def finance_report_activities_csv(project_id: str, organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
     org = organization_id or 'org'
     details = await finance_service.project_budget_details(org, project_id, date_from, date_to)
-    buf = BytesIO()
+    
+    # Use StringIO for CSV text content
+    from io import StringIO
+    buf = StringIO()
     writer = csv.writer(buf)
     writer.writerow(['Activity ID','Transactions','Spent'])
     for aid, row in details['spent_by_activity'].items():
         writer.writerow([aid, row['transactions'], row['spent']])
-    buf.seek(0)
-    return StreamingResponse(buf, media_type='text/csv', headers={"Content-Disposition": f"attachment; filename=finance_activities_{project_id}.csv"})
+    
+    # Convert to bytes for streaming
+    csv_content = buf.getvalue()
+    buf.close()
+    
+    return StreamingResponse(
+        BytesIO(csv_content.encode('utf-8')), 
+        media_type='text/csv', 
+        headers={"Content-Disposition": f"attachment; filename=finance_activities_{project_id}.csv"}
+    )
 
 @api.get('/finance/reports/all-projects-csv')
 async def finance_report_all_projects_csv(organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
