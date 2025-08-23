@@ -669,19 +669,19 @@ const BudgetTrackingPage = () => {
             </div>
             <div>
               <label className="text-sm font-medium">Date</label>
-              <Input type="date" value={expenseData.date} onChange={e =&gt; setExpenseData(prev =&gt; ({ ...prev, date: e.target.value }))} />
+              <Input type="date" value={expenseData.date} onChange={e => setExpenseData(prev => ({ ...prev, date: e.target.value }))} />
             </div>
             <div>
               <label className="text-sm font-medium">Vendor</label>
-              <Input value={expenseData.vendor} onChange={e =&gt; setExpenseData(prev =&gt; ({ ...prev, vendor: e.target.value }))} />
+              <Input value={expenseData.vendor} onChange={e => setExpenseData(prev => ({ ...prev, vendor: e.target.value }))} />
             </div>
             <div>
               <label className="text-sm font-medium">Invoice No</label>
-              <Input value={expenseData.invoice_no} onChange={e =&gt; setExpenseData(prev =&gt; ({ ...prev, invoice_no: e.target.value }))} />
+              <Input value={expenseData.invoice_no} onChange={e => setExpenseData(prev => ({ ...prev, invoice_no: e.target.value }))} />
             </div>
             <div>
               <label className="text-sm font-medium">Amount</label>
-              <Input type="number" value={expenseData.amount} onChange={e =&gt; setExpenseData(prev =&gt; ({ ...prev, amount: e.target.value }))} />
+              <Input type="number" value={expenseData.amount} onChange={e => setExpenseData(prev => ({ ...prev, amount: e.target.value }))} />
             </div>
             <div>
               <label className="text-sm font-medium">Currency</label>
