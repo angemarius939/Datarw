@@ -456,19 +456,19 @@ const BudgetTrackingPage = () => {
                 </div>
                 <div>
                   <label className="text-sm text-gray-600">Vendor</label>
-                  <Input value={filters.vendor || ''} onChange={e =&gt; setFilters(prev =&gt; ({ ...prev, vendor: e.target.value }))} placeholder="Vendor name" />
+                  <Input value={filters.vendor || ''} onChange={e => setFilters(prev => ({ ...prev, vendor: e.target.value }))} placeholder="Vendor name" />
                 </div>
                 <div>
                   <label className="text-sm text-gray-600">From</label>
-                  <Input type="date" value={filters.date_from || ''} onChange={e =&gt; setFilters(prev =&gt; ({ ...prev, date_from: e.target.value }))} />
+                  <Input type="date" value={filters.date_from || ''} onChange={e => setFilters(prev => ({ ...prev, date_from: e.target.value }))} />
                 </div>
                 <div>
                   <label className="text-sm text-gray-600">To</label>
-                  <Input type="date" value={filters.date_to || ''} onChange={e =&gt; setFilters(prev =&gt; ({ ...prev, date_to: e.target.value }))} />
+                  <Input type="date" value={filters.date_to || ''} onChange={e => setFilters(prev => ({ ...prev, date_to: e.target.value }))} />
                 </div>
                 <div className="flex gap-2 flex-wrap items-center">
-                  <Button onClick={() =&gt; { setPage(1); loadExpenses(true); }}><RefreshCw className="h-4 w-4 mr-2"/>Apply</Button>
-                  <Button variant="outline" onClick={() =&gt; { setFilters({ project_id: '', activity_id: '', funding_source: '', vendor: '', date_from: '', date_to: '' }); setPage(1); loadExpenses(true); }}>Clear</Button>
+                  <Button onClick={() => { setPage(1); loadExpenses(true); }}><RefreshCw className="h-4 w-4 mr-2"/>Apply</Button>
+                  <Button variant="outline" onClick={() => { setFilters({ project_id: '', activity_id: '', funding_source: '', vendor: '', date_from: '', date_to: '' }); setPage(1); loadExpenses(true); }}>Clear</Button>
                   <div className="flex gap-1">
                     <Button type="button" variant="outline" onClick={applyThisMonth}>This Month</Button>
                     <Button type="button" variant="outline" onClick={applyLast90Days}>Last 90 Days</Button>
