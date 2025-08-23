@@ -703,10 +703,10 @@ const BudgetTrackingPage = () => {
             </div>
             <div>
               <label className="text-sm font-medium">Cost Center</label>
-              <Select value={expenseData.cost_center} onValueChange={(v) =&gt; setExpenseData(prev =&gt; ({ ...prev, cost_center: v }))}>
+              <Select value={expenseData.cost_center} onValueChange={(v) => setExpenseData(prev => ({ ...prev, cost_center: v }))}>
                 <SelectTrigger><SelectValue placeholder="Select"/></SelectTrigger>
                 <SelectContent>
-                  {(config.cost_centers || []).map(cc =&gt; (<SelectItem key={cc} value={cc}>{cc}</SelectItem>))}
+                  {(config.cost_centers || []).map(cc => (<SelectItem key={cc} value={cc}>{cc}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
