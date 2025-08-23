@@ -716,7 +716,7 @@ const BudgetTrackingPage = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() =&gt; setOpenModal(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setOpenModal(false)}>Cancel</Button>
             <Button onClick={saveExpense}>Save</Button>
           </DialogFooter>
         </DialogContent>
