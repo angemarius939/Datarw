@@ -521,13 +521,13 @@ const BudgetTrackingPage = () => {
               <div className="mt-3 flex items-center justify-between">
                 <div className="text-sm text-gray-600">Showing {(page-1)*pageSize + 1} - {Math.min(page*pageSize, total)} of {total}</div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" disabled={page &lt;= 1} onClick={() =&gt; setPage(p =&gt; Math.max(1, p-1))}>Prev</Button>
+                  <Button variant="outline" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p-1))}>Prev</Button>
                   <span className="text-sm">Page {page} / {totalPages}</span>
-                  <Button variant="outline" disabled={page &gt;= totalPages} onClick={() =&gt; setPage(p =&gt; Math.min(totalPages, p+1))}>Next</Button>
-                  <Select value={String(pageSize)} onValueChange={(v) =&gt; { setPageSize(Number(v)); setPage(1); }}>
+                  <Button variant="outline" disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p+1))}>Next</Button>
+                  <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
                     <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {[10,20,50,100].map(s =&gt; (<SelectItem key={s} value={String(s)}>{s} / page</SelectItem>))}
+                      {[10,20,50,100].map(s => (<SelectItem key={s} value={String(s)}>{s} / page</SelectItem>))}
                     </SelectContent>
                   </Select>
                 </div>
