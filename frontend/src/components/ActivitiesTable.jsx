@@ -537,7 +537,17 @@ const ActivitiesTable = () => {
                       toast({ title: 'Import complete', description: `${created} created, ${updated} updated, ${failed} failed` });
                       // Refresh table
                       const actsRes = await projectsAPI.getActivities();
-                      setActivities(actsRes.data || []);
+                      
+                      // Handle pagination response format
+                      const activitiesData = actsRes.data;
+                      if (Array.isArray(activitiesData)) {
+                        setActivities(activitiesData);
+                      } else if (activitiesData && Array.isArray(activitiesData.items)) {
+                        setActivities(activitiesData.items);
+                      } else {
+                        setActivities([]);
+                      }
+                      
                       setSelectedRows({});
                       setPage(1);
                     } catch (err) {
