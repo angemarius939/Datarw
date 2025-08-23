@@ -886,6 +886,38 @@ async def get_projects(status: Optional[str] = None, current_user: User = Depend
         items.append(doc)
     return items
 
+@api.get('/activities')
+async def get_activities(
+    project_id: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 20,
+    current_user: User = Depends(auth_util.get_current_active_user)
+):
+    """Get activities with server-side pagination and filtering"""
+    result = await project_service.get_activities(
+        organization_id=current_user.organization_id,
+        project_id=project_id,
+        page=page,
+        page_size=page_size
+    )
+    return result
+
+@api.get('/beneficiaries')
+async def get_beneficiaries(
+    project_id: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 20,
+    current_user: User = Depends(auth_util.get_current_active_user)
+):
+    """Get beneficiaries with server-side pagination and filtering"""
+    result = await project_service.get_beneficiaries(
+        organization_id=current_user.organization_id,
+        project_id=project_id,
+        page=page,
+        page_size=page_size
+    )
+    return result
+
 @api.get('/projects/dashboard')
 async def get_projects_dashboard(current_user: User = Depends(auth_util.get_current_active_user)):
     """Get dashboard data for projects overview"""
