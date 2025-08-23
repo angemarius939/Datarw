@@ -5357,6 +5357,448 @@ class DataRWAPITester:
             self.log_result("Funding Utilization Date Range", False, f"Request error: {str(e)}")
             return False
 
+    def test_server_side_pagination_surveys(self):
+        """Test server-side pagination for surveys endpoint with filtering"""
+        try:
+            # First create some test surveys to ensure we have data
+            for i in range(15):
+                survey_data = {
+                    "title": f"Pagination Test Survey {i+1}",
+                    "description": f"Test survey {i+1} for pagination testing",
+                    "status": "draft" if i % 2 == 0 else "active",
+                    "questions": [
+                        {
+                            "type": "short_text",
+                            "question": f"Test question {i+1}",
+                            "required": True
+                        }
+                    ]
+                }
+                
+                create_response = self.session.post(
+                    f"{self.base_url}/surveys",
+                    json=survey_data
+                )
+                
+                if create_response.status_code != 200:
+                    # If survey creation fails, continue with existing data
+                    break
+            
+            # Test pagination with filtering
+            response = self.session.get(
+                f"{self.base_url}/surveys",
+                params={
+                    "page": 1,
+                    "page_size": 10,
+                    "status": "draft"
+                }
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify pagination structure
+                required_fields = ["items", "total", "page", "page_size", "total_pages"]
+                missing_fields = [field for field in required_fields if field not in data]
+                
+                if missing_fields:
+                    self.log_result("Surveys Pagination", False, 
+                                  f"Missing pagination fields: {missing_fields}", data)
+                    return False
+                
+                # Verify pagination metadata
+                if data["page"] != 1:
+                    self.log_result("Surveys Pagination", False, 
+                                  f"Expected page=1, got {data['page']}", data)
+                    return False
+                
+                if data["page_size"] != 10:
+                    self.log_result("Surveys Pagination", False, 
+                                  f"Expected page_size=10, got {data['page_size']}", data)
+                    return False
+                
+                # Verify items array
+                items = data.get("items", [])
+                if not isinstance(items, list):
+                    self.log_result("Surveys Pagination", False, 
+                                  "Items should be an array", data)
+                    return False
+                
+                if len(items) > data["page_size"]:
+                    self.log_result("Surveys Pagination", False, 
+                                  f"Items count ({len(items)}) exceeds page_size ({data['page_size']})", data)
+                    return False
+                
+                # Verify filtering works (status=draft)
+                for item in items:
+                    if item.get("status") != "draft":
+                        self.log_result("Surveys Pagination", False, 
+                                      f"Filtering failed: found non-draft survey {item.get('id')}", data)
+                        return False
+                
+                # Verify total_pages calculation
+                expected_total_pages = (data["total"] + data["page_size"] - 1) // data["page_size"]
+                if data["total_pages"] != expected_total_pages:
+                    self.log_result("Surveys Pagination", False, 
+                                  f"Incorrect total_pages calculation: expected {expected_total_pages}, got {data['total_pages']}", data)
+                    return False
+                
+                self.log_result("Surveys Pagination", True, 
+                              f"Pagination working correctly: {len(items)} items, total={data['total']}, pages={data['total_pages']}")
+                return True
+            else:
+                self.log_result("Surveys Pagination", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Surveys Pagination", False, f"Request error: {str(e)}")
+            return False
+
+    def test_server_side_pagination_activities(self):
+        """Test server-side pagination for activities endpoint with project filtering"""
+        try:
+            # Ensure we have a project for testing
+            if not hasattr(self, 'project_id'):
+                # Create a test project first
+                project_data = {
+                    "name": "Pagination Test Project",
+                    "description": "Test project for pagination testing",
+                    "project_manager_id": self.user_data["id"],
+                    "start_date": "2024-01-01T00:00:00",
+                    "end_date": "2024-12-31T23:59:59",
+                    "budget_total": 1000000.0,
+                    "beneficiaries_target": 1000,
+                    "location": "Test Location",
+                    "donor_organization": "Test Donor"
+                }
+                
+                create_response = self.session.post(
+                    f"{self.base_url}/projects",
+                    json=project_data
+                )
+                
+                if create_response.status_code == 200:
+                    self.project_id = create_response.json().get("id")
+                else:
+                    self.log_result("Activities Pagination", False, "Failed to create test project")
+                    return False
+            
+            # Create some test activities
+            for i in range(12):
+                activity_data = {
+                    "project_id": self.project_id,
+                    "name": f"Pagination Test Activity {i+1}",
+                    "description": f"Test activity {i+1} for pagination testing",
+                    "assigned_to": self.user_data["id"],
+                    "start_date": "2024-01-01T00:00:00",
+                    "end_date": "2024-12-31T23:59:59",
+                    "budget_allocated": 50000.0,
+                    "deliverables": [f"Deliverable {i+1}"],
+                    "dependencies": []
+                }
+                
+                create_response = self.session.post(
+                    f"{self.base_url}/activities",
+                    json=activity_data
+                )
+                
+                if create_response.status_code != 200:
+                    # If activity creation fails, continue with existing data
+                    break
+            
+            # Test pagination with project filtering
+            response = self.session.get(
+                f"{self.base_url}/activities",
+                params={
+                    "page": 1,
+                    "page_size": 5,
+                    "project_id": self.project_id
+                }
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify pagination structure
+                required_fields = ["items", "total", "page", "page_size", "total_pages"]
+                missing_fields = [field for field in required_fields if field not in data]
+                
+                if missing_fields:
+                    self.log_result("Activities Pagination", False, 
+                                  f"Missing pagination fields: {missing_fields}", data)
+                    return False
+                
+                # Verify pagination metadata
+                if data["page"] != 1:
+                    self.log_result("Activities Pagination", False, 
+                                  f"Expected page=1, got {data['page']}", data)
+                    return False
+                
+                if data["page_size"] != 5:
+                    self.log_result("Activities Pagination", False, 
+                                  f"Expected page_size=5, got {data['page_size']}", data)
+                    return False
+                
+                # Verify items array
+                items = data.get("items", [])
+                if not isinstance(items, list):
+                    self.log_result("Activities Pagination", False, 
+                                  "Items should be an array", data)
+                    return False
+                
+                if len(items) > data["page_size"]:
+                    self.log_result("Activities Pagination", False, 
+                                  f"Items count ({len(items)}) exceeds page_size ({data['page_size']})", data)
+                    return False
+                
+                # Verify filtering works (project_id filter)
+                for item in items:
+                    if item.get("project_id") != self.project_id:
+                        self.log_result("Activities Pagination", False, 
+                                      f"Filtering failed: found activity from different project {item.get('project_id')}", data)
+                        return False
+                
+                self.log_result("Activities Pagination", True, 
+                              f"Pagination working correctly: {len(items)} items, total={data['total']}, pages={data['total_pages']}")
+                return True
+            else:
+                self.log_result("Activities Pagination", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Activities Pagination", False, f"Request error: {str(e)}")
+            return False
+
+    def test_server_side_pagination_beneficiaries(self):
+        """Test server-side pagination for beneficiaries endpoint with project filtering"""
+        try:
+            # Ensure we have a project for testing
+            if not hasattr(self, 'project_id'):
+                self.log_result("Beneficiaries Pagination", False, "No project ID available")
+                return False
+            
+            # Create some test beneficiaries
+            for i in range(8):
+                beneficiary_data = {
+                    "project_id": self.project_id,
+                    "unique_id": f"BEN-{uuid.uuid4().hex[:8]}",
+                    "name": f"Test Beneficiary {i+1}",
+                    "gender": "male" if i % 2 == 0 else "female",
+                    "age": 25 + (i % 40),
+                    "location": f"Test Location {i+1}",
+                    "beneficiary_type": "direct",
+                    "enrollment_date": "2024-01-01T00:00:00"
+                }
+                
+                create_response = self.session.post(
+                    f"{self.base_url}/beneficiaries",
+                    json=beneficiary_data
+                )
+                
+                if create_response.status_code != 200:
+                    # If beneficiary creation fails, continue with existing data
+                    break
+            
+            # Test pagination with project filtering
+            response = self.session.get(
+                f"{self.base_url}/beneficiaries",
+                params={
+                    "page": 1,
+                    "page_size": 5,
+                    "project_id": self.project_id
+                }
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify pagination structure
+                required_fields = ["items", "total", "page", "page_size", "total_pages"]
+                missing_fields = [field for field in required_fields if field not in data]
+                
+                if missing_fields:
+                    self.log_result("Beneficiaries Pagination", False, 
+                                  f"Missing pagination fields: {missing_fields}", data)
+                    return False
+                
+                # Verify pagination metadata
+                if data["page"] != 1:
+                    self.log_result("Beneficiaries Pagination", False, 
+                                  f"Expected page=1, got {data['page']}", data)
+                    return False
+                
+                if data["page_size"] != 5:
+                    self.log_result("Beneficiaries Pagination", False, 
+                                  f"Expected page_size=5, got {data['page_size']}", data)
+                    return False
+                
+                # Verify items array
+                items = data.get("items", [])
+                if not isinstance(items, list):
+                    self.log_result("Beneficiaries Pagination", False, 
+                                  "Items should be an array", data)
+                    return False
+                
+                if len(items) > data["page_size"]:
+                    self.log_result("Beneficiaries Pagination", False, 
+                                  f"Items count ({len(items)}) exceeds page_size ({data['page_size']})", data)
+                    return False
+                
+                # Verify filtering works (project_id filter)
+                for item in items:
+                    if item.get("project_id") != self.project_id:
+                        self.log_result("Beneficiaries Pagination", False, 
+                                      f"Filtering failed: found beneficiary from different project {item.get('project_id')}", data)
+                        return False
+                
+                self.log_result("Beneficiaries Pagination", True, 
+                              f"Pagination working correctly: {len(items)} items, total={data['total']}, pages={data['total_pages']}")
+                return True
+            else:
+                self.log_result("Beneficiaries Pagination", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Beneficiaries Pagination", False, f"Request error: {str(e)}")
+            return False
+
+    def test_server_side_pagination_finance_expenses(self):
+        """Test server-side pagination for finance expenses endpoint (verify existing pagination still works)"""
+        try:
+            # Create some test expenses
+            for i in range(7):
+                expense_data = {
+                    "date": "2024-01-01T00:00:00",
+                    "vendor": f"Test Vendor {i+1}",
+                    "amount": 100000.0 + (i * 50000),
+                    "currency": "RWF",
+                    "funding_source": "World Bank" if i % 2 == 0 else "USAID",
+                    "cost_center": "Operations",
+                    "invoice_no": f"INV-{uuid.uuid4().hex[:8]}",
+                    "notes": f"Test expense {i+1} for pagination testing"
+                }
+                
+                create_response = self.session.post(
+                    f"{self.base_url}/finance/expenses",
+                    json=expense_data
+                )
+                
+                if create_response.status_code != 200:
+                    # If expense creation fails, continue with existing data
+                    break
+            
+            # Test pagination
+            response = self.session.get(
+                f"{self.base_url}/finance/expenses",
+                params={
+                    "page": 1,
+                    "page_size": 5
+                }
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify pagination structure
+                required_fields = ["items", "total", "page", "page_size", "total_pages"]
+                missing_fields = [field for field in required_fields if field not in data]
+                
+                if missing_fields:
+                    self.log_result("Finance Expenses Pagination", False, 
+                                  f"Missing pagination fields: {missing_fields}", data)
+                    return False
+                
+                # Verify pagination metadata
+                if data["page"] != 1:
+                    self.log_result("Finance Expenses Pagination", False, 
+                                  f"Expected page=1, got {data['page']}", data)
+                    return False
+                
+                if data["page_size"] != 5:
+                    self.log_result("Finance Expenses Pagination", False, 
+                                  f"Expected page_size=5, got {data['page_size']}", data)
+                    return False
+                
+                # Verify items array
+                items = data.get("items", [])
+                if not isinstance(items, list):
+                    self.log_result("Finance Expenses Pagination", False, 
+                                  "Items should be an array", data)
+                    return False
+                
+                if len(items) > data["page_size"]:
+                    self.log_result("Finance Expenses Pagination", False, 
+                                  f"Items count ({len(items)}) exceeds page_size ({data['page_size']})", data)
+                    return False
+                
+                # Test filtering with vendor parameter
+                filter_response = self.session.get(
+                    f"{self.base_url}/finance/expenses",
+                    params={
+                        "page": 1,
+                        "page_size": 5,
+                        "vendor": "Test Vendor"
+                    }
+                )
+                
+                if filter_response.status_code == 200:
+                    filter_data = filter_response.json()
+                    filter_items = filter_data.get("items", [])
+                    
+                    # Verify filtering works
+                    for item in filter_items:
+                        if "Test Vendor" not in item.get("vendor", ""):
+                            self.log_result("Finance Expenses Pagination", False, 
+                                          f"Filtering failed: found expense with vendor {item.get('vendor')}", filter_data)
+                            return False
+                
+                self.log_result("Finance Expenses Pagination", True, 
+                              f"Pagination working correctly: {len(items)} items, total={data['total']}, pages={data['total_pages']}")
+                return True
+            else:
+                self.log_result("Finance Expenses Pagination", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Finance Expenses Pagination", False, f"Request error: {str(e)}")
+            return False
+
+    def test_pagination_authentication_protection(self):
+        """Test that all pagination endpoints are properly protected by authentication"""
+        try:
+            # Remove authorization header temporarily
+            original_headers = self.session.headers.copy()
+            if 'Authorization' in self.session.headers:
+                del self.session.headers['Authorization']
+            
+            endpoints_to_test = [
+                "/surveys?page=1&page_size=10",
+                "/activities?page=1&page_size=5",
+                "/beneficiaries?page=1&page_size=5",
+                "/finance/expenses?page=1&page_size=5"
+            ]
+            
+            all_protected = True
+            for endpoint in endpoints_to_test:
+                response = self.session.get(f"{self.base_url}{endpoint}")
+                if response.status_code not in [401, 403]:
+                    self.log_result("Pagination Auth Protection", False, 
+                                  f"Endpoint {endpoint} not properly protected: HTTP {response.status_code}")
+                    all_protected = False
+                    break
+            
+            # Restore headers
+            self.session.headers.update(original_headers)
+            
+            if all_protected:
+                self.log_result("Pagination Auth Protection", True, 
+                              "All pagination endpoints properly protected by authentication")
+                return True
+            else:
+                return False
+                
+        except Exception as e:
+            # Restore headers in case of error
+            self.session.headers.update(original_headers)
+            self.log_result("Pagination Auth Protection", False, f"Request error: {str(e)}")
+            return False
+
     def test_projects_dashboard_endpoint_fix(self):
         """Test the newly added /api/projects/dashboard endpoint that was just implemented to fix dashboard loading issues"""
         try:
