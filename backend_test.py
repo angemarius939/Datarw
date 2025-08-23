@@ -6422,14 +6422,35 @@ class DataRWAPITester:
 
     def run_all_tests(self):
         """Run all tests in sequence"""
+    def run_all_tests(self):
+        """Run all tests in sequence"""
         print(f"🚀 Starting DataRW Backend API Tests")
         print(f"📍 Testing against: {self.base_url}")
         print("=" * 60)
         
+        # URGENT: Test dashboard endpoints for 500 errors FIRST
+        if not self.test_api_health():
+            print("\n❌ API Health Check Failed - Cannot proceed with testing")
+            return self.generate_summary()
+        
+        # Run auth setup for protected endpoints
+        auth_success = self.test_user_registration()
+        if not auth_success:
+            print("\n❌ Authentication setup failed - Cannot test protected endpoints")
+            return self.generate_summary()
+        
+        # PRIORITY: Test for 500 errors immediately
+        error_endpoints = self.test_dashboard_endpoints_for_500_errors()
+        
+        # If we found 500 errors, we can stop here and report
+        if error_endpoints:
+            print(f"\n🚨 CRITICAL: Found {len(error_endpoints)} endpoints with 500 errors!")
+            print("Stopping further testing to focus on 500 error analysis.")
+            return self.generate_summary()
+        
+        # Continue with remaining tests if no 500 errors found
         # Test sequence - order matters for dependencies
         tests = [
-            self.test_api_health,
-            self.test_user_registration,
             self.test_duplicate_registration,
             self.test_user_login_valid,
             self.test_user_login_invalid,
