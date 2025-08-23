@@ -5913,16 +5913,202 @@ class DataRWAPITester:
         print(f"\nREVIEW REQUEST TESTING COMPLETE: {success_count}/{total_tests} tests passed")
         return success_count == total_tests
 
+    def test_dashboard_surveys_endpoint(self):
+        """Test GET /api/surveys endpoint for dashboard data loading"""
+        try:
+            response = self.session.get(f"{self.base_url}/surveys")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    # Check if surveys have required fields for dashboard
+                    for survey in data:
+                        required_fields = ['id', 'title', 'status', 'responses_count', 'updated_at']
+                        missing_fields = [field for field in required_fields if field not in survey]
+                        if missing_fields:
+                            self.log_result("Dashboard Surveys Endpoint", False, 
+                                          f"Survey missing required fields: {missing_fields}", survey)
+                            return False
+                    
+                    self.log_result("Dashboard Surveys Endpoint", True, 
+                                  f"Retrieved {len(data)} surveys with proper structure for dashboard")
+                    return True
+                else:
+                    self.log_result("Dashboard Surveys Endpoint", False, "Response is not a list", data)
+                    return False
+            else:
+                self.log_result("Dashboard Surveys Endpoint", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Dashboard Surveys Endpoint", False, f"Request error: {str(e)}")
+            return False
+
+    def test_dashboard_analytics_endpoint(self):
+        """Test GET /api/analytics endpoint for dashboard data loading"""
+        try:
+            response = self.session.get(f"{self.base_url}/analytics")
+            
+            if response.status_code == 200:
+                data = response.json()
+                # Check for required analytics fields
+                required_fields = ['total_responses', 'monthly_growth', 'response_rate']
+                missing_fields = [field for field in required_fields if field not in data]
+                
+                if missing_fields:
+                    self.log_result("Dashboard Analytics Endpoint", False, 
+                                  f"Missing required analytics fields: {missing_fields}", data)
+                    return False
+                
+                # Validate data types
+                if not isinstance(data['total_responses'], int):
+                    self.log_result("Dashboard Analytics Endpoint", False, 
+                                  f"total_responses should be int, got {type(data['total_responses'])}", data)
+                    return False
+                
+                if not isinstance(data['monthly_growth'], (int, float)):
+                    self.log_result("Dashboard Analytics Endpoint", False, 
+                                  f"monthly_growth should be numeric, got {type(data['monthly_growth'])}", data)
+                    return False
+                
+                if not isinstance(data['response_rate'], (int, float)):
+                    self.log_result("Dashboard Analytics Endpoint", False, 
+                                  f"response_rate should be numeric, got {type(data['response_rate'])}", data)
+                    return False
+                
+                self.log_result("Dashboard Analytics Endpoint", True, 
+                              "Analytics data retrieved with proper structure for dashboard")
+                return True
+            else:
+                self.log_result("Dashboard Analytics Endpoint", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Dashboard Analytics Endpoint", False, f"Request error: {str(e)}")
+            return False
+
+    def test_dashboard_projects_endpoint(self):
+        """Test GET /api/projects endpoint for dashboard data loading"""
+        try:
+            response = self.session.get(f"{self.base_url}/projects")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    # Check if projects have basic required fields for pickers and dashboard
+                    for project in data:
+                        if 'id' not in project and '_id' not in project:
+                            self.log_result("Dashboard Projects Endpoint", False, 
+                                          "Project missing id field", project)
+                            return False
+                        
+                        # Check for name field (used in pickers)
+                        if 'name' not in project:
+                            self.log_result("Dashboard Projects Endpoint", False, 
+                                          "Project missing name field", project)
+                            return False
+                    
+                    self.log_result("Dashboard Projects Endpoint", True, 
+                                  f"Retrieved {len(data)} projects with proper structure for dashboard and pickers")
+                    return True
+                else:
+                    self.log_result("Dashboard Projects Endpoint", False, "Response is not a list", data)
+                    return False
+            else:
+                self.log_result("Dashboard Projects Endpoint", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Dashboard Projects Endpoint", False, f"Request error: {str(e)}")
+            return False
+
+    def test_dashboard_endpoints_authentication(self):
+        """Test that dashboard endpoints are properly protected by authentication"""
+        try:
+            # Store original headers
+            original_headers = self.session.headers.copy()
+            
+            # Remove authorization header
+            if 'Authorization' in self.session.headers:
+                del self.session.headers['Authorization']
+            
+            endpoints_to_test = [
+                ('/surveys', 'Surveys'),
+                ('/analytics', 'Analytics'), 
+                ('/projects', 'Projects')
+            ]
+            
+            all_protected = True
+            for endpoint, name in endpoints_to_test:
+                response = self.session.get(f"{self.base_url}{endpoint}")
+                
+                if response.status_code not in [401, 403]:
+                    self.log_result(f"Dashboard {name} Auth Protection", False, 
+                                  f"Expected 401/403, got {response.status_code} - endpoint not properly protected", 
+                                  response.text)
+                    all_protected = False
+                else:
+                    self.log_result(f"Dashboard {name} Auth Protection", True, 
+                                  f"Properly rejected unauthorized access with HTTP {response.status_code}")
+            
+            # Restore headers
+            self.session.headers.update(original_headers)
+            
+            return all_protected
+            
+        except Exception as e:
+            # Restore headers in case of error
+            self.session.headers.update(original_headers)
+            self.log_result("Dashboard Endpoints Authentication", False, f"Request error: {str(e)}")
+            return False
+
+    def test_dashboard_endpoints_comprehensive(self):
+        """Comprehensive test of dashboard endpoints as requested in review"""
+        print("\n" + "="*60)
+        print("DASHBOARD ENDPOINTS TESTING (Review Request)")
+        print("="*60)
+        
+        success_count = 0
+        total_tests = 4
+        
+        # Test 1: GET /api/surveys
+        if self.test_dashboard_surveys_endpoint():
+            success_count += 1
+        
+        # Test 2: GET /api/analytics
+        if self.test_dashboard_analytics_endpoint():
+            success_count += 1
+        
+        # Test 3: GET /api/projects
+        if self.test_dashboard_projects_endpoint():
+            success_count += 1
+        
+        # Test 4: Authentication protection
+        if self.test_dashboard_endpoints_authentication():
+            success_count += 1
+        
+        print(f"\nDASHBOARD ENDPOINTS TESTING COMPLETE: {success_count}/{total_tests} tests passed")
+        return success_count == total_tests
+
 def main():
     """Main test execution"""
     tester = DataRWAPITester()
     
-    # Run the specific review request tests
-    print("Running Review Request Backend Tests...")
-    review_success = tester.test_review_request_routes()
+    # Test API health first
+    if not tester.test_api_health():
+        print("❌ API Health check failed - aborting tests")
+        exit(1)
     
-    # Exit with appropriate code
-    exit(0 if review_success else 1)
+    # Run authentication tests
+    if not tester.test_auth_endpoints_comprehensive():
+        print("❌ Auth endpoints testing failed")
+        exit(1)
+    
+    # Run dashboard endpoints tests (as requested in review)
+    dashboard_success = tester.test_dashboard_endpoints_comprehensive()
+    
+    if dashboard_success:
+        print("\n🎉 DASHBOARD ENDPOINTS TESTS PASSED! All requested endpoints working correctly.")
+    else:
+        print("\n⚠️  Some dashboard endpoint tests failed. Check the output above for details.")
+        exit(1)
 
 if __name__ == "__main__":
     main()
