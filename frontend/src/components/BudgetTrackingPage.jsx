@@ -497,7 +497,7 @@ const BudgetTrackingPage = () => {
                     ) : expenses.length === 0 ? (
                       <tr><td colSpan={9} className="text-center p-6 text-gray-500">No expenses found</td></tr>
                     ) : (
-                      expenses.map(exp =&gt; (
+                      expenses.map(exp => (
                         <tr key={exp.id || exp._id} className="border-t hover:bg-gray-50">
                           <td className="p-2">{dateToInput(exp.date)}</td>
                           <td className="p-2">{getProjectName(exp.project_id)}</td>
@@ -508,8 +508,8 @@ const BudgetTrackingPage = () => {
                           <td className="p-2">{exp.invoice_no || '-'}</td>
                           <td className="p-2">{exp.notes || ''}</td>
                           <td className="p-2 text-right">
-                            <Button size="sm" variant="outline" onClick={() =&gt; openEdit(exp)}>Edit</Button>
-                            <Button size="sm" variant="ghost" className="text-red-600 ml-2" onClick={() =&gt; deleteExpense(exp.id || exp._id)}>Delete</Button>
+                            <Button size="sm" variant="outline" onClick={() => openEdit(exp)}>Edit</Button>
+                            <Button size="sm" variant="ghost" className="text-red-600 ml-2" onClick={() => deleteExpense(exp.id || exp._id)}>Delete</Button>
                           </td>
                         </tr>
                       ))
