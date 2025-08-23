@@ -342,8 +342,8 @@ metadata:
 
 test_plan:
   current_focus:
-  - "Create Activity Modal refactor with milestones, planned/actual outputs, assigned person dropdown"
-  - "Activity creation backend alignment (creator auto-stamp, planned dates fallback)"
+  - "Fix auth 404s and protect /api/users behind auth"
+  - "Budget Tracking: show project names in UI and add quick date presets (This Month, Last 90 Days)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
