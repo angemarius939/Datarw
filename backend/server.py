@@ -125,6 +125,11 @@ class LoginRequest(BaseModel):
 
 @api.post('/auth/register')
 async def register_user(payload: RegisterRequest):
+    # Check if user already exists
+    existing_user = await db.users.find_one({"email": payload.email.lower()})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
     # Create org if not exists for this email domain (simple default org per user)
     org_name = f"{payload.name.split(' ')[0]}'s Organization"
     org_doc = {
@@ -158,6 +163,11 @@ async def register_user(payload: RegisterRequest):
         'org_id': user_doc['organization_id'],
         'role': user_doc['role'],
     })
+    
+    # Remove MongoDB _id field before serialization
+    user_doc.pop('_id', None)
+    org_doc.pop('_id', None)
+    
     return {
         'access_token': token,
         'token_type': 'bearer',
