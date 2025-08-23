@@ -990,6 +990,94 @@ class DataRWAPITester:
             return False
 
     # Project Management Tests
+    def test_dashboard_status_fields_fix(self):
+        """Test /api/projects/dashboard endpoint specifically for status field validation to prevent .replace() errors"""
+        try:
+            response = self.session.get(f"{self.base_url}/projects/dashboard")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check recent_activities array for proper status fields
+                recent_activities = data.get("recent_activities", [])
+                if isinstance(recent_activities, list):
+                    for i, activity in enumerate(recent_activities):
+                        if isinstance(activity, dict):
+                            # Check if status field exists and is a string (not undefined/null)
+                            status = activity.get("status")
+                            if status is None:
+                                self.log_result("Dashboard Status Fields Fix", False, 
+                                              f"recent_activities[{i}] has null/undefined status field", activity)
+                                return False
+                            if not isinstance(status, str):
+                                self.log_result("Dashboard Status Fields Fix", False, 
+                                              f"recent_activities[{i}] status is not a string: {type(status)}", activity)
+                                return False
+                            
+                            # Verify status is a valid string that can be used with .replace()
+                            try:
+                                # Test the .replace() operation that was causing the frontend error
+                                test_replace = status.replace('_', ' ')
+                            except AttributeError as e:
+                                self.log_result("Dashboard Status Fields Fix", False, 
+                                              f"recent_activities[{i}] status cannot be used with .replace(): {str(e)}", activity)
+                                return False
+                
+                # Check activity_insights.activity_status_breakdown if it exists
+                activity_insights = data.get("activity_insights")
+                if activity_insights and isinstance(activity_insights, dict):
+                    activity_status_breakdown = activity_insights.get("activity_status_breakdown")
+                    if activity_status_breakdown and isinstance(activity_status_breakdown, dict):
+                        for status_key in activity_status_breakdown.keys():
+                            if status_key is None:
+                                self.log_result("Dashboard Status Fields Fix", False, 
+                                              "activity_insights.activity_status_breakdown has null/undefined status key", activity_insights)
+                                return False
+                            if not isinstance(status_key, str):
+                                self.log_result("Dashboard Status Fields Fix", False, 
+                                              f"activity_insights.activity_status_breakdown key is not a string: {type(status_key)}", activity_insights)
+                                return False
+                
+                # Verify all status-related fields are strings throughout the response
+                def check_status_fields_recursive(obj, path=""):
+                    if isinstance(obj, dict):
+                        for key, value in obj.items():
+                            current_path = f"{path}.{key}" if path else key
+                            if key == "status" and value is not None:
+                                if not isinstance(value, str):
+                                    self.log_result("Dashboard Status Fields Fix", False, 
+                                                  f"Status field at {current_path} is not a string: {type(value)}", obj)
+                                    return False
+                                # Test .replace() operation
+                                try:
+                                    value.replace('_', ' ')
+                                except AttributeError:
+                                    self.log_result("Dashboard Status Fields Fix", False, 
+                                                  f"Status field at {current_path} cannot be used with .replace()", obj)
+                                    return False
+                            elif isinstance(value, (dict, list)):
+                                if not check_status_fields_recursive(value, current_path):
+                                    return False
+                    elif isinstance(obj, list):
+                        for i, item in enumerate(obj):
+                            current_path = f"{path}[{i}]" if path else f"[{i}]"
+                            if not check_status_fields_recursive(item, current_path):
+                                return False
+                    return True
+                
+                if not check_status_fields_recursive(data):
+                    return False
+                
+                self.log_result("Dashboard Status Fields Fix", True, 
+                              "All status fields are properly formatted strings - .replace() error prevention verified")
+                return True
+            else:
+                self.log_result("Dashboard Status Fields Fix", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Dashboard Status Fields Fix", False, f"Request error: {str(e)}")
+            return False
+
     def test_project_dashboard_datetime_bug_fix(self):
         """Test project dashboard endpoint specifically for datetime variable scoping bug fix"""
         try:
