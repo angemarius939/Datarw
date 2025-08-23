@@ -374,6 +374,12 @@ class Enumerator(SafeModel):
     assigned_surveys: List[str] = []
 
 # -------------------- Finance --------------------
+class ApprovalStatus(str, Enum):
+    PENDING = 'pending'
+    APPROVED = 'approved'
+    REJECTED = 'rejected'
+    DRAFT = 'draft'
+
 class Expense(SafeModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     project_id: str
@@ -391,6 +397,12 @@ class Expense(SafeModel):
     last_updated_by: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    # Approval workflow fields
+    approval_status: ApprovalStatus = Field(default=ApprovalStatus.DRAFT)
+    approved_by: Optional[str] = None
+    approved_at: Optional[datetime] = None
+    rejection_reason: Optional[str] = None
+    requires_director_approval: bool = Field(default=False)  # For amounts above threshold
 
 class ExpenseCreate(SafeModel):
     project_id: str
