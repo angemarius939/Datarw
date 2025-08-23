@@ -243,7 +243,7 @@ const BudgetTrackingPage = () => {
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil((total || 0) / pageSize)), [total, pageSize]);
 
-  const downloadBlob = (data, filename, type = 'text/csv') =&gt; {
+  const downloadBlob = (data, filename, type = 'text/csv') => {
     const blob = new Blob([data], { type: `${type};charset=utf-8;` });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
