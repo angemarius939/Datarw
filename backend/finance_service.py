@@ -285,3 +285,151 @@ class FinanceService:
 
     async def all_projects_variance(self, organization_id: str, date_from: Optional[str] = None, date_to: Optional[str] = None) -> List[Dict[str, Any]]:
         return (await self.budget_vs_actual(organization_id, None, date_from, date_to)).get("by_project", [])
+
+    # -------------------- Approval Workflow Methods --------------------
+    async def submit_expense_for_approval(self, organization_id: str, expense_id: str, user_id: str) -> Optional[Dict[str, Any]]:
+        """Submit an expense for approval"""
+        filters = []
+        try:
+            filters.append({"_id": ObjectId(expense_id)})
+        except Exception:
+            pass
+        filters.append({"id": expense_id})
+        query = {"$and": [{"organization_id": organization_id}, {"$or": filters}]}
+        
+        # Get current expense
+        expense_doc = await self.db.expenses.find_one(query)
+        if not expense_doc:
+            return None
+        
+        # Check if user can submit (should be creator or have edit permissions)
+        if expense_doc.get("created_by") != user_id:
+            # Additional permission check could go here
+            pass
+        
+        # Determine if director approval is needed (e.g., for amounts > threshold)
+        DIRECTOR_APPROVAL_THRESHOLD = 100000.0  # 100K threshold
+        requires_director = float(expense_doc.get("amount", 0)) > DIRECTOR_APPROVAL_THRESHOLD
+        
+        update_data = {
+            "approval_status": "pending",
+            "requires_director_approval": requires_director,
+            "updated_at": datetime.utcnow(),
+            "last_updated_by": user_id
+        }
+        
+        result = await self.db.expenses.update_one(query, {"$set": update_data})
+        if result.modified_count > 0:
+            # Return updated expense
+            updated_doc = await self.db.expenses.find_one(query)
+            if updated_doc:
+                updated_doc["_id"] = str(updated_doc.get("_id"))
+                return updated_doc
+        return None
+
+    async def approve_expense(self, organization_id: str, expense_id: str, approver_id: str, approver_role: str) -> Optional[Dict[str, Any]]:
+        """Approve an expense (Admin or Director)"""
+        filters = []
+        try:
+            filters.append({"_id": ObjectId(expense_id)})
+        except Exception:
+            pass
+        filters.append({"id": expense_id})
+        query = {"$and": [{"organization_id": organization_id}, {"$or": filters}]}
+        
+        # Get current expense
+        expense_doc = await self.db.expenses.find_one(query)
+        if not expense_doc:
+            return None
+        
+        # Check approval permissions
+        if expense_doc.get("approval_status") != "pending":
+            raise ValueError("Expense is not pending approval")
+        
+        # Check if approver has sufficient role
+        requires_director = expense_doc.get("requires_director_approval", False)
+        if requires_director and approver_role not in ["Director", "Admin", "System Admin"]:
+            raise ValueError("Director approval required for this expense amount")
+        
+        if approver_role not in ["Admin", "Director", "System Admin"]:
+            raise ValueError("Insufficient permissions to approve expenses")
+        
+        update_data = {
+            "approval_status": "approved",
+            "approved_by": approver_id,
+            "approved_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+            "last_updated_by": approver_id
+        }
+        
+        result = await self.db.expenses.update_one(query, {"$set": update_data})
+        if result.modified_count > 0:
+            updated_doc = await self.db.expenses.find_one(query)
+            if updated_doc:
+                updated_doc["_id"] = str(updated_doc.get("_id"))
+                return updated_doc
+        return None
+
+    async def reject_expense(self, organization_id: str, expense_id: str, approver_id: str, approver_role: str, rejection_reason: str) -> Optional[Dict[str, Any]]:
+        """Reject an expense with reason"""
+        filters = []
+        try:
+            filters.append({"_id": ObjectId(expense_id)})
+        except Exception:
+            pass
+        filters.append({"id": expense_id})
+        query = {"$and": [{"organization_id": organization_id}, {"$or": filters}]}
+        
+        # Get current expense
+        expense_doc = await self.db.expenses.find_one(query)
+        if not expense_doc:
+            return None
+        
+        if expense_doc.get("approval_status") != "pending":
+            raise ValueError("Expense is not pending approval")
+        
+        if approver_role not in ["Admin", "Director", "System Admin"]:
+            raise ValueError("Insufficient permissions to reject expenses")
+        
+        update_data = {
+            "approval_status": "rejected",
+            "rejection_reason": rejection_reason,
+            "approved_by": approver_id,
+            "approved_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+            "last_updated_by": approver_id
+        }
+        
+        result = await self.db.expenses.update_one(query, {"$set": update_data})
+        if result.modified_count > 0:
+            updated_doc = await self.db.expenses.find_one(query)
+            if updated_doc:
+                updated_doc["_id"] = str(updated_doc.get("_id"))
+                return updated_doc
+        return None
+
+    async def get_pending_approvals(self, organization_id: str, user_role: str) -> List[Dict[str, Any]]:
+        """Get expenses pending approval for the user's role"""
+        query = {
+            "organization_id": organization_id,
+            "approval_status": "pending"
+        }
+        
+        # Filter by approval level needed
+        if user_role == "Admin":
+            # Admins can approve anything
+            pass
+        elif user_role == "Director":
+            # Directors can approve anything
+            pass
+        else:
+            # Other roles cannot approve
+            return []
+        
+        cursor = self.db.expenses.find(query).sort("created_at", 1)
+        items = []
+        async for doc in cursor:
+            doc["_id"] = str(doc.get("_id"))
+            items.append(doc)
+        
+        return items
