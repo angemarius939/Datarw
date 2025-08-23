@@ -105,13 +105,17 @@ class ProjectService:
         
         return Activity(**activity_dict)
 
-    async def get_activities(self, organization_id: str, project_id: Optional[str] = None) -> List[Activity]:
-        """Get activities for an organization or project"""
+    async def get_activities(self, organization_id: str, project_id: Optional[str] = None, page: int = 1, page_size: int = 20) -> Dict[str, Any]:
+        """Get activities for an organization or project with pagination"""
         query = {"organization_id": organization_id}
         if project_id:
             query["project_id"] = project_id
-            
-        cursor = self.db.activities.find(query).sort("start_date", 1)
+        
+        # Count total for pagination metadata
+        total = await self.db.activities.count_documents(query)
+        
+        # Apply pagination
+        cursor = self.db.activities.find(query).sort("start_date", 1).skip((page - 1) * page_size).limit(page_size)
         activities = []
         async for doc in cursor:
             # Normalize fields for backward compatibility
@@ -124,7 +128,14 @@ class ProjectService:
             doc["completion_variance"] = doc.get("completion_variance", 0.0)
             doc["schedule_variance_days"] = doc.get("schedule_variance_days", 0)
             activities.append(Activity(**doc))
-        return activities
+        
+        return {
+            'items': activities,
+            'total': total,
+            'page': page,
+            'page_size': page_size,
+            'total_pages': (total + page_size - 1) // page_size
+        }
 
     async def update_activity(self, activity_id: str, updates: ActivityUpdate) -> Optional[Activity]:
         """Update an activity. Supports lookup by Mongo _id or UUID id."""
