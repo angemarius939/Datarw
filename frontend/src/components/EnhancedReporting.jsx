@@ -246,6 +246,11 @@ const EnhancedReporting = () => {
     }
   };
 
+  const getProjectName = (id) => {
+    const p = (projects || []).find(x => (x.id || x._id) === id);
+    return p ? p.name : id;
+  };
+
   const StatCard = ({ title, value, icon, color = "blue", description, onClick }) => (
     <Card className={`hover:shadow-lg transition-shadow duration-300 ${onClick ? 'cursor-pointer' : ''}`} onClick={onClick}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -469,7 +474,7 @@ const EnhancedReporting = () => {
                               </Badge>
                             </div>
                             <p className="text-sm text-gray-600 mt-1">
-                              Project ID: {report.project_id} • Generated: {new Date(report.generated_at).toLocaleDateString()}
+                              Project: <span title={getProjectName(report.project_id)}>{getProjectName(report.project_id)}</span> • Generated: {new Date(report.generated_at).toLocaleDateString()}
                             </p>
                             <p className="text-xs text-gray-500 mt-1">
                               File size: {report.file_size || 'Unknown'}
@@ -800,7 +805,7 @@ const EnhancedReporting = () => {
                 disabled={!selectedProject || imageFiles.length === 0 || loading}
               >
                 {loading ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Uploading...</>
+                  <><Upload className="h-4 w-4 mr-2" /> Uploading...</>
                 ) : (
                   <><Upload className="h-4 w-4 mr-2" /> Upload Images</>
                 )}

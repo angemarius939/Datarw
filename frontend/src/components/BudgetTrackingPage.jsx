@@ -170,7 +170,7 @@ const BudgetTrackingPage = () => {
   const exportCSV = async () => {
     try {
       const params = { ...filters };
-      Object.keys(params).forEach(k => { if (!params[k]) delete params[k]; });
+      Object.keys(params).forEach(k =&gt; { if (!params[k]) delete params[k]; });
       const res = await financeAPI.exportExpensesCSV(params);
       const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -212,7 +212,7 @@ const BudgetTrackingPage = () => {
     try {
       setAiLoading(true);
       // Build a simple anomalies list from current page
-      const anomalies = (expenses || []).filter(e => (e.amount || 0) > 1000000).map(e => ({ id: e.id, vendor: e.vendor, amount: e.amount }));
+      const anomalies = (expenses || []).filter(e =&gt; (e.amount || 0) &gt; 1000000).map(e =&gt; ({ id: e.id, vendor: e.vendor, amount: e.amount }));
       const summary = { page, total, filters };
       const res = await financeAPI.getAIInsights({ anomalies, summary });
       setAiResult(res.data);
@@ -224,14 +224,26 @@ const BudgetTrackingPage = () => {
     }
   };
 
-  const getProjectName = (id) => {
-    const p = (projects || []).find(x => (x.id || x._id) === id);
+  const getProjectName = (id) =&gt; {
+    const p = (projects || []).find(x =&gt; (x.id || x._id) === id);
     return p ? p.name : id;
   };
 
-  const totalPages = useMemo(() => Math.max(1, Math.ceil((total || 0) / pageSize)), [total, pageSize]);
+  // Quick date presets
+  const applyThisMonth = () =&gt; {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    setFilters(prev =&gt; ({ ...prev, date_from: dateToInput(start), date_to: dateToInput(now) }));
+  };
+  const applyLast90Days = () =&gt; {
+    const now = new Date();
+    const start = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    setFilters(prev =&gt; ({ ...prev, date_from: dateToInput(start), date_to: dateToInput(now) }));
+  };
 
-  const downloadBlob = (data, filename, type = 'text/csv') => {
+  const totalPages = useMemo(() =&gt; Math.max(1, Math.ceil((total || 0) / pageSize)), [total, pageSize]);
+
+  const downloadBlob = (data, filename, type = 'text/csv') =&gt; {
     const blob = new Blob([data], { type: `${type};charset=utf-8;` });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -243,7 +255,7 @@ const BudgetTrackingPage = () => {
     URL.revokeObjectURL(url);
   };
 
-  const downloadProjectReport = async () => {
+  const downloadProjectReport = async () =&gt; {
     if (!filters.project_id) {
       toast({ title: 'Select project', description: 'Choose a project in the Expenses filter first', variant: 'destructive' });
       return;
@@ -252,7 +264,7 @@ const BudgetTrackingPage = () => {
     downloadBlob(res.data, `finance_project_${filters.project_id}.csv`);
   };
 
-  const downloadActivitiesReport = async () => {
+  const downloadActivitiesReport = async () =&gt; {
     if (!filters.project_id) {
       toast({ title: 'Select project', description: 'Choose a project in the Expenses filter first', variant: 'destructive' });
       return;
@@ -261,19 +273,19 @@ const BudgetTrackingPage = () => {
     downloadBlob(res.data, `finance_activities_${filters.project_id}.csv`);
   };
 
-  const downloadAllProjectsReport = async () => {
+  const downloadAllProjectsReport = async () =&gt; {
     const res = await financeAPI.downloadAllProjectsReportCSV(buildDateParams());
     downloadBlob(res.data, 'finance_all_projects.csv');
   };
 
-  const buildDateParams = () => {
+  const buildDateParams = () =&gt; {
     const params = {};
     if (filters.date_from) params.date_from = filters.date_from;
     if (filters.date_to) params.date_to = filters.date_to;
     return params;
   };
 
-  const downloadProjectReportXLSX = async () => {
+  const downloadProjectReportXLSX = async () =&gt; {
     if (!filters.project_id) {
       toast({ title: 'Select project', description: 'Choose a project in the Expenses filter first', variant: 'destructive' });
       return;
@@ -282,7 +294,7 @@ const BudgetTrackingPage = () => {
     downloadBlob(res.data, `finance_project_${filters.project_id}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   };
 
-  const downloadActivitiesReportXLSX = async () => {
+  const downloadActivitiesReportXLSX = async () =&gt; {
     if (!filters.project_id) {
       toast({ title: 'Select project', description: 'Choose a project in the Expenses filter first', variant: 'destructive' });
       return;
@@ -291,12 +303,12 @@ const BudgetTrackingPage = () => {
     downloadBlob(res.data, `finance_activities_${filters.project_id}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   };
 
-  const downloadAllProjectsReportXLSX = async () => {
+  const downloadAllProjectsReportXLSX = async () =&gt; {
     const res = await financeAPI.downloadAllProjectsReportXLSX(buildDateParams());
     downloadBlob(res.data, 'finance_all_projects.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   };
 
-  const downloadProjectReportPDF = async () => {
+  const downloadProjectReportPDF = async () =&gt; {
     if (!filters.project_id) {
       toast({ title: 'Select project', description: 'Choose a project in the Expenses filter first', variant: 'destructive' });
       return;
@@ -305,7 +317,7 @@ const BudgetTrackingPage = () => {
     downloadBlob(res.data, `finance_project_${filters.project_id}.pdf`, 'application/pdf');
   };
 
-  const downloadActivitiesReportPDF = async () => {
+  const downloadActivitiesReportPDF = async () =&gt; {
     if (!filters.project_id) {
       toast({ title: 'Select project', description: 'Choose a project in the Expenses filter first', variant: 'destructive' });
       return;
@@ -314,7 +326,7 @@ const BudgetTrackingPage = () => {
     downloadBlob(res.data, `finance_activities_${filters.project_id}.pdf`, 'application/pdf');
   };
 
-  const downloadAllProjectsReportPDF = async () => {
+  const downloadAllProjectsReportPDF = async () =&gt; {
     const res = await financeAPI.downloadAllProjectsReportPDF(buildDateParams());
     downloadBlob(res.data, 'finance_all_projects.pdf', 'application/pdf');
   };
@@ -325,8 +337,8 @@ const BudgetTrackingPage = () => {
         <h1 className="text-3xl font-bold text-gray-900">Budget Tracking</h1>
         <div className="flex gap-2">
           <Button variant="outline" onClick={exportCSV}><Download className="h-4 w-4 mr-2"/>Export CSV</Button>
-          <Button variant="outline" onClick={() => document.getElementById('expenses-import').click()}><Upload className="h-4 w-4 mr-2"/>Import CSV (stub)</Button>
-          <input id="expenses-import" type="file" className="hidden" accept=".csv,text/csv" onChange={async (e) => {
+          <Button variant="outline" onClick={() =&gt; document.getElementById('expenses-import').click()}><Upload className="h-4 w-4 mr-2"/>Import CSV (stub)</Button>
+          <input id="expenses-import" type="file" className="hidden" accept=".csv,text/csv" onChange={async (e) =&gt; {
             const file = e.target.files?.[0];
             if (!file) return;
             try {
@@ -361,19 +373,19 @@ const BudgetTrackingPage = () => {
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-medium">Funding Sources</h3>
                     <div className="flex gap-2">
-                      <Input placeholder="Add funding source" value={newFunding} onChange={e => setNewFunding(e.target.value)} />
-                      <Button variant="outline" onClick={() => {
+                      <Input placeholder="Add funding source" value={newFunding} onChange={e =&gt; setNewFunding(e.target.value)} />
+                      <Button variant="outline" onClick={() =&gt; {
                         if (!newFunding.trim()) return;
-                        setConfig(prev => ({ ...prev, funding_sources: Array.from(new Set([...(prev.funding_sources||[]), newFunding.trim()])) }));
+                        setConfig(prev =&gt; ({ ...prev, funding_sources: Array.from(new Set([...(prev.funding_sources||[]), newFunding.trim()])) }));
                         setNewFunding('');
                       }}>Add</Button>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {(config.funding_sources || []).map(fs => (
+                    {(config.funding_sources || []).map(fs =&gt; (
                       <Badge key={fs} className="bg-gray-100 text-gray-800">
                         {fs}
-                        <button className="ml-2 text-red-600" onClick={() => setConfig(prev => ({ ...prev, funding_sources: (prev.funding_sources||[]).filter(x => x !== fs) }))}>×</button>
+                        <button className="ml-2 text-red-600" onClick={() =&gt; setConfig(prev =&gt; ({ ...prev, funding_sources: (prev.funding_sources||[]).filter(x =&gt; x !== fs) }))}>×</button>
                       </Badge>
                     ))}
                   </div>
@@ -382,19 +394,19 @@ const BudgetTrackingPage = () => {
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-medium">Cost Centers</h3>
                     <div className="flex gap-2">
-                      <Input placeholder="Add cost center" value={newCenter} onChange={e => setNewCenter(e.target.value)} />
-                      <Button variant="outline" onClick={() => {
+                      <Input placeholder="Add cost center" value={newCenter} onChange={e =&gt; setNewCenter(e.target.value)} />
+                      <Button variant="outline" onClick={() =&gt; {
                         if (!newCenter.trim()) return;
-                        setConfig(prev => ({ ...prev, cost_centers: Array.from(new Set([...(prev.cost_centers||[]), newCenter.trim()])) }));
+                        setConfig(prev =&gt; ({ ...prev, cost_centers: Array.from(new Set([...(prev.cost_centers||[]), newCenter.trim()])) }));
                         setNewCenter('');
                       }}>Add</Button>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {(config.cost_centers || []).map(cc => (
+                    {(config.cost_centers || []).map(cc =&gt; (
                       <Badge key={cc} className="bg-gray-100 text-gray-800">
                         {cc}
-                        <button className="ml-2 text-red-600" onClick={() => setConfig(prev => ({ ...prev, cost_centers: (prev.cost_centers||[]).filter(x => x !== cc) }))}>×</button>
+                        <button className="ml-2 text-red-600" onClick={() =&gt; setConfig(prev =&gt; ({ ...prev, cost_centers: (prev.cost_centers||[]).filter(x =&gt; x !== cc) }))}>×</button>
                       </Badge>
                     ))}
                   </div>
@@ -413,16 +425,16 @@ const BudgetTrackingPage = () => {
               <CardTitle>Expenses</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-6 gap-3 items-end">
+              <div className="grid md:grid-cols-7 gap-3 items-end">
                 <div className="md:col-span-2">
                   <label className="text-sm text-gray-600">Project</label>
-                  <Select value={filters.project_id || ''} onValueChange={(v) => setFilters(prev => ({ ...prev, project_id: v === 'all' ? '' : v }))}>
+                  <Select value={filters.project_id || ''} onValueChange={(v) =&gt; setFilters(prev =&gt; ({ ...prev, project_id: v === 'all' ? '' : v }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="All Projects" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Projects</SelectItem>
-                      {(projects || []).map(p => (
+                      {(projects || []).map(p =&gt; (
                         <SelectItem key={p.id || p._id} value={p.id || p._id}>{p.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -430,13 +442,13 @@ const BudgetTrackingPage = () => {
                 </div>
                 <div>
                   <label className="text-sm text-gray-600">Funding Source</label>
-                  <Select value={filters.funding_source || ''} onValueChange={(v) => setFilters(prev => ({ ...prev, funding_source: v === 'all' ? '' : v }))}>
+                  <Select value={filters.funding_source || ''} onValueChange={(v) =&gt; setFilters(prev =&gt; ({ ...prev, funding_source: v === 'all' ? '' : v }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="All Funding" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All</SelectItem>
-                      {(config.funding_sources || []).map(fs => (
+                      {(config.funding_sources || []).map(fs =&gt; (
                         <SelectItem key={fs} value={fs}>{fs}</SelectItem>
                       ))}
                     </SelectContent>
@@ -444,19 +456,23 @@ const BudgetTrackingPage = () => {
                 </div>
                 <div>
                   <label className="text-sm text-gray-600">Vendor</label>
-                  <Input value={filters.vendor || ''} onChange={e => setFilters(prev => ({ ...prev, vendor: e.target.value }))} placeholder="Vendor name" />
+                  <Input value={filters.vendor || ''} onChange={e =&gt; setFilters(prev =&gt; ({ ...prev, vendor: e.target.value }))} placeholder="Vendor name" />
                 </div>
                 <div>
                   <label className="text-sm text-gray-600">From</label>
-                  <Input type="date" value={filters.date_from || ''} onChange={e => setFilters(prev => ({ ...prev, date_from: e.target.value }))} />
+                  <Input type="date" value={filters.date_from || ''} onChange={e =&gt; setFilters(prev =&gt; ({ ...prev, date_from: e.target.value }))} />
                 </div>
                 <div>
                   <label className="text-sm text-gray-600">To</label>
-                  <Input type="date" value={filters.date_to || ''} onChange={e => setFilters(prev => ({ ...prev, date_to: e.target.value }))} />
+                  <Input type="date" value={filters.date_to || ''} onChange={e =&gt; setFilters(prev =&gt; ({ ...prev, date_to: e.target.value }))} />
                 </div>
-                <div className="flex gap-2">
-                  <Button onClick={() => { setPage(1); loadExpenses(true); }}><RefreshCw className="h-4 w-4 mr-2"/>Apply</Button>
-                  <Button variant="outline" onClick={() => { setFilters({ project_id: '', activity_id: '', funding_source: '', vendor: '', date_from: '', date_to: '' }); setPage(1); loadExpenses(true); }}>Clear</Button>
+                <div className="flex gap-2 flex-wrap items-center">
+                  <Button onClick={() =&gt; { setPage(1); loadExpenses(true); }}><RefreshCw className="h-4 w-4 mr-2"/>Apply</Button>
+                  <Button variant="outline" onClick={() =&gt; { setFilters({ project_id: '', activity_id: '', funding_source: '', vendor: '', date_from: '', date_to: '' }); setPage(1); loadExpenses(true); }}>Clear</Button>
+                  <div className="flex gap-1">
+                    <Button type="button" variant="outline" onClick={applyThisMonth}>This Month</Button>
+                    <Button type="button" variant="outline" onClick={applyLast90Days}>Last 90 Days</Button>
+                  </div>
                 </div>
               </div>
 
@@ -481,7 +497,7 @@ const BudgetTrackingPage = () => {
                     ) : expenses.length === 0 ? (
                       <tr><td colSpan={9} className="text-center p-6 text-gray-500">No expenses found</td></tr>
                     ) : (
-                      expenses.map(exp => (
+                      expenses.map(exp =&gt; (
                         <tr key={exp.id || exp._id} className="border-t hover:bg-gray-50">
                           <td className="p-2">{dateToInput(exp.date)}</td>
                           <td className="p-2">{getProjectName(exp.project_id)}</td>
@@ -492,8 +508,8 @@ const BudgetTrackingPage = () => {
                           <td className="p-2">{exp.invoice_no || '-'}</td>
                           <td className="p-2">{exp.notes || ''}</td>
                           <td className="p-2 text-right">
-                            <Button size="sm" variant="outline" onClick={() => openEdit(exp)}>Edit</Button>
-                            <Button size="sm" variant="ghost" className="text-red-600 ml-2" onClick={() => deleteExpense(exp.id || exp._id)}>Delete</Button>
+                            <Button size="sm" variant="outline" onClick={() =&gt; openEdit(exp)}>Edit</Button>
+                            <Button size="sm" variant="ghost" className="text-red-600 ml-2" onClick={() =&gt; deleteExpense(exp.id || exp._id)}>Delete</Button>
                           </td>
                         </tr>
                       ))
@@ -505,13 +521,13 @@ const BudgetTrackingPage = () => {
               <div className="mt-3 flex items-center justify-between">
                 <div className="text-sm text-gray-600">Showing {(page-1)*pageSize + 1} - {Math.min(page*pageSize, total)} of {total}</div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p-1))}>Prev</Button>
+                  <Button variant="outline" disabled={page &lt;= 1} onClick={() =&gt; setPage(p =&gt; Math.max(1, p-1))}>Prev</Button>
                   <span className="text-sm">Page {page} / {totalPages}</span>
-                  <Button variant="outline" disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p+1))}>Next</Button>
-                  <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+                  <Button variant="outline" disabled={page &gt;= totalPages} onClick={() =&gt; setPage(p =&gt; Math.min(totalPages, p+1))}>Next</Button>
+                  <Select value={String(pageSize)} onValueChange={(v) =&gt; { setPageSize(Number(v)); setPage(1); }}>
                     <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {[10,20,50,100].map(s => (<SelectItem key={s} value={String(s)}>{s} / page</SelectItem>))}
+                      {[10,20,50,100].map(s =&gt; (<SelectItem key={s} value={String(s)}>{s} / page</SelectItem>))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -529,13 +545,13 @@ const BudgetTrackingPage = () => {
                   <Button variant="outline" onClick={downloadProjectReport}><Download className="h-4 w-4 mr-2"/>Project CSV</Button>
                   <Button variant="outline" onClick={downloadActivitiesReport}><Download className="h-4 w-4 mr-2"/>Activities CSV</Button>
                   <Button variant="outline" onClick={downloadAllProjectsReport}><Download className="h-4 w-4 mr-2"/>All Projects CSV</Button>
-                  <Button variant="outline" onClick={() => downloadProjectReportXLSX()}><Download className="h-4 w-4 mr-2"/>Project XLSX</Button>
-                  <Button variant="outline" onClick={() => downloadActivitiesReportXLSX()}><Download className="h-4 w-4 mr-2"/>Activities XLSX</Button>
-                  <Button variant="outline" onClick={() => downloadAllProjectsReportXLSX()}><Download className="h-4 w-4 mr-2"/>All Projects XLSX</Button>
+                  <Button variant="outline" onClick={() =&gt; downloadProjectReportXLSX()}><Download className="h-4 w-4 mr-2"/>Project XLSX</Button>
+                  <Button variant="outline" onClick={() =&gt; downloadActivitiesReportXLSX()}><Download className="h-4 w-4 mr-2"/>Activities XLSX</Button>
+                  <Button variant="outline" onClick={() =&gt; downloadAllProjectsReportXLSX()}><Download className="h-4 w-4 mr-2"/>All Projects XLSX</Button>
                   <Button onClick={runReports} disabled={loadingReports}>{loadingReports ? 'Running…' : 'Run Summaries'}</Button>
-                  <Button variant="outline" onClick={() => downloadProjectReportPDF()}><Download className="h-4 w-4 mr-2"/>Project PDF</Button>
-                  <Button variant="outline" onClick={() => downloadActivitiesReportPDF()}><Download className="h-4 w-4 mr-2"/>Activities PDF</Button>
-                  <Button variant="outline" onClick={() => downloadAllProjectsReportPDF()}><Download className="h-4 w-4 mr-2"/>All Projects PDF</Button>
+                  <Button variant="outline" onClick={() =&gt; downloadProjectReportPDF()}><Download className="h-4 w-4 mr-2"/>Project PDF</Button>
+                  <Button variant="outline" onClick={() =&gt; downloadActivitiesReportPDF()}><Download className="h-4 w-4 mr-2"/>Activities PDF</Button>
+                  <Button variant="outline" onClick={() =&gt; downloadAllProjectsReportPDF()}><Download className="h-4 w-4 mr-2"/>All Projects PDF</Button>
                 </div>
               </div>
             </CardHeader>
@@ -547,7 +563,7 @@ const BudgetTrackingPage = () => {
                   <div>
                     <h3 className="font-medium mb-2">Burn Rate ({burnRate?.period})</h3>
                     <div className="border rounded p-2 bg-white max-h-64 overflow-auto">
-                      {(burnRate?.series || []).map((s) => (
+                      {(burnRate?.series || []).map((s) =&gt; (
                         <div key={s.period} className="flex items-center justify-between py-1 text-sm">
                           <span>{s.period}</span>
                           <span>{s.spent.toLocaleString()}</span>
@@ -558,13 +574,13 @@ const BudgetTrackingPage = () => {
                   <div>
                     <h3 className="font-medium mb-2">Budget vs Actual (by project)</h3>
                     <div className="border rounded p-2 bg-white max-h-64 overflow-auto">
-                      {(variance?.by_project || []).map((row) => (
+                      {(variance?.by_project || []).map((row) =&gt; (
                         <div key={row.project_id} className="grid grid-cols-5 gap-2 text-sm py-1">
                           <span className="truncate" title={getProjectName(row.project_id)}>{getProjectName(row.project_id)}</span>
                           <span className="text-right">Planned: {row.planned.toLocaleString()}</span>
                           <span className="text-right">Allocated: {row.allocated.toLocaleString()}</span>
                           <span className="text-right">Actual: {row.actual.toLocaleString()}</span>
-                          <span className={`text-right ${row.variance_amount < 0 ? 'text-red-600' : 'text-green-700'}`}>Var: {row.variance_amount.toLocaleString()} ({Number(row.variance_pct||0).toFixed(1)}%)</span>
+                          <span className={`text-right ${row.variance_amount &lt; 0 ? 'text-red-600' : 'text-green-700'}`}>Var: {row.variance_amount.toLocaleString()} ({Number(row.variance_pct||0).toFixed(1)}%)</span>
                         </div>
                       ))}
                     </div>
@@ -580,7 +596,7 @@ const BudgetTrackingPage = () => {
                   <div>
                     <h3 className="font-medium mb-2">Funding Utilization</h3>
                     <div className="border rounded p-2 bg-white max-h-64 overflow-auto">
-                      {(utilization?.by_funding_source || []).map(u => (
+                      {(utilization?.by_funding_source || []).map(u =&gt; (
                         <div key={u.funding_source} className="flex items-center justify-between py-1 text-sm">
                           <span>{u.funding_source}</span>
                           <span>{u.spent.toLocaleString()}</span>
@@ -621,7 +637,7 @@ const BudgetTrackingPage = () => {
                   <div>
                     <h4 className="font-medium mb-1">Recommendations</h4>
                     <ul className="list-disc pl-6 text-sm">
-                      {(aiResult.recommendations || []).map((r, idx) => (
+                      {(aiResult.recommendations || []).map((r, idx) =&gt; (
                         <li key={idx}>{r}</li>
                       ))}
                     </ul>
@@ -642,10 +658,10 @@ const BudgetTrackingPage = () => {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium">Project</label>
-              <Select value={expenseData.project_id} onValueChange={(v) => setExpenseData(prev => ({ ...prev, project_id: v }))}>
+              <Select value={expenseData.project_id} onValueChange={(v) =&gt; setExpenseData(prev =&gt; ({ ...prev, project_id: v }))}>
                 <SelectTrigger><SelectValue placeholder="Select project"/></SelectTrigger>
                 <SelectContent>
-                  {(projects || []).map(p => (
+                  {(projects || []).map(p =&gt; (
                     <SelectItem key={p.id || p._id} value={p.id || p._id}>{p.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -653,54 +669,54 @@ const BudgetTrackingPage = () => {
             </div>
             <div>
               <label className="text-sm font-medium">Date</label>
-              <Input type="date" value={expenseData.date} onChange={e => setExpenseData(prev => ({ ...prev, date: e.target.value }))} />
+              <Input type="date" value={expenseData.date} onChange={e =&gt; setExpenseData(prev =&gt; ({ ...prev, date: e.target.value }))} />
             </div>
             <div>
               <label className="text-sm font-medium">Vendor</label>
-              <Input value={expenseData.vendor} onChange={e => setExpenseData(prev => ({ ...prev, vendor: e.target.value }))} />
+              <Input value={expenseData.vendor} onChange={e =&gt; setExpenseData(prev =&gt; ({ ...prev, vendor: e.target.value }))} />
             </div>
             <div>
               <label className="text-sm font-medium">Invoice No</label>
-              <Input value={expenseData.invoice_no} onChange={e => setExpenseData(prev => ({ ...prev, invoice_no: e.target.value }))} />
+              <Input value={expenseData.invoice_no} onChange={e =&gt; setExpenseData(prev =&gt; ({ ...prev, invoice_no: e.target.value }))} />
             </div>
             <div>
               <label className="text-sm font-medium">Amount</label>
-              <Input type="number" value={expenseData.amount} onChange={e => setExpenseData(prev => ({ ...prev, amount: e.target.value }))} />
+              <Input type="number" value={expenseData.amount} onChange={e =&gt; setExpenseData(prev =&gt; ({ ...prev, amount: e.target.value }))} />
             </div>
             <div>
               <label className="text-sm font-medium">Currency</label>
-              <Select value={expenseData.currency} onValueChange={(v) => setExpenseData(prev => ({ ...prev, currency: v }))}>
+              <Select value={expenseData.currency} onValueChange={(v) =&gt; setExpenseData(prev =&gt; ({ ...prev, currency: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {['USD','RWF','EUR','KES','UGX'].map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
+                  {['USD','RWF','EUR','KES','UGX'].map(c =&gt; (<SelectItem key={c} value={c}>{c}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
             <div>
               <label className="text-sm font-medium">Funding Source</label>
-              <Select value={expenseData.funding_source} onValueChange={(v) => setExpenseData(prev => ({ ...prev, funding_source: v }))}>
+              <Select value={expenseData.funding_source} onValueChange={(v) =&gt; setExpenseData(prev =&gt; ({ ...prev, funding_source: v }))}>
                 <SelectTrigger><SelectValue placeholder="Select"/></SelectTrigger>
                 <SelectContent>
-                  {(config.funding_sources || []).map(fs => (<SelectItem key={fs} value={fs}>{fs}</SelectItem>))}
+                  {(config.funding_sources || []).map(fs =&gt; (<SelectItem key={fs} value={fs}>{fs}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
             <div>
               <label className="text-sm font-medium">Cost Center</label>
-              <Select value={expenseData.cost_center} onValueChange={(v) => setExpenseData(prev => ({ ...prev, cost_center: v }))}>
+              <Select value={expenseData.cost_center} onValueChange={(v) =&gt; setExpenseData(prev =&gt; ({ ...prev, cost_center: v }))}>
                 <SelectTrigger><SelectValue placeholder="Select"/></SelectTrigger>
                 <SelectContent>
-                  {(config.cost_centers || []).map(cc => (<SelectItem key={cc} value={cc}>{cc}</SelectItem>))}
+                  {(config.cost_centers || []).map(cc =&gt; (<SelectItem key={cc} value={cc}>{cc}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
             <div className="col-span-2">
               <label className="text-sm font-medium">Notes</label>
-              <Input value={expenseData.notes} onChange={e => setExpenseData(prev => ({ ...prev, notes: e.target.value }))} />
+              <Input value={expenseData.notes} onChange={e =&gt; setExpenseData(prev =&gt; ({ ...prev, notes: e.target.value }))} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenModal(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() =&gt; setOpenModal(false)}>Cancel</Button>
             <Button onClick={saveExpense}>Save</Button>
           </DialogFooter>
         </DialogContent>
