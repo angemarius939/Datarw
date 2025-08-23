@@ -213,6 +213,10 @@ async def get_my_org(current_user: UserModel = Depends(auth_util.get_current_act
     org = await db.organizations.find_one({'id': current_user.organization_id})
     if not org:
         raise HTTPException(status_code=404, detail='Organization not found')
+    
+    # Remove MongoDB _id field before serialization
+    org.pop('_id', None)
+    
     return OrgModel(**org)
 
 @api.get('/users')
