@@ -685,19 +685,19 @@ const BudgetTrackingPage = () => {
             </div>
             <div>
               <label className="text-sm font-medium">Currency</label>
-              <Select value={expenseData.currency} onValueChange={(v) =&gt; setExpenseData(prev =&gt; ({ ...prev, currency: v }))}>
+              <Select value={expenseData.currency} onValueChange={(v) => setExpenseData(prev => ({ ...prev, currency: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {['USD','RWF','EUR','KES','UGX'].map(c =&gt; (<SelectItem key={c} value={c}>{c}</SelectItem>))}
+                  {['USD','RWF','EUR','KES','UGX'].map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
             <div>
               <label className="text-sm font-medium">Funding Source</label>
-              <Select value={expenseData.funding_source} onValueChange={(v) =&gt; setExpenseData(prev =&gt; ({ ...prev, funding_source: v }))}>
+              <Select value={expenseData.funding_source} onValueChange={(v) => setExpenseData(prev => ({ ...prev, funding_source: v }))}>
                 <SelectTrigger><SelectValue placeholder="Select"/></SelectTrigger>
                 <SelectContent>
-                  {(config.funding_sources || []).map(fs =&gt; (<SelectItem key={fs} value={fs}>{fs}</SelectItem>))}
+                  {(config.funding_sources || []).map(fs => (<SelectItem key={fs} value={fs}>{fs}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
