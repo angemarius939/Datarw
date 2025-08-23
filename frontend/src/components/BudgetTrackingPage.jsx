@@ -442,13 +442,13 @@ const BudgetTrackingPage = () => {
                 </div>
                 <div>
                   <label className="text-sm text-gray-600">Funding Source</label>
-                  <Select value={filters.funding_source || ''} onValueChange={(v) =&gt; setFilters(prev =&gt; ({ ...prev, funding_source: v === 'all' ? '' : v }))}>
+                  <Select value={filters.funding_source || ''} onValueChange={(v) => setFilters(prev => ({ ...prev, funding_source: v === 'all' ? '' : v }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="All Funding" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All</SelectItem>
-                      {(config.funding_sources || []).map(fs =&gt; (
+                      {(config.funding_sources || []).map(fs => (
                         <SelectItem key={fs} value={fs}>{fs}</SelectItem>
                       ))}
                     </SelectContent>
