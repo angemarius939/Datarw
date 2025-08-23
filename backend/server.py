@@ -461,7 +461,10 @@ async def finance_report_all_projects_xlsx(organization_id: Optional[str] = Quer
 async def finance_report_project_csv(project_id: str, organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
     org = organization_id or 'org'
     details = await finance_service.project_budget_details(org, project_id, date_from, date_to)
-    buf = BytesIO()
+    
+    # Use StringIO for CSV text content
+    from io import StringIO
+    buf = StringIO()
     writer = csv.writer(buf)
     writer.writerow(['Metric','Value'])
     writer.writerow(['Total Budgeted', details['total_budgeted']])
@@ -469,8 +472,16 @@ async def finance_report_project_csv(project_id: str, organization_id: Optional[
     writer.writerow(['Total Spent', details['total_spent']])
     writer.writerow(['Variance Amount', details['variance_amount']])
     writer.writerow(['Variance %', details['variance_pct']])
-    buf.seek(0)
-    return StreamingResponse(buf, media_type='text/csv', headers={"Content-Disposition": f"attachment; filename=finance_project_{project_id}.csv"})
+    
+    # Convert to bytes for streaming
+    csv_content = buf.getvalue()
+    buf.close()
+    
+    return StreamingResponse(
+        BytesIO(csv_content.encode('utf-8')), 
+        media_type='text/csv', 
+        headers={"Content-Disposition": f"attachment; filename=finance_project_{project_id}.csv"}
+    )
 
 @api.get('/finance/reports/activities-csv')
 async def finance_report_activities_csv(project_id: str, organization_id: Optional[str] = Query(None), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)):
