@@ -242,15 +242,22 @@ async def put_fin_config(updates: Dict[str, Any], current_user: UserModel = Depe
     return await finance_service.update_org_config(current_user.organization_id, updates)
 
 @api.post('/finance/expenses')
-async def create_fin_expense(exp: Expense, current_user: UserModel = Depends(auth_util.get_current_active_user)):
-    create_data = Expense.model_validate(exp).model_dump()
+async def create_fin_expense(exp: ExpenseCreate, current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    create_data = exp.model_dump()
     # Normalize date
     if isinstance(create_data.get('date'), str):
         try:
             create_data['date'] = datetime.fromisoformat(create_data['date'])
         except Exception:
             create_data['date'] = datetime.utcnow()
-    return await finance_service.create_expense(Expense(**create_data), current_user.organization_id, current_user.id)
+    
+    # Add required fields
+    create_data['organization_id'] = current_user.organization_id
+    create_data['created_by'] = current_user.id
+    create_data['last_updated_by'] = current_user.id
+    
+    expense = Expense(**create_data)
+    return await finance_service.create_expense(expense, current_user.organization_id, current_user.id)
 
 @api.get('/finance/expenses')
 async def list_fin_expenses(
