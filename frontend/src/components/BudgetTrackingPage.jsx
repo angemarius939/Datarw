@@ -428,13 +428,13 @@ const BudgetTrackingPage = () => {
               <div className="grid md:grid-cols-7 gap-3 items-end">
                 <div className="md:col-span-2">
                   <label className="text-sm text-gray-600">Project</label>
-                  <Select value={filters.project_id || ''} onValueChange={(v) =&gt; setFilters(prev =&gt; ({ ...prev, project_id: v === 'all' ? '' : v }))}>
+                  <Select value={filters.project_id || ''} onValueChange={(v) => setFilters(prev => ({ ...prev, project_id: v === 'all' ? '' : v }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="All Projects" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Projects</SelectItem>
-                      {(projects || []).map(p =&gt; (
+                      {(projects || []).map(p => (
                         <SelectItem key={p.id || p._id} value={p.id || p._id}>{p.name}</SelectItem>
                       ))}
                     </SelectContent>
