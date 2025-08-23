@@ -286,18 +286,29 @@ class ProjectService:
         
         return Beneficiary(**beneficiary_dict)
 
-    async def get_beneficiaries(self, organization_id: str, project_id: Optional[str] = None) -> List[Beneficiary]:
-        """Get beneficiaries for an organization or project"""
+    async def get_beneficiaries(self, organization_id: str, project_id: Optional[str] = None, page: int = 1, page_size: int = 20) -> Dict[str, Any]:
+        """Get beneficiaries for an organization or project with pagination"""
         query = {"organization_id": organization_id}
         if project_id:
             query["project_ids"] = project_id
-            
-        cursor = self.db.beneficiaries.find(query).sort("last_name", 1)
+        
+        # Count total for pagination metadata
+        total = await self.db.beneficiaries.count_documents(query)
+        
+        # Apply pagination
+        cursor = self.db.beneficiaries.find(query).sort("name", 1).skip((page - 1) * page_size).limit(page_size)
         beneficiaries = []
         async for doc in cursor:
             doc["_id"] = str(doc["_id"])
             beneficiaries.append(Beneficiary(**doc))
-        return beneficiaries
+        
+        return {
+            'items': beneficiaries,
+            'total': total,
+            'page': page,
+            'page_size': page_size,
+            'total_pages': (total + page_size - 1) // page_size
+        }
 
     async def get_beneficiary_demographics(self, organization_id: str, project_id: Optional[str] = None) -> Dict[str, Any]:
         """Get demographic breakdown of beneficiaries"""
