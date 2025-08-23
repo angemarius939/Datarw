@@ -225,6 +225,8 @@ async def list_users(current_user: UserModel = Depends(auth_util.get_current_act
     cursor = db.users.find({'organization_id': current_user.organization_id})
     users = []
     async for doc in cursor:
+        # Remove MongoDB _id field before serialization
+        doc.pop('_id', None)
         users.append(UserModel(**doc))
     return users
 
