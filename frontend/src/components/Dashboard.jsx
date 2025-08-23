@@ -93,7 +93,15 @@ const Dashboard = ({ onUpgrade }) => {
       ]);
 
       if (surveysRes.status === 'fulfilled') {
-        setSurveys(surveysRes.value.data);
+        const surveysData = surveysRes.value.data;
+        // Handle both old array format and new pagination format
+        if (Array.isArray(surveysData)) {
+          setSurveys(surveysData);
+        } else if (surveysData && Array.isArray(surveysData.items)) {
+          setSurveys(surveysData.items);
+        } else {
+          setSurveys([]);
+        }
       }
 
       if (analyticsRes.status === 'fulfilled') {
