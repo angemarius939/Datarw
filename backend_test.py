@@ -6407,6 +6407,8 @@ class DataRWAPITester:
             self.test_finance_config_update_and_persist,
             self.test_create_simple_project_for_expenses,
             self.test_create_expense,
+            # FINANCE APPROVAL WORKFLOW TESTS (PHASE 2 - HIGH PRIORITY)
+            self.test_finance_approval_workflow_comprehensive,
             self.test_list_expenses_with_pagination_and_filters,
             self.test_update_expense,
             self.test_delete_expense,
