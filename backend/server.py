@@ -291,6 +291,66 @@ async def delete_fin_expense(expense_id: str, current_user: UserModel = Depends(
     ok = await finance_service.delete_expense(current_user.organization_id, expense_id)
     return {'success': ok}
 
+# -------------------- Finance Approval Workflow Routes --------------------
+@api.post('/finance/expenses/{expense_id}/submit')
+async def submit_expense_for_approval(expense_id: str, current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    """Submit an expense for approval"""
+    try:
+        result = await finance_service.submit_expense_for_approval(
+            current_user.organization_id, expense_id, current_user.id
+        )
+        if result:
+            return {"success": True, "expense": result}
+        else:
+            raise HTTPException(status_code=404, detail="Expense not found")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api.post('/finance/expenses/{expense_id}/approve')
+async def approve_expense(expense_id: str, current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    """Approve an expense (Admin/Director only)"""
+    try:
+        result = await finance_service.approve_expense(
+            current_user.organization_id, expense_id, current_user.id, current_user.role
+        )
+        if result:
+            return {"success": True, "expense": result}
+        else:
+            raise HTTPException(status_code=404, detail="Expense not found")
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api.post('/finance/expenses/{expense_id}/reject')
+async def reject_expense(expense_id: str, request: dict, current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    """Reject an expense with reason (Admin/Director only)"""
+    try:
+        rejection_reason = request.get('rejection_reason', '')
+        if not rejection_reason:
+            raise HTTPException(status_code=400, detail="Rejection reason is required")
+        
+        result = await finance_service.reject_expense(
+            current_user.organization_id, expense_id, current_user.id, current_user.role, rejection_reason
+        )
+        if result:
+            return {"success": True, "expense": result}
+        else:
+            raise HTTPException(status_code=404, detail="Expense not found")
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api.get('/finance/approvals/pending')
+async def get_pending_approvals(current_user: UserModel = Depends(auth_util.get_current_active_user)):
+    """Get expenses pending approval for current user's role"""
+    try:
+        items = await finance_service.get_pending_approvals(current_user.organization_id, current_user.role)
+        return {"items": items, "total": len(items)}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 # Analytics
 @api.get('/finance/burn-rate')
 async def fin_burn_rate(period: str = 'monthly', project_id: Optional[str] = None, date_from: Optional[str] = None, date_to: Optional[str] = None, current_user: UserModel = Depends(auth_util.get_current_active_user)):
