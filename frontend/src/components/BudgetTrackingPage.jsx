@@ -230,18 +230,18 @@ const BudgetTrackingPage = () => {
   };
 
   // Quick date presets
-  const applyThisMonth = () =&gt; {
+  const applyThisMonth = () => {
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    setFilters(prev =&gt; ({ ...prev, date_from: dateToInput(start), date_to: dateToInput(now) }));
+    setFilters(prev => ({ ...prev, date_from: dateToInput(start), date_to: dateToInput(now) }));
   };
-  const applyLast90Days = () =&gt; {
+  const applyLast90Days = () => {
     const now = new Date();
     const start = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-    setFilters(prev =&gt; ({ ...prev, date_from: dateToInput(start), date_to: dateToInput(now) }));
+    setFilters(prev => ({ ...prev, date_from: dateToInput(start), date_to: dateToInput(now) }));
   };
 
-  const totalPages = useMemo(() =&gt; Math.max(1, Math.ceil((total || 0) / pageSize)), [total, pageSize]);
+  const totalPages = useMemo(() => Math.max(1, Math.ceil((total || 0) / pageSize)), [total, pageSize]);
 
   const downloadBlob = (data, filename, type = 'text/csv') =&gt; {
     const blob = new Blob([data], { type: `${type};charset=utf-8;` });
