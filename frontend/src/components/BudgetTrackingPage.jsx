@@ -637,7 +637,7 @@ const BudgetTrackingPage = () => {
                   <div>
                     <h4 className="font-medium mb-1">Recommendations</h4>
                     <ul className="list-disc pl-6 text-sm">
-                      {(aiResult.recommendations || []).map((r, idx) =&gt; (
+                      {(aiResult.recommendations || []).map((r, idx) => (
                         <li key={idx}>{r}</li>
                       ))}
                     </ul>
