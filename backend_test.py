@@ -5524,6 +5524,7 @@ class DataRWAPITester:
             self.test_project_dashboard_datetime_bug_fix,
             self.test_project_dashboard,
             self.test_dashboard_pydantic_validation_fix,  # NEW: Test Pydantic validation fix
+            self.test_projects_dashboard_endpoint_fix,    # NEW: Test newly added dashboard endpoint fix
             self.test_enhanced_project_dashboard_analytics,  # NEW: Test enhanced analytics
             self.test_project_creation_with_correct_fields,  # NEW: Test correct field mapping
             self.test_project_creation_validation_errors,    # NEW: Test validation errors  
