@@ -75,7 +75,7 @@ class FinanceService:
         async for doc in cursor:
             doc["_id"] = str(doc.get("_id"))
             items.append(doc)
-        return {"items": items, "total": total, "page": page, "page_size": page_size}
+        return {"items": items, "total": total, "page": page, "page_size": page_size, "total_pages": (total + page_size - 1) // page_size}
 
     async def get_expense(self, organization_id: str, expense_id: str) -> Optional[Expense]:
         filters = []
