@@ -658,10 +658,10 @@ const BudgetTrackingPage = () => {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium">Project</label>
-              <Select value={expenseData.project_id} onValueChange={(v) =&gt; setExpenseData(prev =&gt; ({ ...prev, project_id: v }))}>
+              <Select value={expenseData.project_id} onValueChange={(v) => setExpenseData(prev => ({ ...prev, project_id: v }))}>
                 <SelectTrigger><SelectValue placeholder="Select project"/></SelectTrigger>
                 <SelectContent>
-                  {(projects || []).map(p =&gt; (
+                  {(projects || []).map(p => (
                     <SelectItem key={p.id || p._id} value={p.id || p._id}>{p.name}</SelectItem>
                   ))}
                 </SelectContent>
