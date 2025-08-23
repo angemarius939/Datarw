@@ -373,16 +373,16 @@ const BudgetTrackingPage = () => {
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-medium">Funding Sources</h3>
                     <div className="flex gap-2">
-                      <Input placeholder="Add funding source" value={newFunding} onChange={e =&gt; setNewFunding(e.target.value)} />
-                      <Button variant="outline" onClick={() =&gt; {
+                      <Input placeholder="Add funding source" value={newFunding} onChange={e => setNewFunding(e.target.value)} />
+                      <Button variant="outline" onClick={() => {
                         if (!newFunding.trim()) return;
-                        setConfig(prev =&gt; ({ ...prev, funding_sources: Array.from(new Set([...(prev.funding_sources||[]), newFunding.trim()])) }));
+                        setConfig(prev => ({ ...prev, funding_sources: Array.from(new Set([...(prev.funding_sources||[]), newFunding.trim()])) }));
                         setNewFunding('');
                       }}>Add</Button>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {(config.funding_sources || []).map(fs =&gt; (
+                    {(config.funding_sources || []).map(fs => (
                       <Badge key={fs} className="bg-gray-100 text-gray-800">
                         {fs}
                         <button className="ml-2 text-red-600" onClick={() =&gt; setConfig(prev =&gt; ({ ...prev, funding_sources: (prev.funding_sources||[]).filter(x =&gt; x !== fs) }))}>×</button>
