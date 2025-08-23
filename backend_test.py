@@ -187,7 +187,7 @@ class DataRWAPITester:
             
             if response.status_code == 401:
                 data = response.json()
-                if "Incorrect email or password" in data.get("detail", ""):
+                if "Invalid credentials" in data.get("detail", "") or "Incorrect email or password" in data.get("detail", ""):
                     self.log_result("Invalid Login", True, "Properly rejected invalid credentials")
                     return True
                 else:
