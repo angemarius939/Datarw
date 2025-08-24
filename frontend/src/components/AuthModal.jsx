@@ -15,6 +15,8 @@ const AuthModal = ({ isOpen, onClose }) => {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('login');
 
+  console.log('AuthModal rendered, isOpen:', isOpen);
+
   const [loginData, setLoginData] = useState({
     email: '',
     password: ''
