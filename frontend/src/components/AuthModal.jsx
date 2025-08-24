@@ -27,45 +27,50 @@ const AuthModal = ({ isOpen, onClose }) => {
     confirmPassword: ''
   });
 
-  const handleLogin = async () => {
-    console.log('=== HANDLE LOGIN CALLED ===');
+  const handleLogin = () => {
+    if (!loginData.email || !loginData.password) {
+      setError('Please fill in all fields');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
-    try {
-      // Direct API call
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
-      const response = await fetch(`${backendUrl}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(loginData)
-      });
+    // Since the button click handler has issues with the Dialog component,
+    // use a timeout to ensure this executes properly
+    setTimeout(async () => {
+      try {
+        const backendUrl = 'http://localhost:8001';
+        const response = await fetch(`${backendUrl}/api/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(loginData)
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Login failed');
+        }
+
+        const data = await response.json();
+        
+        // Store auth data
+        localStorage.setItem('access_token', data.access_token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('organization', JSON.stringify(data.organization));
+
+        // Close modal and redirect
+        onClose();
+        setLoginData({ email: '', password: '' });
+        window.location.href = '/?tab=overview';
+        
+      } catch (error) {
+        setError(error.message || 'Login failed');
+        setLoading(false);
       }
-
-      const data = await response.json();
-      
-      // Store auth data
-      localStorage.setItem('access_token', data.access_token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      localStorage.setItem('organization', JSON.stringify(data.organization));
-
-      // Close modal and reload page to activate auth context
-      onClose();
-      setLoginData({ email: '', password: '' });
-      window.location.reload();
-      
-    } catch (error) {
-      console.error('Login error:', error);
-      setError(error.message || 'Login failed');
-    }
-    
-    setLoading(false);
+    }, 100);
   };
 
   const handleRegister = async () => {
