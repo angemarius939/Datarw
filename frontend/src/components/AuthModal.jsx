@@ -29,14 +29,13 @@ const AuthModal = ({ isOpen, onClose }) => {
     confirmPassword: ''
   });
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    console.log('=== HANDLE LOGIN CALLED ===', e);
+  const handleLogin = async () => {
+    console.log('=== HANDLE LOGIN CALLED ===');
     setLoading(true);
     setError('');
 
     try {
-      // Direct API call since form submission isn't working with the Dialog component
+      // Direct API call
       const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
       const response = await fetch(`${backendUrl}/api/auth/login`, {
         method: 'POST',
@@ -47,7 +46,8 @@ const AuthModal = ({ isOpen, onClose }) => {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
