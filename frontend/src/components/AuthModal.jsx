@@ -72,6 +72,7 @@ const AuthModal = ({ isOpen, onClose }) => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    console.log('=== HANDLE REGISTER CALLED ===', e);
     setLoading(true);
     setError('');
 
@@ -87,20 +88,41 @@ const AuthModal = ({ isOpen, onClose }) => {
       return;
     }
 
-    const result = await register({
-      name: registerData.name,
-      email: registerData.email,
-      password: registerData.password
-    });
+    try {
+      // Direct API call
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+      const response = await fetch(`${backendUrl}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: registerData.name,
+          email: registerData.email,
+          password: registerData.password
+        })
+      });
 
-    if (result.success) {
-      // Add a small delay to ensure auth state updates before closing modal
-      setTimeout(() => {
-        onClose();
-        setRegisterData({ name: '', email: '', password: '', confirmPassword: '' });
-      }, 100);
-    } else {
-      setError(result.error);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      // Store auth data
+      localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('organization', JSON.stringify(data.organization));
+
+      // Close modal and reload page to activate auth context
+      onClose();
+      setRegisterData({ name: '', email: '', password: '', confirmPassword: '' });
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Registration error:', error);
+      setError(error.message || 'Registration failed');
     }
 
     setLoading(false);
