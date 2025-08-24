@@ -220,7 +220,7 @@ class DatabaseService:
         responses = await self.db.survey_responses.find({"survey_id": survey_id}).to_list(10000)
         return [SurveyResponse(**response) for response in responses]
 
-    async def get_organization_analytics(self, organization_id: str) -> AnalyticsData:
+    async def get_organization_analytics(self, organization_id: str):
         """Get analytics data for an organization"""
         # Get organization surveys
         org_surveys = await self.get_organization_surveys(organization_id)
