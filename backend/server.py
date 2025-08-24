@@ -21,6 +21,7 @@ from models import (
 from project_service import ProjectService
 from finance_service import FinanceService
 from kpi_service import KPIService
+from beneficiary_service import BeneficiaryService
 
 # Auth utilities
 import auth as auth_util
