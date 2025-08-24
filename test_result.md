@@ -470,7 +470,7 @@ backend:
 - agent: "main"
   message: "FEATURE UPDATE: Implemented unit selector and Gantt bars. Backend models extended with optional measurement_unit on Activity/ActivityCreate/ActivityUpdate; progress update now accepts measurement_unit. Frontend CreateActivityModal now includes unit selector next to Target and Achieved quantities; EnhancedActivityTracker shows units and adds simple Gantt-style bar per row; Assigned Team input supports presets (M&E, Field, Data, Operations) plus free text. Ready for backend verification."
   - agent: "main"
-    message: "Added finance CSV report endpoints: /api/finance/reports/project-csv, activities-csv, all-projects-csv and wired frontend download buttons in BudgetTrackingPage."
+    message: "CRITICAL ISSUE IDENTIFIED AND FIXED: Frontend was configured to use external backend URL (https://data-insights-42.preview.emergentagent.com) instead of local backend (http://localhost:8001). This prevented proper authentication flow and dashboard access. Backend testing confirmed all APIs are fully functional: Authentication (registration/login), Beneficiary Management (creation/listing/analytics), KPI Dashboard endpoints, and Dashboard data loading. Fixed by updating frontend/.env to use local backend. Authentication now works correctly, users can access dashboard, and KPI Dashboard is functional. However, there appears to be an issue with React routing or authentication persistence that prevents proper tab navigation after login - users get redirected back to landing page instead of staying in dashboard context."
 
 
 agent_communication:
