@@ -99,6 +99,7 @@ auth_util.db = db
 project_service = ProjectService(db)
 finance_service = FinanceService(db)
 kpi_service = KPIService(db)
+beneficiary_service = BeneficiaryService(db)
 finance_ai = FinanceAI()
 
 app = FastAPI(title='DataRW API', version='1.0.0')
