@@ -415,5 +415,4 @@ class KPIService:
             "achievement_distribution": achievement_ranges
         }
 
-# Initialize the service
-kpi_service = KPIService()
+# Service will be initialized in server.py with database connection
