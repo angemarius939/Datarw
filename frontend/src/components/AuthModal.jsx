@@ -228,15 +228,14 @@ const AuthModal = ({ isOpen, onClose }) => {
                     </Alert>
                   )}
 
-                  <Button 
+                  <button 
                     type="submit" 
-                    className="w-full" 
+                    className="w-full inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2 disabled:pointer-events-none disabled:opacity-50"
                     disabled={loading}
-                    onClick={handleRegister}
                   >
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Create Account
-                  </Button>
+                  </button>
                 </form>
               </CardContent>
             </Card>
