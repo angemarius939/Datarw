@@ -163,7 +163,7 @@ const AuthModal = ({ isOpen, onClose }) => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-4">
                   <div>
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -202,7 +202,7 @@ const AuthModal = ({ isOpen, onClose }) => {
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Sign In
                   </button>
-                </form>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
