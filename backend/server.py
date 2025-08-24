@@ -20,7 +20,7 @@ from models import (
 )
 from project_service import ProjectService
 from finance_service import FinanceService
-from kpi_service import kpi_service
+from kpi_service import KPIService
 
 # Auth utilities
 import auth as auth_util
@@ -97,6 +97,7 @@ auth_util.db = db
 
 project_service = ProjectService(db)
 finance_service = FinanceService(db)
+kpi_service = KPIService(db)
 finance_ai = FinanceAI()
 
 app = FastAPI(title='DataRW API', version='1.0.0')
