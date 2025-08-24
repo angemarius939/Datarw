@@ -37,6 +37,7 @@ import CreateBudgetItemModal from './CreateBudgetItemModal';
 import ActivitiesTable from './ActivitiesTable';
 import BudgetTrackingPage from './BudgetTrackingPage';
 import KPIDashboard from './KPIDashboard';
+import BeneficiaryInterface from './BeneficiaryInterface';
 
 const VALID_TABS = new Set([
   'overview','surveys','builder','data','users',
