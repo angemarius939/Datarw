@@ -380,6 +380,27 @@ class ApprovalStatus(str, Enum):
     REJECTED = 'rejected'
     DRAFT = 'draft'
 
+class ServiceType(str, Enum):
+    TRAINING = 'training'
+    DISTRIBUTION = 'distribution'
+    GRANT = 'grant'
+    MENTORSHIP = 'mentorship'
+    CONSULTATION = 'consultation'
+    FOLLOW_UP = 'follow_up'
+    ASSESSMENT = 'assessment'
+
+class BeneficiaryStatus(str, Enum):
+    ACTIVE = 'active'
+    INACTIVE = 'inactive'
+    GRADUATED = 'graduated'
+    DROPPED_OUT = 'dropped_out'
+
+class RiskLevel(str, Enum):
+    LOW = 'low'
+    MEDIUM = 'medium'
+    HIGH = 'high'
+    CRITICAL = 'critical'
+
 class Expense(SafeModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     project_id: str
