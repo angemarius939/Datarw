@@ -6508,6 +6508,409 @@ class DataRWAPITester:
         
         return error_endpoints
 
+    def test_kpi_indicators(self):
+        """Test KPI indicators endpoint - organization-level KPIs with date range support"""
+        try:
+            # Test without date range
+            response = self.session.get(f"{self.base_url}/kpi/indicators")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify expected response structure
+                required_sections = ["overview", "performance_indicators", "trends"]
+                if all(section in data for section in required_sections):
+                    
+                    # Verify overview section
+                    overview = data["overview"]
+                    overview_fields = ["total_projects", "active_projects", "completed_projects", 
+                                     "total_activities", "total_beneficiaries", "total_budget", "utilized_budget"]
+                    if all(field in overview for field in overview_fields):
+                        
+                        # Verify performance indicators section
+                        performance = data["performance_indicators"]
+                        performance_fields = ["project_completion_rate", "activity_completion_rate", 
+                                            "budget_utilization_rate", "overdue_rate", "on_time_delivery_rate"]
+                        if all(field in performance for field in performance_fields):
+                            
+                            # Verify trends section
+                            trends = data["trends"]
+                            if "monthly_trends" in trends and isinstance(trends["monthly_trends"], list):
+                                self.log_result("KPI Indicators", True, 
+                                              "Organization-level indicator KPIs retrieved successfully with proper structure")
+                                return True
+                            else:
+                                self.log_result("KPI Indicators", False, "Invalid trends structure", data)
+                                return False
+                        else:
+                            missing = [f for f in performance_fields if f not in performance]
+                            self.log_result("KPI Indicators", False, f"Missing performance fields: {missing}", data)
+                            return False
+                    else:
+                        missing = [f for f in overview_fields if f not in overview]
+                        self.log_result("KPI Indicators", False, f"Missing overview fields: {missing}", data)
+                        return False
+                else:
+                    missing = [s for s in required_sections if s not in data]
+                    self.log_result("KPI Indicators", False, f"Missing sections: {missing}", data)
+                    return False
+            else:
+                self.log_result("KPI Indicators", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("KPI Indicators", False, f"Request error: {str(e)}")
+            return False
+
+    def test_kpi_indicators_date_range(self):
+        """Test KPI indicators endpoint with date range filtering"""
+        try:
+            from datetime import datetime, timedelta
+            
+            # Test with date range
+            date_from = (datetime.now() - timedelta(days=30)).isoformat()
+            date_to = datetime.now().isoformat()
+            
+            response = self.session.get(
+                f"{self.base_url}/kpi/indicators",
+                params={"date_from": date_from, "date_to": date_to}
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify same structure as basic test
+                required_sections = ["overview", "performance_indicators", "trends"]
+                if all(section in data for section in required_sections):
+                    self.log_result("KPI Indicators Date Range", True, 
+                                  "Date range filtering working correctly for indicator KPIs")
+                    return True
+                else:
+                    missing = [s for s in required_sections if s not in data]
+                    self.log_result("KPI Indicators Date Range", False, f"Missing sections: {missing}", data)
+                    return False
+            else:
+                self.log_result("KPI Indicators Date Range", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("KPI Indicators Date Range", False, f"Request error: {str(e)}")
+            return False
+
+    def test_kpi_activities(self):
+        """Test KPI activities endpoint - activity-level KPIs with drill-down capabilities"""
+        try:
+            # Test without project filter
+            response = self.session.get(f"{self.base_url}/kpi/activities")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify expected response structure
+                required_sections = ["activities", "summary", "analytics"]
+                if all(section in data for section in required_sections):
+                    
+                    # Verify activities array structure
+                    activities = data["activities"]
+                    if isinstance(activities, list):
+                        # If activities exist, verify structure
+                        if len(activities) > 0:
+                            activity = activities[0]
+                            activity_fields = ["activity_id", "name", "project_id", "status", "progress_percentage",
+                                             "risk_level", "risk_score", "is_overdue", "days_variance", 
+                                             "target_quantity", "achieved_quantity", "completion_rate"]
+                            if not all(field in activity for field in activity_fields):
+                                missing = [f for f in activity_fields if f not in activity]
+                                self.log_result("KPI Activities", False, f"Missing activity fields: {missing}", data)
+                                return False
+                        
+                        # Verify summary section
+                        summary = data["summary"]
+                        summary_fields = ["total_activities", "completed_activities", "overdue_activities",
+                                        "high_risk_activities", "completion_rate", "overdue_rate", 
+                                        "avg_progress", "avg_completion_rate"]
+                        if all(field in summary for field in summary_fields):
+                            
+                            # Verify analytics section
+                            analytics = data["analytics"]
+                            analytics_fields = ["status_breakdown", "risk_distribution", "performance_trends"]
+                            if all(field in analytics for field in analytics_fields):
+                                self.log_result("KPI Activities", True, 
+                                              "Activity-level KPIs retrieved successfully with drill-down capabilities")
+                                return True
+                            else:
+                                missing = [f for f in analytics_fields if f not in analytics]
+                                self.log_result("KPI Activities", False, f"Missing analytics fields: {missing}", data)
+                                return False
+                        else:
+                            missing = [f for f in summary_fields if f not in summary]
+                            self.log_result("KPI Activities", False, f"Missing summary fields: {missing}", data)
+                            return False
+                    else:
+                        self.log_result("KPI Activities", False, "Activities should be an array", data)
+                        return False
+                else:
+                    missing = [s for s in required_sections if s not in data]
+                    self.log_result("KPI Activities", False, f"Missing sections: {missing}", data)
+                    return False
+            else:
+                self.log_result("KPI Activities", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("KPI Activities", False, f"Request error: {str(e)}")
+            return False
+
+    def test_kpi_activities_project_filter(self):
+        """Test KPI activities endpoint with project filtering"""
+        try:
+            # First create a test project to filter by
+            if hasattr(self, 'test_project_id'):
+                project_id = self.test_project_id
+            else:
+                # Use a dummy project ID for testing
+                project_id = "test-project-123"
+            
+            response = self.session.get(
+                f"{self.base_url}/kpi/activities",
+                params={"project_id": project_id}
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify same structure as basic test
+                required_sections = ["activities", "summary", "analytics"]
+                if all(section in data for section in required_sections):
+                    # Verify that if activities exist, they belong to the specified project
+                    activities = data["activities"]
+                    if isinstance(activities, list) and len(activities) > 0:
+                        for activity in activities:
+                            if activity.get("project_id") != project_id:
+                                self.log_result("KPI Activities Project Filter", False, 
+                                              f"Activity belongs to wrong project: {activity.get('project_id')}", data)
+                                return False
+                    
+                    self.log_result("KPI Activities Project Filter", True, 
+                                  "Project filtering working correctly for activity KPIs")
+                    return True
+                else:
+                    missing = [s for s in required_sections if s not in data]
+                    self.log_result("KPI Activities Project Filter", False, f"Missing sections: {missing}", data)
+                    return False
+            else:
+                self.log_result("KPI Activities Project Filter", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("KPI Activities Project Filter", False, f"Request error: {str(e)}")
+            return False
+
+    def test_kpi_projects(self):
+        """Test KPI projects endpoint - project-level KPIs with drill-down capabilities"""
+        try:
+            # Test without project filter (get all projects)
+            response = self.session.get(f"{self.base_url}/kpi/projects")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify expected response structure
+                required_sections = ["projects", "summary", "analytics"]
+                if all(section in data for section in required_sections):
+                    
+                    # Verify projects array structure
+                    projects = data["projects"]
+                    if isinstance(projects, list):
+                        # If projects exist, verify structure
+                        if len(projects) > 0:
+                            project = projects[0]
+                            project_fields = ["project_id", "name", "status", "total_activities", "completed_activities",
+                                            "overdue_activities", "activity_completion_rate", "avg_activity_progress",
+                                            "budget", "expenses", "budget_utilization", "target_beneficiaries",
+                                            "actual_beneficiaries", "beneficiary_achievement_rate"]
+                            if not all(field in project for field in project_fields):
+                                missing = [f for f in project_fields if f not in project]
+                                self.log_result("KPI Projects", False, f"Missing project fields: {missing}", data)
+                                return False
+                        
+                        # Verify summary section
+                        summary = data["summary"]
+                        summary_fields = ["total_projects", "completed_projects", "project_completion_rate",
+                                        "total_budget", "total_expenses", "overall_budget_utilization", 
+                                        "avg_budget_utilization"]
+                        if all(field in summary for field in summary_fields):
+                            
+                            # Verify analytics section
+                            analytics = data["analytics"]
+                            analytics_fields = ["status_distribution", "budget_performance", "beneficiary_impact"]
+                            if all(field in analytics for field in analytics_fields):
+                                
+                                # Verify budget_performance structure
+                                budget_perf = analytics["budget_performance"]
+                                if "budget_distribution" in budget_perf and "utilization_distribution" in budget_perf:
+                                    
+                                    # Verify beneficiary_impact structure
+                                    beneficiary_impact = analytics["beneficiary_impact"]
+                                    impact_fields = ["total_target_beneficiaries", "total_actual_beneficiaries",
+                                                   "overall_achievement_rate", "achievement_distribution"]
+                                    if all(field in beneficiary_impact for field in impact_fields):
+                                        self.log_result("KPI Projects", True, 
+                                                      "Project-level KPIs retrieved successfully with drill-down capabilities")
+                                        return True
+                                    else:
+                                        missing = [f for f in impact_fields if f not in beneficiary_impact]
+                                        self.log_result("KPI Projects", False, f"Missing beneficiary impact fields: {missing}", data)
+                                        return False
+                                else:
+                                    self.log_result("KPI Projects", False, "Missing budget performance fields", data)
+                                    return False
+                            else:
+                                missing = [f for f in analytics_fields if f not in analytics]
+                                self.log_result("KPI Projects", False, f"Missing analytics fields: {missing}", data)
+                                return False
+                        else:
+                            missing = [f for f in summary_fields if f not in summary]
+                            self.log_result("KPI Projects", False, f"Missing summary fields: {missing}", data)
+                            return False
+                    else:
+                        self.log_result("KPI Projects", False, "Projects should be an array", data)
+                        return False
+                else:
+                    missing = [s for s in required_sections if s not in data]
+                    self.log_result("KPI Projects", False, f"Missing sections: {missing}", data)
+                    return False
+            else:
+                self.log_result("KPI Projects", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("KPI Projects", False, f"Request error: {str(e)}")
+            return False
+
+    def test_kpi_projects_single_filter(self):
+        """Test KPI projects endpoint with single project filtering"""
+        try:
+            # First create a test project to filter by
+            if hasattr(self, 'test_project_id'):
+                project_id = self.test_project_id
+            else:
+                # Use a dummy project ID for testing
+                project_id = "test-project-123"
+            
+            response = self.session.get(
+                f"{self.base_url}/kpi/projects",
+                params={"project_id": project_id}
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify same structure as basic test
+                required_sections = ["projects", "summary", "analytics"]
+                if all(section in data for section in required_sections):
+                    # Verify that if projects exist, only the specified project is returned
+                    projects = data["projects"]
+                    if isinstance(projects, list):
+                        if len(projects) > 1:
+                            self.log_result("KPI Projects Single Filter", False, 
+                                          f"Expected 1 project, got {len(projects)}", data)
+                            return False
+                        elif len(projects) == 1:
+                            if projects[0].get("project_id") != project_id:
+                                self.log_result("KPI Projects Single Filter", False, 
+                                              f"Wrong project returned: {projects[0].get('project_id')}", data)
+                                return False
+                    
+                    self.log_result("KPI Projects Single Filter", True, 
+                                  "Single project filtering working correctly for project KPIs")
+                    return True
+                else:
+                    missing = [s for s in required_sections if s not in data]
+                    self.log_result("KPI Projects Single Filter", False, f"Missing sections: {missing}", data)
+                    return False
+            else:
+                self.log_result("KPI Projects Single Filter", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("KPI Projects Single Filter", False, f"Request error: {str(e)}")
+            return False
+
+    def test_kpi_dashboard_authentication(self):
+        """Test KPI Dashboard endpoints authentication protection"""
+        try:
+            # Remove authorization header temporarily
+            original_headers = self.session.headers.copy()
+            if 'Authorization' in self.session.headers:
+                del self.session.headers['Authorization']
+            
+            # Test all three KPI endpoints without authentication
+            endpoints = [
+                "/kpi/indicators",
+                "/kpi/activities", 
+                "/kpi/projects"
+            ]
+            
+            all_protected = True
+            for endpoint in endpoints:
+                response = self.session.get(f"{self.base_url}{endpoint}")
+                if response.status_code not in [401, 403]:
+                    self.log_result("KPI Dashboard Authentication", False, 
+                                  f"Endpoint {endpoint} not properly protected: HTTP {response.status_code}")
+                    all_protected = False
+                    break
+            
+            # Restore headers
+            self.session.headers.update(original_headers)
+            
+            if all_protected:
+                self.log_result("KPI Dashboard Authentication", True, 
+                              "All KPI Dashboard endpoints properly protected by Bearer token authentication")
+                return True
+            else:
+                return False
+                
+        except Exception as e:
+            # Restore headers in case of exception
+            self.session.headers.update(original_headers)
+            self.log_result("KPI Dashboard Authentication", False, f"Request error: {str(e)}")
+            return False
+
+    def test_kpi_dashboard_comprehensive(self):
+        """Comprehensive test of all KPI Dashboard endpoints as requested in review"""
+        print("\n" + "="*60)
+        print("COMPREHENSIVE KPI DASHBOARD TESTING")
+        print("="*60)
+        
+        success_count = 0
+        total_tests = 7
+        
+        # Test 1: KPI Indicators basic
+        if self.test_kpi_indicators():
+            success_count += 1
+        
+        # Test 2: KPI Indicators with date range
+        if self.test_kpi_indicators_date_range():
+            success_count += 1
+        
+        # Test 3: KPI Activities basic
+        if self.test_kpi_activities():
+            success_count += 1
+        
+        # Test 4: KPI Activities with project filter
+        if self.test_kpi_activities_project_filter():
+            success_count += 1
+        
+        # Test 5: KPI Projects basic
+        if self.test_kpi_projects():
+            success_count += 1
+        
+        # Test 6: KPI Projects with single project filter
+        if self.test_kpi_projects_single_filter():
+            success_count += 1
+        
+        # Test 7: Authentication protection
+        if self.test_kpi_dashboard_authentication():
+            success_count += 1
+        
+        print(f"\nKPI DASHBOARD TESTING COMPLETE: {success_count}/{total_tests} tests passed")
+        return success_count == total_tests
+
     def run_all_tests(self):
         """Run all tests in sequence"""
     def run_all_tests(self):
