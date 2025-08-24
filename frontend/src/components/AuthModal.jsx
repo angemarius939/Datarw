@@ -30,6 +30,7 @@ const AuthModal = ({ isOpen, onClose }) => {
   });
 
   const handleLogin = async (e) => {
+    console.log('=== HANDLE LOGIN CALLED ===', e);
     e.preventDefault();
     console.log('AuthModal: handleLogin called with data:', loginData);
     setLoading(true);
