@@ -36,8 +36,16 @@ api.interceptors.response.use(
 
 // Auth API
 export const authAPI = {
-  register: (userData) => api.post('/auth/register', userData),
-  login: (credentials) => api.post('/auth/login', credentials),
+  register: (userData) => {
+    console.log('AUTH API: Register called with:', userData);
+    console.log('AUTH API: API_BASE:', API_BASE);
+    return api.post('/auth/register', userData);
+  },
+  login: (credentials) => {
+    console.log('AUTH API: Login called with:', credentials);
+    console.log('AUTH API: API_BASE:', API_BASE);
+    return api.post('/auth/login', credentials);
+  },
   logout: () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');
