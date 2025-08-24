@@ -341,7 +341,7 @@ const KPIDashboard = () => {
             onClick={fetchKPIData}
             className="flex items-center space-x-2"
           >
-            <Refresh className="h-4 w-4" />
+            <RefreshCw className="h-4 w-4" />
             <span>Refresh</span>
           </Button>
         </div>
