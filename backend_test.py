@@ -8122,26 +8122,17 @@ class DataRWAPITester:
         return success_count == total_tests
 
 def main():
-    """Main test execution"""
+    """Main test execution - Run review requested tests"""
     tester = DataRWAPITester()
     
-    # Test API health first
-    if not tester.test_api_health():
-        print("❌ API Health check failed - aborting tests")
-        exit(1)
+    # Run the specific tests requested in the review
+    success = tester.run_review_requested_tests()
     
-    # Run authentication tests
-    if not tester.test_auth_endpoints_comprehensive():
-        print("❌ Auth endpoints testing failed")
-        exit(1)
-    
-    # Run dashboard endpoints tests (as requested in review)
-    dashboard_success = tester.test_dashboard_endpoints_comprehensive()
-    
-    if dashboard_success:
-        print("\n🎉 DASHBOARD ENDPOINTS TESTS PASSED! All requested endpoints working correctly.")
+    if success:
+        print("\n🎉 ALL REVIEW REQUESTED TESTS PASSED!")
+        print("Authentication and beneficiary management system working correctly.")
     else:
-        print("\n⚠️  Some dashboard endpoint tests failed. Check the output above for details.")
+        print("\n⚠️  Some tests failed. Check the output above for details.")
         exit(1)
 
 if __name__ == "__main__":
