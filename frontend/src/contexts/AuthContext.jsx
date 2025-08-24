@@ -43,7 +43,9 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
+      console.log('AuthContext: Login starting with credentials:', credentials);
       const response = await authAPI.login(credentials);
+      console.log('AuthContext: Login response received:', response);
       const { access_token, user: userData, organization: orgData } = response.data;
 
       // Store auth data
@@ -60,6 +62,7 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true };
     } catch (error) {
+      console.error('AuthContext: Login error:', error);
       return {
         success: false,
         error: error.response?.data?.detail || 'Login failed'
