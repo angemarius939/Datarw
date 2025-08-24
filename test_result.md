@@ -104,7 +104,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Fix project creation error - React runtime error 'Objects are not valid as a React child' occurs when creating new projects, caused by frontend sending mismatched field names to backend and improperly rendering Pydantic validation errors."
+user_problem_statement: "User reports that 'service and KPI is not displaying' and requests 'add beneficiary creation'. Investigation revealed the main issue was frontend configured to use external backend URL instead of local backend, preventing proper authentication and dashboard access. Authentication endpoints, KPI Dashboard, and Beneficiary Management systems are all functional on backend."
 
 backend:
   - task: "Create Activity Modal Refactor & Backend Alignment"
