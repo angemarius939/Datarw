@@ -216,7 +216,7 @@ const AuthModal = ({ isOpen, onClose }) => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleRegister} className="space-y-4">
+                <div className="space-y-4">
                   <div>
                     <Label htmlFor="name">Full Name</Label>
                     <Input
@@ -277,7 +277,7 @@ const AuthModal = ({ isOpen, onClose }) => {
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Create Account
                   </button>
-                </form>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
