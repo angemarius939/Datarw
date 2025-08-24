@@ -30,23 +30,41 @@ const AuthModal = ({ isOpen, onClose }) => {
   });
 
   const handleLogin = async (e) => {
-    console.log('=== HANDLE LOGIN CALLED ===', e);
     e.preventDefault();
-    console.log('AuthModal: handleLogin called with data:', loginData);
+    console.log('=== HANDLE LOGIN CALLED ===', e);
     setLoading(true);
     setError('');
 
-    const result = await login(loginData);
-    console.log('AuthModal: login result:', result);
-    
-    if (result.success) {
-      // Add a small delay to ensure auth state updates before closing modal
-      setTimeout(() => {
-        onClose();
-        setLoginData({ email: '', password: '' });
-      }, 100);
-    } else {
-      setError(result.error);
+    try {
+      // Direct API call since form submission isn't working with the Dialog component
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+      const response = await fetch(`${backendUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(loginData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      // Store auth data
+      localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('organization', JSON.stringify(data.organization));
+
+      // Close modal and reload page to activate auth context
+      onClose();
+      setLoginData({ email: '', password: '' });
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Login error:', error);
+      setError(error.message || 'Login failed');
     }
     
     setLoading(false);
