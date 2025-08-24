@@ -674,6 +674,9 @@ const Dashboard = ({ onUpgrade }) => {
           )}
 
           {activeTab === 'reports' && <EnhancedReporting />}
+          
+          {/* KPI Dashboard Content */}
+          {activeTab === 'kpi-dashboard' && <KPIDashboard />}
 
           {/* Admin Panel Content */}
           {activeTab === 'admin-panel' && <AdminPanel />}
