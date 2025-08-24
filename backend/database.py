@@ -265,7 +265,7 @@ class DatabaseService:
         ]
         
     # Enumerator CRUD
-    async def create_enumerator(self, enumerator: EnumeratorCreate, organization_id: str) -> Enumerator:
+    async def create_enumerator(self, enumerator, organization_id: str):
         """Create a new enumerator"""
         enumerator_doc = Enumerator(
             name=enumerator.name,
