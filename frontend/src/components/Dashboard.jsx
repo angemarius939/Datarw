@@ -662,11 +662,7 @@ const Dashboard = ({ onUpgrade }) => {
             </div>
           )}
 
-          {activeTab === 'beneficiaries' && (
-            <div className="space-y-6">
-              {/* ... unchanged content ... */}
-            </div>
-          )}
+          {activeTab === 'beneficiaries' && <BeneficiaryInterface />}
 
           {activeTab === 'documents' && (
             <div className="space-y-6">
