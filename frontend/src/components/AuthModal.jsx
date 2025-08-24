@@ -29,10 +29,12 @@ const AuthModal = ({ isOpen, onClose }) => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    console.log('AuthModal: handleLogin called with data:', loginData);
     setLoading(true);
     setError('');
 
     const result = await login(loginData);
+    console.log('AuthModal: login result:', result);
     
     if (result.success) {
       // Add a small delay to ensure auth state updates before closing modal
