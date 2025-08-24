@@ -339,21 +339,42 @@ class Beneficiary(SafeModel):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class BeneficiaryCreate(SafeModel):
-    unique_id: str
+    name: str
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    gender: Optional[Gender] = None
+    gender: str
+    age: Optional[int] = None
     date_of_birth: Optional[datetime] = None
-    location: Optional[str] = None
+    contact_phone: Optional[str] = None
+    contact_email: Optional[str] = None
+    national_id: Optional[str] = None
+    address: Optional[str] = None
+    gps_latitude: Optional[float] = None
+    gps_longitude: Optional[float] = None
     project_ids: List[str] = []
+    activity_ids: List[str] = []
+    custom_fields: Dict[str, Any] = {}
+    tags: List[str] = []
 
 class BeneficiaryUpdate(SafeModel):
+    name: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    gender: Optional[Gender] = None
+    gender: Optional[str] = None
+    age: Optional[int] = None
     date_of_birth: Optional[datetime] = None
-    location: Optional[str] = None
+    contact_phone: Optional[str] = None
+    contact_email: Optional[str] = None
+    national_id: Optional[str] = None
+    address: Optional[str] = None
+    gps_latitude: Optional[float] = None
+    gps_longitude: Optional[float] = None
     project_ids: Optional[List[str]] = None
+    activity_ids: Optional[List[str]] = None
+    status: Optional[BeneficiaryStatus] = None
+    risk_level: Optional[RiskLevel] = None
+    custom_fields: Optional[Dict[str, Any]] = None
+    tags: Optional[List[str]] = None
 
 # -------------------- Project Documents --------------------
 class ProjectDocument(SafeModel):
