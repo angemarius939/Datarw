@@ -376,6 +376,134 @@ class BeneficiaryUpdate(SafeModel):
     custom_fields: Optional[Dict[str, Any]] = None
     tags: Optional[List[str]] = None
 
+class ServiceRecord(SafeModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    beneficiary_id: str
+    project_id: str
+    activity_id: Optional[str] = None
+    
+    # Service Details
+    service_type: ServiceType
+    service_name: str
+    service_description: Optional[str] = None
+    
+    # Location and Time
+    service_date: datetime
+    service_location: Optional[str] = None
+    gps_latitude: Optional[float] = None
+    gps_longitude: Optional[float] = None
+    
+    # Staff and Resources
+    staff_responsible: Optional[str] = None
+    staff_name: Optional[str] = None
+    resources_used: List[str] = []
+    cost: Optional[float] = None
+    
+    # Outcomes and Notes
+    outcome: Optional[str] = None
+    notes: Optional[str] = None
+    satisfaction_score: Optional[int] = None  # 1-5 scale
+    follow_up_required: bool = False
+    follow_up_date: Optional[datetime] = None
+    
+    # Metadata
+    organization_id: str
+    created_by: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class ServiceRecordCreate(SafeModel):
+    beneficiary_id: str
+    project_id: str
+    activity_id: Optional[str] = None
+    service_type: ServiceType
+    service_name: str
+    service_description: Optional[str] = None
+    service_date: datetime
+    service_location: Optional[str] = None
+    gps_latitude: Optional[float] = None
+    gps_longitude: Optional[float] = None
+    staff_responsible: Optional[str] = None
+    staff_name: Optional[str] = None
+    resources_used: List[str] = []
+    cost: Optional[float] = None
+    outcome: Optional[str] = None
+    notes: Optional[str] = None
+    satisfaction_score: Optional[int] = None
+    follow_up_required: bool = False
+    follow_up_date: Optional[datetime] = None
+
+class BeneficiaryKPI(SafeModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    beneficiary_id: str
+    project_id: str
+    activity_id: Optional[str] = None
+    
+    # KPI Definition
+    kpi_name: str
+    kpi_description: Optional[str] = None
+    kpi_type: str  # 'numeric', 'percentage', 'boolean', 'text'
+    unit_of_measure: Optional[str] = None
+    
+    # Values and Progress
+    baseline_value: Optional[float] = None
+    target_value: Optional[float] = None
+    current_value: Optional[float] = None
+    progress_percentage: Optional[float] = None
+    
+    # Tracking
+    measurement_date: datetime = Field(default_factory=datetime.utcnow)
+    next_measurement_date: Optional[datetime] = None
+    measurement_frequency: Optional[str] = None  # 'weekly', 'monthly', 'quarterly'
+    
+    # Status
+    is_on_track: bool = True
+    variance_percentage: Optional[float] = None
+    
+    # Metadata
+    organization_id: str
+    created_by: Optional[str] = None
+    updated_by: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class BeneficiaryKPICreate(SafeModel):
+    beneficiary_id: str
+    project_id: str
+    activity_id: Optional[str] = None
+    kpi_name: str
+    kpi_description: Optional[str] = None
+    kpi_type: str
+    unit_of_measure: Optional[str] = None
+    baseline_value: Optional[float] = None
+    target_value: Optional[float] = None
+    current_value: Optional[float] = None
+    measurement_frequency: Optional[str] = None
+
+class BeneficiaryKPIUpdate(SafeModel):
+    current_value: Optional[float] = None
+    target_value: Optional[float] = None
+    measurement_date: Optional[datetime] = None
+    next_measurement_date: Optional[datetime] = None
+    notes: Optional[str] = None
+
+class BatchServiceRecord(SafeModel):
+    beneficiary_ids: List[str]
+    project_id: str
+    activity_id: Optional[str] = None
+    service_type: ServiceType
+    service_name: str
+    service_description: Optional[str] = None
+    service_date: datetime
+    service_location: Optional[str] = None
+    gps_latitude: Optional[float] = None
+    gps_longitude: Optional[float] = None
+    staff_responsible: Optional[str] = None
+    staff_name: Optional[str] = None
+    resources_used: List[str] = []
+    cost_per_beneficiary: Optional[float] = None
+    notes: Optional[str] = None
+
 # -------------------- Project Documents --------------------
 class ProjectDocument(SafeModel):
     id: Optional[str] = None
