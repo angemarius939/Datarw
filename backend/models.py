@@ -281,16 +281,60 @@ class KPIIndicatorUpdate(SafeModel):
 
 # -------------------- Beneficiaries --------------------
 class Beneficiary(SafeModel):
-    id: Optional[str] = None
-    _id: Optional[str] = None
-    unique_id: str
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    # Basic Information
+    name: str
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    gender: Optional[Gender] = None
+    gender: str
+    age: Optional[int] = None
     date_of_birth: Optional[datetime] = None
-    location: Optional[str] = None
+    contact_phone: Optional[str] = None
+    contact_email: Optional[str] = None
+    
+    # Identification
+    national_id: Optional[str] = None
+    system_id: Optional[str] = None
+    alternative_id: Optional[str] = None
+    
+    # Location Information
+    address: Optional[str] = None
+    gps_latitude: Optional[float] = None
+    gps_longitude: Optional[float] = None
+    gps_accuracy: Optional[float] = None
+    service_location: Optional[str] = None
+    household_gps_lat: Optional[float] = None
+    household_gps_lng: Optional[float] = None
+    
+    # Project Linkages
     project_ids: List[str] = []
+    activity_ids: List[str] = []
+    primary_project_id: Optional[str] = None
+    
+    # Status and Tracking
+    status: BeneficiaryStatus = BeneficiaryStatus.ACTIVE
+    enrollment_date: datetime = Field(default_factory=datetime.utcnow)
+    graduation_date: Optional[datetime] = None
+    last_service_date: Optional[datetime] = None
+    
+    # Risk and Progress
+    risk_level: RiskLevel = RiskLevel.LOW
+    risk_score: Optional[float] = None
+    progress_score: Optional[float] = None
+    
+    # Documents and Media
+    profile_photo_url: Optional[str] = None
+    document_urls: List[str] = []
+    verification_status: str = "pending"
+    
+    # Custom Attributes
+    custom_fields: Dict[str, Any] = {}
+    tags: List[str] = []
+    
+    # Metadata
     organization_id: str
+    created_by: Optional[str] = None
+    updated_by: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
