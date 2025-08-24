@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connection Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .test { margin: 20px 0; padding: 15px; border-radius: 8px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>DataRW Connection Test</h1>
+    <p>This page tests the connection between frontend and backend services.</p>
+    
+    <button onclick="testConnection()">🔗 Test Backend Connection</button>
+    <button onclick="testLogin()">🔐 Test Login API</button>
+    <button onclick="clearResults()">🧹 Clear Results</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        function addResult(type, title, content) {
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = `<strong>${title}</strong><br>${content}`;
+            resultsDiv.appendChild(div);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        async function testConnection() {
+            addResult('info', '🔄 Testing Connection', 'Attempting to connect to backend health endpoint...');
+            
+            try {
+                const start = Date.now();
+                const response = await fetch('http://localhost:8001/api/health', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const end = Date.now();
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult('success', '✅ Backend Connection Successful', 
+                        `Status: ${response.status}<br>` +
+                        `Response time: ${end - start}ms<br>` +
+                        `Data: <pre>${JSON.stringify(data, null, 2)}</pre>`
+                    );
+                } else {
+                    addResult('error', '❌ Backend Response Error', 
+                        `Status: ${response.status}<br>` +
+                        `Status Text: ${response.statusText}`
+                    );
+                }
+            } catch (error) {
+                addResult('error', '❌ Connection Failed', 
+                    `Error: ${error.message}<br>` +
+                    `Error Type: ${error.name}<br>` +
+                    `This usually indicates:<br>` +
+                    `• Backend server is not running<br>` +
+                    `• CORS policy blocking the request<br>` +
+                    `• Network connectivity issues<br>` +
+                    `• Firewall blocking port 8001`
+                );
+            }
+        }
+        
+        async function testLogin() {
+            addResult('info', '🔄 Testing Login API', 'Attempting to test login endpoint...');
+            
+            try {
+                const start = Date.now();
+                const response = await fetch('http://localhost:8001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'test_backend_user@example.com',
+                        password: 'TestPassword123!'
+                    })
+                });
+                const end = Date.now();
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult('success', '✅ Login API Working', 
+                        `Status: ${response.status}<br>` +
+                        `Response time: ${end - start}ms<br>` +
+                        `User: ${data.user.name}<br>` +
+                        `Organization: ${data.organization.name}<br>` +
+                        `Token: ${data.access_token.substring(0, 20)}...`
+                    );
+                    
+                    // Store the auth data for testing
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    localStorage.setItem('organization', JSON.stringify(data.organization));
+                    
+                    addResult('success', '🎉 Login Successful!', 
+                        `Authentication data stored in localStorage.<br>` +
+                        `<a href="http://localhost:3000/?tab=overview" style="color: #007bff;">🚀 Go to Dashboard</a>`
+                    );
+                    
+                } else {
+                    const errorData = await response.json();
+                    addResult('error', '❌ Login API Error', 
+                        `Status: ${response.status}<br>` +
+                        `Error: ${errorData.detail || 'Unknown error'}`
+                    );
+                }
+            } catch (error) {
+                addResult('error', '❌ Login API Failed', 
+                    `Error: ${error.message}<br>` +
+                    `This indicates the same connection issues as above.`
+                );
+            }
+        }
+        
+        // Auto-test on page load
+        window.addEventListener('load', function() {
+            addResult('info', '🚀 Page Loaded', 'Connection test page ready. Click buttons above to test.');
+        });
+    </script>
+</body>
+</html>
