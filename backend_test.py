@@ -6911,6 +6911,200 @@ class DataRWAPITester:
         print(f"\nKPI DASHBOARD TESTING COMPLETE: {success_count}/{total_tests} tests passed")
         return success_count == total_tests
 
+    def test_beneficiary_creation_urgent(self):
+        """URGENT: Test beneficiary creation endpoint to identify why users cannot create beneficiaries"""
+        print("\n" + "="*80)
+        print("URGENT BENEFICIARY CREATION TESTING")
+        print("="*80)
+        
+        success_count = 0
+        total_tests = 5
+        
+        # Test 1: Authentication check
+        try:
+            if not self.auth_token:
+                self.log_result("Beneficiary Auth Check", False, "No authentication token available")
+                return False
+            
+            # Verify token is valid by testing a protected endpoint
+            response = self.session.get(f"{self.base_url}/organizations/me")
+            if response.status_code != 200:
+                self.log_result("Beneficiary Auth Check", False, f"Authentication failed: HTTP {response.status_code}")
+                return False
+            
+            self.log_result("Beneficiary Auth Check", True, "Authentication token valid")
+            success_count += 1
+        except Exception as e:
+            self.log_result("Beneficiary Auth Check", False, f"Authentication error: {str(e)}")
+            return False
+        
+        # Test 2: Test beneficiary creation with minimal required data (as specified in review)
+        try:
+            beneficiary_data = {
+                "name": "Test Beneficiary",
+                "gender": "female",
+                "contact_phone": "+250123456789",
+                "project_ids": [],
+                "custom_fields": {},
+                "tags": []
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/beneficiaries",
+                json=beneficiary_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "beneficiary" in data:
+                    beneficiary = data["beneficiary"]
+                    if beneficiary.get("name") == beneficiary_data["name"]:
+                        self.beneficiary_id = beneficiary.get("id")
+                        self.log_result("Beneficiary Creation - Minimal Data", True, 
+                                      "Beneficiary created successfully with minimal required data")
+                        success_count += 1
+                    else:
+                        self.log_result("Beneficiary Creation - Minimal Data", False, 
+                                      "Beneficiary data mismatch", data)
+                else:
+                    self.log_result("Beneficiary Creation - Minimal Data", False, 
+                                  "Missing success/beneficiary fields in response", data)
+            else:
+                error_details = response.text
+                self.log_result("Beneficiary Creation - Minimal Data", False, 
+                              f"HTTP {response.status_code}: {error_details}")
+                
+                # Check for specific error types
+                if response.status_code == 422:
+                    self.log_result("Model Validation Error", False, 
+                                  f"BeneficiaryCreate model validation failed: {error_details}")
+                elif response.status_code == 500:
+                    self.log_result("Server Error", False, 
+                                  f"Internal server error - possible import/service issue: {error_details}")
+                elif response.status_code == 401 or response.status_code == 403:
+                    self.log_result("Authentication Error", False, 
+                                  f"Authentication/authorization failed: {error_details}")
+                
+        except Exception as e:
+            self.log_result("Beneficiary Creation - Minimal Data", False, f"Request error: {str(e)}")
+        
+        # Test 3: Test BeneficiaryCreate model validation with invalid data
+        try:
+            invalid_data = {
+                "name": "",  # Empty name should fail
+                "gender": "invalid_gender",  # Invalid gender
+                "contact_phone": "invalid_phone",
+                "project_ids": "not_a_list",  # Should be list
+                "custom_fields": "not_a_dict",  # Should be dict
+                "tags": "not_a_list"  # Should be list
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/beneficiaries",
+                json=invalid_data
+            )
+            
+            if response.status_code == 422:
+                error_data = response.json()
+                if "detail" in error_data:
+                    self.log_result("Model Validation Test", True, 
+                                  "BeneficiaryCreate model properly validates input data")
+                    success_count += 1
+                else:
+                    self.log_result("Model Validation Test", False, 
+                                  "Validation error format unexpected", error_data)
+            else:
+                self.log_result("Model Validation Test", False, 
+                              f"Expected 422 validation error, got HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Model Validation Test", False, f"Request error: {str(e)}")
+        
+        # Test 4: Test service initialization and database connection
+        try:
+            # Test if the beneficiaries endpoint is accessible (service initialized)
+            response = self.session.get(f"{self.base_url}/beneficiaries")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, dict) and "items" in data:
+                    self.log_result("Service Initialization Test", True, 
+                                  "Beneficiary service initialized and database connected")
+                    success_count += 1
+                elif isinstance(data, list):
+                    self.log_result("Service Initialization Test", True, 
+                                  "Beneficiary service initialized and database connected (legacy format)")
+                    success_count += 1
+                else:
+                    self.log_result("Service Initialization Test", False, 
+                                  "Unexpected response format", data)
+            else:
+                error_details = response.text
+                self.log_result("Service Initialization Test", False, 
+                              f"Service/database issue: HTTP {response.status_code} - {error_details}")
+                
+        except Exception as e:
+            self.log_result("Service Initialization Test", False, f"Request error: {str(e)}")
+        
+        # Test 5: Test with complete beneficiary data
+        try:
+            complete_data = {
+                "name": "Complete Test Beneficiary",
+                "first_name": "Complete",
+                "last_name": "Test",
+                "gender": "male",
+                "age": 25,
+                "contact_phone": "+250987654321",
+                "contact_email": "complete.test@example.com",
+                "national_id": "1234567890123456",
+                "address": "Kigali, Rwanda",
+                "gps_latitude": -1.9441,
+                "gps_longitude": 30.0619,
+                "project_ids": [],
+                "activity_ids": [],
+                "custom_fields": {
+                    "occupation": "Teacher",
+                    "education_level": "University"
+                },
+                "tags": ["education", "urban"]
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/beneficiaries",
+                json=complete_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "beneficiary" in data:
+                    self.log_result("Complete Beneficiary Creation", True, 
+                                  "Beneficiary created successfully with complete data")
+                    success_count += 1
+                else:
+                    self.log_result("Complete Beneficiary Creation", False, 
+                                  "Missing success/beneficiary fields", data)
+            else:
+                self.log_result("Complete Beneficiary Creation", False, 
+                              f"HTTP {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Complete Beneficiary Creation", False, f"Request error: {str(e)}")
+        
+        print(f"\nBENEFICIARY CREATION TESTING COMPLETE: {success_count}/{total_tests} tests passed")
+        
+        # Detailed analysis
+        if success_count < total_tests:
+            print("\n🔍 CRITICAL ISSUES IDENTIFIED:")
+            failed_tests = [result for result in self.test_results[-total_tests:] if not result['success']]
+            for result in failed_tests:
+                print(f"  ❌ {result['test']}: {result['message']}")
+                if result.get('details'):
+                    print(f"     Details: {result['details']}")
+        else:
+            print("\n✅ ALL BENEFICIARY CREATION TESTS PASSED")
+        
+        return success_count == total_tests
+
     def run_all_tests(self):
         """Run all tests in sequence"""
     def run_all_tests(self):
