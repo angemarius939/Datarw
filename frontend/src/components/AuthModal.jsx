@@ -87,7 +87,7 @@ const AuthModal = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!registerData.name || !registerData.email || !registerData.password) {
       setError('Please fill in all fields');
       return;
@@ -106,43 +106,59 @@ const AuthModal = ({ isOpen, onClose }) => {
     setLoading(true);
     setError('');
 
-    setTimeout(async () => {
-      try {
-        const backendUrl = 'http://localhost:8001';
-        const response = await fetch(`${backendUrl}/api/auth/register`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            name: registerData.name,
-            email: registerData.email,
-            password: registerData.password
-          })
-        });
+    try {
+      const response = await fetch('http://localhost:8001/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: registerData.name,
+          email: registerData.email,
+          password: registerData.password
+        })
+      });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || 'Registration failed');
-        }
-
-        const data = await response.json();
-        
-        // Store auth data
-        localStorage.setItem('access_token', data.access_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('organization', JSON.stringify(data.organization));
-
-        // Close modal and redirect
-        onClose();
-        setRegisterData({ name: '', email: '', password: '', confirmPassword: '' });
-        window.location.href = '/?tab=overview';
-        
-      } catch (error) {
-        setError(error.message || 'Registration failed');
-        setLoading(false);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Registration failed');
       }
-    }, 100);
+
+      const data = await response.json();
+      
+      // Store auth data with verification
+      localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('organization', JSON.stringify(data.organization));
+
+      // Verify data was stored
+      const stored = {
+        token: localStorage.getItem('access_token'),
+        user: localStorage.getItem('user'),
+        org: localStorage.getItem('organization')
+      };
+
+      console.log('Registration auth data stored:', {
+        tokenExists: !!stored.token,
+        userExists: !!stored.user,
+        orgExists: !!stored.org
+      });
+
+      // Close modal
+      onClose();
+      setRegisterData({ name: '', email: '', password: '', confirmPassword: '' });
+      
+      // Force page reload to activate auth context
+      setTimeout(() => {
+        window.location.href = '/';
+        window.location.reload();
+      }, 100);
+      
+    } catch (error) {
+      console.error('Registration error:', error);
+      setError(error.message || 'Registration failed');
+      setLoading(false);
+    }
   };
 
   const resetForm = () => {
