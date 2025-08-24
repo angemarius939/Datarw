@@ -70,9 +70,8 @@ const AuthModal = ({ isOpen, onClose }) => {
     setLoading(false);
   };
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    console.log('=== HANDLE REGISTER CALLED ===', e);
+  const handleRegister = async () => {
+    console.log('=== HANDLE REGISTER CALLED ===');
     setLoading(true);
     setError('');
 
