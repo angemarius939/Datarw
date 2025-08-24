@@ -4,11 +4,9 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from bson import ObjectId
 import asyncio
-from database import get_database
-
 class KPIService:
-    def __init__(self):
-        self.db = get_database()
+    def __init__(self, db):
+        self.db = db
 
     # -------------------- Indicator Level KPIs --------------------
     async def get_indicator_kpis(self, organization_id: str, date_from: Optional[str] = None, date_to: Optional[str] = None) -> Dict[str, Any]:
