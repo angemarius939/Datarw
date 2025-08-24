@@ -393,6 +393,280 @@ async def get_project_kpis(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+# -------------------- Beneficiary Management Routes --------------------
+@api.post('/beneficiaries')
+async def create_beneficiary(
+    beneficiary: dict,
+    current_user: UserModel = Depends(auth_util.get_current_active_user)
+):
+    """Create a new beneficiary"""
+    try:
+        from models import BeneficiaryCreate
+        beneficiary_data = BeneficiaryCreate(**beneficiary)
+        result = await beneficiary_service.create_beneficiary(
+            beneficiary_data, 
+            current_user.organization_id, 
+            current_user.id
+        )
+        return {"success": True, "beneficiary": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api.get('/beneficiaries')
+async def get_beneficiaries(
+    project_id: Optional[str] = None,
+    activity_id: Optional[str] = None,
+    status: Optional[str] = None,
+    risk_level: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 20,
+    search: Optional[str] = None,
+    current_user: UserModel = Depends(auth_util.get_current_active_user)
+):
+    """Get beneficiaries with filtering and pagination"""
+    try:
+        result = await beneficiary_service.get_beneficiaries(
+            organization_id=current_user.organization_id,
+            project_id=project_id,
+            activity_id=activity_id,
+            status=status,
+            risk_level=risk_level,
+            page=page,
+            page_size=page_size,
+            search=search
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api.get('/beneficiaries/{beneficiary_id}')
+async def get_beneficiary(
+    beneficiary_id: str,
+    current_user: UserModel = Depends(auth_util.get_current_active_user)
+):
+    """Get a specific beneficiary"""
+    try:
+        beneficiary = await beneficiary_service.get_beneficiary_by_id(
+            beneficiary_id, 
+            current_user.organization_id
+        )
+        if beneficiary:
+            return beneficiary
+        else:
+            raise HTTPException(status_code=404, detail="Beneficiary not found")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api.put('/beneficiaries/{beneficiary_id}')
+async def update_beneficiary(
+    beneficiary_id: str,
+    beneficiary_data: dict,
+    current_user: UserModel = Depends(auth_util.get_current_active_user)
+):
+    """Update a beneficiary"""
+    try:
+        from models import BeneficiaryUpdate
+        update_data = BeneficiaryUpdate(**beneficiary_data)
+        result = await beneficiary_service.update_beneficiary(
+            beneficiary_id,
+            update_data,
+            current_user.organization_id,
+            current_user.id
+        )
+        if result:
+            return {"success": True, "beneficiary": result}
+        else:
+            raise HTTPException(status_code=404, detail="Beneficiary not found")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api.delete('/beneficiaries/{beneficiary_id}')
+async def delete_beneficiary(
+    beneficiary_id: str,
+    current_user: UserModel = Depends(auth_util.get_current_active_user)
+):
+    """Delete (deactivate) a beneficiary"""
+    try:
+        result = await beneficiary_service.delete_beneficiary(
+            beneficiary_id,
+            current_user.organization_id
+        )
+        return {"success": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api.get('/beneficiaries/analytics')
+async def get_beneficiary_analytics(
+    project_id: Optional[str] = None,
+    current_user: UserModel = Depends(auth_util.get_current_active_user)
+):
+    """Get beneficiary analytics and insights"""
+    try:
+        analytics = await beneficiary_service.get_beneficiary_analytics(
+            current_user.organization_id,
+            project_id
+        )
+        return analytics
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api.get('/beneficiaries/map-data')
+async def get_beneficiary_map_data(
+    project_id: Optional[str] = None,
+    current_user: UserModel = Depends(auth_util.get_current_active_user)
+):
+    """Get beneficiary location data for mapping"""
+    try:
+        map_data = await beneficiary_service.get_beneficiary_map_data(
+            current_user.organization_id,
+            project_id
+        )
+        return {"map_points": map_data}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# -------------------- Service Records Routes --------------------
+@api.post('/service-records')
+async def create_service_record(
+    service_data: dict,
+    current_user: UserModel = Depends(auth_util.get_current_active_user)
+):
+    """Create a service record"""
+    try:
+        from models import ServiceRecordCreate
+        record_data = ServiceRecordCreate(**service_data)
+        result = await beneficiary_service.create_service_record(
+            record_data,
+            current_user.organization_id,
+            current_user.id
+        )
+        return {"success": True, "service_record": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api.post('/service-records/batch')
+async def create_batch_service_records(
+    batch_data: dict,
+    current_user: UserModel = Depends(auth_util.get_current_active_user)
+):
+    """Create service records for multiple beneficiaries"""
+    try:
+        from models import BatchServiceRecord
+        batch = BatchServiceRecord(**batch_data)
+        results = await beneficiary_service.create_batch_service_records(
+            batch,
+            current_user.organization_id,
+            current_user.id
+        )
+        return {"success": True, "service_records": results, "count": len(results)}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api.get('/service-records')
+async def get_service_records(
+    beneficiary_id: Optional[str] = None,
+    project_id: Optional[str] = None,
+    activity_id: Optional[str] = None,
+    service_type: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 20,
+    current_user: UserModel = Depends(auth_util.get_current_active_user)
+):
+    """Get service records with filtering"""
+    try:
+        # Parse dates
+        date_from_dt = datetime.fromisoformat(date_from.replace('Z', '+00:00')) if date_from else None
+        date_to_dt = datetime.fromisoformat(date_to.replace('Z', '+00:00')) if date_to else None
+        
+        result = await beneficiary_service.get_service_records(
+            organization_id=current_user.organization_id,
+            beneficiary_id=beneficiary_id,
+            project_id=project_id,
+            activity_id=activity_id,
+            service_type=service_type,
+            date_from=date_from_dt,
+            date_to=date_to_dt,
+            page=page,
+            page_size=page_size
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# -------------------- Beneficiary KPIs Routes --------------------
+@api.post('/beneficiary-kpis')
+async def create_beneficiary_kpi(
+    kpi_data: dict,
+    current_user: UserModel = Depends(auth_util.get_current_active_user)
+):
+    """Create a KPI for a beneficiary"""
+    try:
+        from models import BeneficiaryKPICreate
+        kpi = BeneficiaryKPICreate(**kpi_data)
+        result = await beneficiary_service.create_beneficiary_kpi(
+            kpi,
+            current_user.organization_id,
+            current_user.id
+        )
+        return {"success": True, "kpi": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api.put('/beneficiary-kpis/{kpi_id}')
+async def update_beneficiary_kpi(
+    kpi_id: str,
+    kpi_data: dict,
+    current_user: UserModel = Depends(auth_util.get_current_active_user)
+):
+    """Update a beneficiary KPI"""
+    try:
+        from models import BeneficiaryKPIUpdate
+        update_data = BeneficiaryKPIUpdate(**kpi_data)
+        result = await beneficiary_service.update_beneficiary_kpi(
+            kpi_id,
+            update_data,
+            current_user.organization_id,
+            current_user.id
+        )
+        if result:
+            return {"success": True, "kpi": result}
+        else:
+            raise HTTPException(status_code=404, detail="KPI not found")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api.get('/beneficiary-kpis')
+async def get_beneficiary_kpis(
+    beneficiary_id: Optional[str] = None,
+    project_id: Optional[str] = None,
+    activity_id: Optional[str] = None,
+    current_user: UserModel = Depends(auth_util.get_current_active_user)
+):
+    """Get beneficiary KPIs"""
+    try:
+        kpis = await beneficiary_service.get_beneficiary_kpis(
+            current_user.organization_id,
+            beneficiary_id,
+            project_id,
+            activity_id
+        )
+        return {"kpis": kpis}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api.post('/beneficiaries/calculate-risk-scores')
+async def calculate_risk_scores(
+    current_user: UserModel = Depends(auth_util.get_current_active_user)
+):
+    """Calculate and update risk scores for all beneficiaries"""
+    try:
+        result = await beneficiary_service.calculate_risk_scores(current_user.organization_id)
+        return {"success": True, **result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 # -------------------- Basic Routes --------------------
 
 # Analytics
