@@ -18,7 +18,7 @@ import {
   PieChart,
   Calendar,
   Filter,
-  Refresh,
+  RefreshCw,
   ChevronDown,
   ChevronUp,
   Eye,
