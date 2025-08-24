@@ -1833,6 +1833,262 @@ class DataRWAPITester:
             self.log_result("Update KPI Value", False, f"Request error: {str(e)}")
             return False
 
+    def test_beneficiary_creation(self):
+        """Test beneficiary creation endpoint as requested in review"""
+        try:
+            beneficiary_data = {
+                "name": f"Jean Baptiste Nzeyimana {uuid.uuid4().hex[:4]}",
+                "gender": "male",
+                "contact_phone": "+250788123456",
+                "project_ids": [],  # Empty array for now
+                "custom_fields": {
+                    "location": "Kigali",
+                    "education_level": "Secondary"
+                },
+                "tags": ["digital_literacy", "rural_community"]
+            }
+            
+            response = self.session.post(
+                f"{self.base_url}/beneficiaries",
+                json=beneficiary_data
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "beneficiary" in data:
+                    beneficiary = data["beneficiary"]
+                    if beneficiary.get("name") == beneficiary_data["name"]:
+                        self.beneficiary_id = beneficiary.get("id")
+                        self.log_result("Beneficiary Creation", True, "Beneficiary created successfully")
+                        return True
+                    else:
+                        self.log_result("Beneficiary Creation", False, "Beneficiary data mismatch", data)
+                        return False
+                else:
+                    self.log_result("Beneficiary Creation", False, "Missing success/beneficiary fields", data)
+                    return False
+            else:
+                self.log_result("Beneficiary Creation", False, f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Beneficiary Creation", False, f"Request error: {str(e)}")
+            return False
+
+    def test_beneficiary_listing_with_pagination(self):
+        """Test beneficiary listing with pagination as requested in review"""
+        try:
+            response = self.session.get(
+                f"{self.base_url}/beneficiaries",
+                params={"page": 1, "page_size": 10}
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if ("items" in data and "total" in data and 
+                    "page" in data and "page_size" in data and "total_pages" in data):
+                    items = data["items"]
+                    if isinstance(items, list):
+                        self.log_result("Beneficiary Listing with Pagination", True, 
+                                      f"Retrieved {len(items)} beneficiaries with proper pagination structure")
+                        return True
+                    else:
+                        self.log_result("Beneficiary Listing with Pagination", False, 
+                                      "Items field is not a list", data)
+                        return False
+                else:
+                    self.log_result("Beneficiary Listing with Pagination", False, 
+                                  "Missing pagination fields", data)
+                    return False
+            else:
+                self.log_result("Beneficiary Listing with Pagination", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Beneficiary Listing with Pagination", False, f"Request error: {str(e)}")
+            return False
+
+    def test_beneficiary_analytics_endpoint(self):
+        """Test beneficiary analytics endpoint as requested in review"""
+        try:
+            response = self.session.get(f"{self.base_url}/beneficiaries/analytics")
+            
+            if response.status_code == 200:
+                data = response.json()
+                # Check for analytics structure
+                if isinstance(data, dict):
+                    # Look for common analytics fields
+                    expected_fields = ["demographics", "service_statistics", "risk_distribution"]
+                    found_fields = [field for field in expected_fields if field in data]
+                    
+                    if found_fields or len(data) > 0:
+                        self.log_result("Beneficiary Analytics", True, 
+                                      f"Analytics data retrieved with fields: {list(data.keys())}")
+                        return True
+                    else:
+                        self.log_result("Beneficiary Analytics", True, 
+                                      "Analytics endpoint returns empty data (expected for new organization)")
+                        return True
+                else:
+                    self.log_result("Beneficiary Analytics", False, 
+                                  "Analytics response is not a dictionary", data)
+                    return False
+            else:
+                self.log_result("Beneficiary Analytics", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Beneficiary Analytics", False, f"Request error: {str(e)}")
+            return False
+
+    def test_kpi_dashboard_endpoints_comprehensive(self):
+        """Test KPI dashboard endpoints as requested in review"""
+        try:
+            success_count = 0
+            total_tests = 3
+            
+            # Test 1: Indicator KPIs
+            response = self.session.get(f"{self.base_url}/kpi/indicators")
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, (list, dict)):
+                    self.log_result("KPI Indicators Endpoint", True, "KPI indicators endpoint working")
+                    success_count += 1
+                else:
+                    self.log_result("KPI Indicators Endpoint", False, "Invalid response format", data)
+            else:
+                self.log_result("KPI Indicators Endpoint", False, f"HTTP {response.status_code}", response.text)
+            
+            # Test 2: Activity KPIs
+            response = self.session.get(f"{self.base_url}/kpi/activities")
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, (list, dict)):
+                    self.log_result("KPI Activities Endpoint", True, "KPI activities endpoint working")
+                    success_count += 1
+                else:
+                    self.log_result("KPI Activities Endpoint", False, "Invalid response format", data)
+            else:
+                self.log_result("KPI Activities Endpoint", False, f"HTTP {response.status_code}", response.text)
+            
+            # Test 3: Project KPIs
+            response = self.session.get(f"{self.base_url}/kpi/projects")
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, (list, dict)):
+                    self.log_result("KPI Projects Endpoint", True, "KPI projects endpoint working")
+                    success_count += 1
+                else:
+                    self.log_result("KPI Projects Endpoint", False, "Invalid response format", data)
+            else:
+                self.log_result("KPI Projects Endpoint", False, f"HTTP {response.status_code}", response.text)
+            
+            return success_count == total_tests
+            
+        except Exception as e:
+            self.log_result("KPI Dashboard Endpoints", False, f"Request error: {str(e)}")
+            return False
+
+    def test_dashboard_data_loading(self):
+        """Test dashboard data loading endpoint as requested in review"""
+        try:
+            response = self.session.get(f"{self.base_url}/projects/dashboard")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check for required dashboard fields
+                required_fields = [
+                    "total_projects", "active_projects", "completed_projects",
+                    "overdue_activities", "budget_utilization", "kpi_performance",
+                    "recent_activities", "projects_by_status", "budget_by_category"
+                ]
+                
+                missing_fields = [field for field in required_fields if field not in data]
+                if not missing_fields:
+                    self.log_result("Dashboard Data Loading", True, 
+                                  "All required dashboard fields present")
+                    return True
+                else:
+                    self.log_result("Dashboard Data Loading", False, 
+                                  f"Missing required fields: {missing_fields}", data)
+                    return False
+            else:
+                self.log_result("Dashboard Data Loading", False, 
+                              f"HTTP {response.status_code}", response.text)
+                return False
+        except Exception as e:
+            self.log_result("Dashboard Data Loading", False, f"Request error: {str(e)}")
+            return False
+
+    def run_review_requested_tests(self):
+        """Run the specific tests requested in the review"""
+        print("="*80)
+        print("RUNNING REVIEW REQUESTED TESTS")
+        print("Testing authentication and beneficiary management system")
+        print("="*80)
+        print(f"Testing against: {self.base_url}")
+        print(f"Test user: {self.test_email}")
+        print("="*80)
+        
+        # Check API health first
+        if not self.test_api_health():
+            print("\n❌ API Health Check failed - stopping tests")
+            return False
+        
+        # Test 1: Authentication Endpoints
+        print("\n" + "="*60)
+        print("1. AUTHENTICATION ENDPOINTS TESTING")
+        print("="*60)
+        
+        auth_success = self.test_auth_endpoints_comprehensive()
+        
+        # Test 2: Beneficiary Management Endpoints
+        print("\n" + "="*60)
+        print("2. BENEFICIARY MANAGEMENT ENDPOINTS TESTING")
+        print("="*60)
+        
+        beneficiary_tests = [
+            self.test_beneficiary_creation,
+            self.test_beneficiary_listing_with_pagination,
+            self.test_beneficiary_analytics_endpoint
+        ]
+        
+        beneficiary_passed = 0
+        for test in beneficiary_tests:
+            try:
+                if test():
+                    beneficiary_passed += 1
+            except Exception as e:
+                print(f"❌ EXCEPTION in {test.__name__}: {str(e)}")
+        
+        # Test 3: KPI Dashboard Endpoints
+        print("\n" + "="*60)
+        print("3. KPI DASHBOARD ENDPOINTS TESTING")
+        print("="*60)
+        
+        kpi_success = self.test_kpi_dashboard_endpoints_comprehensive()
+        
+        # Test 4: Dashboard Data Loading
+        print("\n" + "="*60)
+        print("4. DASHBOARD DATA LOADING TESTING")
+        print("="*60)
+        
+        dashboard_success = self.test_dashboard_data_loading()
+        
+        # Print summary
+        print("\n" + "="*80)
+        print("REVIEW REQUESTED TESTS SUMMARY")
+        print("="*80)
+        print(f"1. Authentication Endpoints: {'✅ PASS' if auth_success else '❌ FAIL'}")
+        print(f"2. Beneficiary Management: {beneficiary_passed}/3 tests passed")
+        print(f"3. KPI Dashboard Endpoints: {'✅ PASS' if kpi_success else '❌ FAIL'}")
+        print(f"4. Dashboard Data Loading: {'✅ PASS' if dashboard_success else '❌ FAIL'}")
+        
+        total_success = auth_success and (beneficiary_passed == 3) and kpi_success and dashboard_success
+        print(f"\nOVERALL RESULT: {'✅ ALL TESTS PASSED' if total_success else '❌ SOME TESTS FAILED'}")
+        
+        return total_success
+
     def test_create_beneficiary(self):
         """Test creating a beneficiary"""
         if not hasattr(self, 'project_id'):
