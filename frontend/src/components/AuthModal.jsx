@@ -73,61 +73,62 @@ const AuthModal = ({ isOpen, onClose }) => {
     }, 100);
   };
 
-  const handleRegister = async () => {
-    console.log('=== HANDLE REGISTER CALLED ===');
-    setLoading(true);
-    setError('');
+  const handleRegister = () => {
+    if (!registerData.name || !registerData.email || !registerData.password) {
+      setError('Please fill in all fields');
+      return;
+    }
 
     if (registerData.password !== registerData.confirmPassword) {
       setError('Passwords do not match');
-      setLoading(false);
       return;
     }
 
     if (registerData.password.length < 6) {
       setError('Password must be at least 6 characters');
-      setLoading(false);
       return;
     }
 
-    try {
-      // Direct API call
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
-      const response = await fetch(`${backendUrl}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name: registerData.name,
-          email: registerData.email,
-          password: registerData.password
-        })
-      });
+    setLoading(true);
+    setError('');
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
+    setTimeout(async () => {
+      try {
+        const backendUrl = 'http://localhost:8001';
+        const response = await fetch(`${backendUrl}/api/auth/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: registerData.name,
+            email: registerData.email,
+            password: registerData.password
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Registration failed');
+        }
+
+        const data = await response.json();
+        
+        // Store auth data
+        localStorage.setItem('access_token', data.access_token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('organization', JSON.stringify(data.organization));
+
+        // Close modal and redirect
+        onClose();
+        setRegisterData({ name: '', email: '', password: '', confirmPassword: '' });
+        window.location.href = '/?tab=overview';
+        
+      } catch (error) {
+        setError(error.message || 'Registration failed');
+        setLoading(false);
       }
-
-      const data = await response.json();
-      
-      // Store auth data
-      localStorage.setItem('access_token', data.access_token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      localStorage.setItem('organization', JSON.stringify(data.organization));
-
-      // Close modal and reload page to activate auth context
-      onClose();
-      setRegisterData({ name: '', email: '', password: '', confirmPassword: '' });
-      window.location.reload();
-      
-    } catch (error) {
-      console.error('Registration error:', error);
-      setError(error.message || 'Registration failed');
-    }
-
-    setLoading(false);
+    }, 100);
   };
 
   const resetForm = () => {
